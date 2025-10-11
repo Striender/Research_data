@@ -166,8 +166,8 @@ def main():
     """
     # --- CONFIGURATION ---
     RESULTS_DIR = "../results/"
-    OUTPUT_DIR = "../Extracted_Data/"
-    EXCEL_OUTPUT_FILE = "rnd.xlsx"
+    OUTPUT_DIR = "/home/neeraj/OneDrive/Research_Data"
+    EXCEL_OUTPUT_FILE = "data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
