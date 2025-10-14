@@ -4,6 +4,7 @@ import re
 import pandas as pd
 from collections import defaultdict
 import json
+import shutil
 
 # Try to import openpyxl and guide the user if it's not installed.
 try:
@@ -162,7 +163,7 @@ def apply_border_to_range(worksheet, row_range, col_range, border_style):
 def main():
     """
     Main function to find ChampSim files, parse them, and save them to a single
-    formatted Excel file with multiple sheets, skipping already processed files.
+    formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
     RESULTS_DIR = "../results/"
@@ -237,21 +238,34 @@ def main():
         return
 
     print(f"\nProcessing data and updating {EXCEL_OUTPUT_FILE}...")
-    output_path = os.path.join(OUTPUT_DIR, EXCEL_OUTPUT_FILE)
+    final_output_path = os.path.join(OUTPUT_DIR, EXCEL_OUTPUT_FILE)
+    temp_output_path = os.path.join("/tmp", EXCEL_OUTPUT_FILE) # Write to a safe temporary location first
     
     try:
-        # Load existing workbook or create a new one
-        if os.path.exists(output_path):
-            book = load_workbook(output_path)
-            # Create a list of sheet names to manage them, as we'll be modifying the book
-            sheet_names = book.sheetnames
-        else:
-            from openpyxl import Workbook
-            book = Workbook()
-            sheet_names = []
-            if 'Sheet' in book.sheetnames:
-                 book.remove(book.active)
+        from openpyxl import Workbook
+        book = Workbook()
+        book.remove(book.active)
 
+        if os.path.exists(final_output_path):
+            try:
+                old_book = load_workbook(final_output_path)
+                for sheet_name in old_book.sheetnames:
+                    if not sheet_name.startswith('raw_'):
+                        print(f"Preserving your custom sheet: {sheet_name}")
+                        old_ws = old_book[sheet_name]
+                        new_ws = book.create_sheet(title=sheet_name)
+                        for row in old_ws.iter_rows():
+                            for cell in row:
+                                new_ws[cell.coordinate].value = cell.value
+                                if cell.has_style:
+                                    new_ws[cell.coordinate].font = cell.font.copy()
+                                    new_ws[cell.coordinate].border = cell.border.copy()
+                                    new_ws[cell.coordinate].fill = cell.fill.copy()
+                                    new_ws[cell.coordinate].number_format = cell.number_format
+                                    new_ws[cell.coordinate].protection = cell.protection.copy()
+                                    new_ws[cell.coordinate].alignment = cell.alignment.copy()
+            except Exception as e:
+                print(f"Warning: Could not load or copy sheets from existing workbook. It might be corrupted. A new file will be created. Error: {e}")
 
         # Define styles once
         thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
@@ -268,14 +282,9 @@ def main():
             
             df = pd.DataFrame(data_list)
             sheet_name = f"raw_{group_key}"
-
-            # If sheet exists, remove it to be rewritten
-            if sheet_name in sheet_names:
-                book.remove(book[sheet_name])
             
-            # Create a new sheet for the data
             worksheet = book.create_sheet(title=sheet_name)
-
+            
             df_for_headers = df.drop(['Experiment'], axis=1, errors='ignore')
             
             # --- Create and Write Main Header ---
@@ -358,11 +367,14 @@ def main():
                     if cell.value: max_length = max(len(str(cell.value)), max_length)
                 worksheet.column_dimensions[column_letter].width = max_length + 2
             
-            print(f" -> Finished writing and formatting sheet: {sheet_name}")
+            print(f" -> Finished processing sheet: {sheet_name}")
         
-        # Save the entire workbook at the end
-        book.save(output_path)
+        # Save the entire workbook to the temporary path first
+        book.save(temp_output_path)
 
+        # Move the completed file to the final destination
+        shutil.move(temp_output_path, final_output_path)
+        
         # Clean the cache for saving by removing internal flags
         for group in data_by_prefetcher.values():
             for record in group.values():
@@ -370,10 +382,11 @@ def main():
                 
         save_json_data(DATA_CACHE_FILE, data_by_prefetcher)
         save_json_data(PROCESSED_LOG_FILE, processed_files_log)
-        print(f"\nSuccessfully created/updated Excel file: {output_path}")
+        print(f"\nSuccessfully created/updated Excel file: {final_output_path}")
 
     except Exception as e:
         print(f"\nAn error occurred while writing the Excel file: {e}")
 
 if __name__ == "__main__":
     main()
+
