@@ -93,9 +93,26 @@ cat "$TMP_COMMAND_FILE" | xargs -I CMD -P "$NUM_CORES" bash -c "CMD"
 
 # --- Cleanup ---
 rm "$TMP_COMMAND_FILE"
-
+echo "===================================================================================================================="
 echo "✅ All traces completed. Results are in $RESULTS_DIR"
+echo "===================================================================================================================="
 
+
+echo ""
+echo "======================================"
+echo "$4: Pushing to GitHub"
+echo "======================================"
+
+git add "$RESULTS_DIR"
+git commit -m "Update  $3 -- $4 results"
+git push origin master
+
+
+echo ""
+echo "======================================"
+echo "Pushed to GitHub successfully."
+echo "======================================"
+echo ""
 
 # ============================
 # Step 2: Extract IPC values
@@ -110,9 +127,7 @@ if [ ! -f "$EXTRACT_SCRIPT" ]; then
     exit 1
 fi
 
-echo ""
-echo "------------------------------------------------------------------------------------------------------"
-echo ""
+
 
 # Call extract_ipc.sh with arguments:
 #   SUBDIR      -> $2
