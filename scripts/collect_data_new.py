@@ -182,7 +182,7 @@ def main():
     # --- CONFIGURATION ---
     RESULTS_DIR = "../results/"
     OUTPUT_DIR = "/home/neeraj/OneDrive/Research_Data"
-    EXCEL_OUTPUT_FILE = "data_dump1.xlsx"
+    EXCEL_OUTPUT_FILE = "data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -288,6 +288,8 @@ def main():
         data_header_fill = PatternFill(start_color="A9A9A9", end_color="A9A9A9", fill_type="solid") # Dark Gray
         sub_header_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid") # Light Blue
         center_alignment = Alignment(horizontal='center', vertical='center')
+        left_alignment = Alignment(horizontal='left', vertical='center')
+        right_alignment = Alignment(horizontal='right', vertical='center')
         
         # Get the defined headers safely
         headers = parse_champsim_file(None)
@@ -324,7 +326,7 @@ def main():
             # Write and Style the data column headers on row 3
             for col_num, col_name in enumerate(headers, 1):
                 cell = worksheet.cell(row=3, column=col_num, value=col_name)
-                cell.font = Font(bold=True, color="FFFFFF")
+                cell.font = Font(bold=True, color="FFFFFF", size=12)
                 cell.fill = data_header_fill
                 cell.border = thin_border
                 cell.alignment = center_alignment
@@ -361,12 +363,18 @@ def main():
                 apply_border_to_range(worksheet, (current_row + 1, current_row + 1), (1, num_cols), thin_border)
                 worksheet.row_dimensions[current_row + 1].height = 30
 
-                df_to_write = df_experiment[headers]
+                # Reindex to ensure all columns are present, then fill missing with 'NaN'
+                df_to_write = df_experiment.reindex(columns=headers).fillna('NaN')
                 
-                # Write data using openpyxl to avoid pandas overwriting styles
+                # Write data using openpyxl to apply styles cell by cell
                 for r_idx, row_data in enumerate(df_to_write.itertuples(index=False), start=current_row + 2):
                     for c_idx, value in enumerate(row_data, 1):
-                        worksheet.cell(row=r_idx, column=c_idx, value=value)
+                        cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
+                        # First column is left-aligned, others are right-aligned
+                        if c_idx == 1:
+                            cell.alignment = left_alignment
+                        else:
+                            cell.alignment = right_alignment
                 
                 current_row += 1 + len(df_experiment)
             
