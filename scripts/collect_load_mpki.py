@@ -57,16 +57,22 @@ def parse_champsim_file(filepath):
         "Trace File": os.path.basename(filepath) if filepath else None,
         "IPC": None,
         "L1D Total Access": None, "L1D Total Hit": None, "L1D Total Miss": None, "L1D Total MPKI": None,
-        "L1D Prefetch Access": None, "L1D Prefetch Issued": None, "L1D Prefetch Useful": None,
-        "L1D Prefetch Accuracy": None, "L1D Average Miss Latency": None,
-        
+        "L1D Load Miss": None, "L1D Load MPKI": None,
+        "L1D Prefetch Access": None, "L1D Prefetch Issued": None, "L1D Prefetch Useful": None, "L1D Useful Load Prefetches": None,
+        "L1D Prefetch Accuracy": None, "L1D Average Miss Latency": None, "L1D Late Prefetches": None,
+        "L1D Prefetch Coverage": None,
+
         "L2C Total Access": None, "L2C Total Hit": None, "L2C Total Miss": None, "L2C Total MPKI": None,
-        "L2C Prefetch Access": None, "L2C Prefetch Issued": None, "L2C Prefetch Useful": None,
-        "L2C Prefetch Accuracy": None, "L2C Average Miss Latency": None,
+        "L2C Load Miss": None, "L2C Load MPKI": None,
+        "L2C Prefetch Access": None, "L2C Prefetch Issued": None, "L2C Prefetch Useful": None, "L2C Useful Load Prefetches": None,
+        "L2C Prefetch Accuracy": None, "L2C Average Miss Latency": None, "L2C Late Prefetches": None,
+        "L2C Prefetch Coverage": None,
 
         "LLC Total Access": None, "LLC Total Hit": None, "LLC Total Miss": None, "LLC Total MPKI": None,
-        "LLC Prefetch Access": None, "LLC Prefetch Issued": None, "LLC Prefetch Useful": None,
-        "LLC Prefetch Accuracy": None, "LLC Average Miss Latency": None
+        "LLC Load Miss": None, "LLC Load MPKI": None,
+        "LLC Prefetch Access": None, "LLC Prefetch Issued": None, "LLC Prefetch Useful": None, "LLC Useful Load Prefetches": None,
+        "LLC Prefetch Accuracy": None, "LLC Average Miss Latency": None, "LLC Late Prefetches": None,
+        "LLC Prefetch Coverage": None,
     }
     
     if not filepath:
@@ -89,6 +95,11 @@ def parse_champsim_file(filepath):
                 metrics["L1D Total Miss"] = int(l1d_total_match.group(3))
                 metrics["L1D Total MPKI"] = float(l1d_total_match.group(4))
             
+            l1d_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if l1d_load_match:
+                metrics["L1D Load Miss"] = int(l1d_load_match.group(1))
+                metrics["L1D Load MPKI"] = float(l1d_load_match.group(2))
+
             l1d_prefetch_access_match = re.search(r"L1D PREFETCH\s+ACCESS:\s+(\d+)", content)
             if l1d_prefetch_access_match:
                 metrics["L1D Prefetch Access"] = int(l1d_prefetch_access_match.group(1))
@@ -98,6 +109,10 @@ def parse_champsim_file(filepath):
                 metrics["L1D Prefetch Issued"] = int(l1d_prefetch_match.group(1))
                 metrics["L1D Prefetch Useful"] = int(l1d_prefetch_match.group(2))
             
+            l1d_useful_load_match = re.search(r"L1D USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if l1d_useful_load_match:
+                metrics["L1D Useful Load Prefetches"] = int(l1d_useful_load_match.group(1))
+
             l1d_accuracy_match = re.search(r"L1D USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
             if l1d_accuracy_match:
                 accuracy_str = l1d_accuracy_match.group(1)
@@ -107,6 +122,10 @@ def parse_champsim_file(filepath):
             l1d_latency_match = re.search(r"L1D AVERAGE MISS LATENCY:\s+([\d.]+)", content)
             if l1d_latency_match:
                 metrics["L1D Average Miss Latency"] = float(l1d_latency_match.group(1))
+            
+            l1d_late_prefetch_match = re.search(r"L1D TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if l1d_late_prefetch_match:
+                metrics["L1D Late Prefetches"] = int(l1d_late_prefetch_match.group(1))
 
             # --- L2C Stats (L2) ---
             l2c_total_match = re.search(r"L2C TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
@@ -116,6 +135,11 @@ def parse_champsim_file(filepath):
                 metrics["L2C Total Miss"] = int(l2c_total_match.group(3))
                 metrics["L2C Total MPKI"] = float(l2c_total_match.group(4))
 
+            l2c_load_match = re.search(r"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if l2c_load_match:
+                metrics["L2C Load Miss"] = int(l2c_load_match.group(1))
+                metrics["L2C Load MPKI"] = float(l2c_load_match.group(2))
+
             l2c_prefetch_access_match = re.search(r"L2C PREFETCH\s+ACCESS:\s+(\d+)", content)
             if l2c_prefetch_access_match:
                 metrics["L2C Prefetch Access"] = int(l2c_prefetch_access_match.group(1))
@@ -124,6 +148,10 @@ def parse_champsim_file(filepath):
             if l2c_prefetch_match:
                 metrics["L2C Prefetch Issued"] = int(l2c_prefetch_match.group(1))
                 metrics["L2C Prefetch Useful"] = int(l2c_prefetch_match.group(2))
+            
+            l2c_useful_load_match = re.search(r"L2C USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if l2c_useful_load_match:
+                 metrics["L2C Useful Load Prefetches"] = int(l2c_useful_load_match.group(1))
             
             l2c_accuracy_match = re.search(r"L2C USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
             if l2c_accuracy_match:
@@ -135,6 +163,10 @@ def parse_champsim_file(filepath):
             if l2c_latency_match:
                 metrics["L2C Average Miss Latency"] = float(l2c_latency_match.group(1))
 
+            l2c_late_prefetch_match = re.search(r"L2C TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if l2c_late_prefetch_match:
+                metrics["L2C Late Prefetches"] = int(l2c_late_prefetch_match.group(1))
+
             # --- LLC Stats (L3) ---
             llc_total_match = re.search(r"LLC TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if llc_total_match:
@@ -142,6 +174,11 @@ def parse_champsim_file(filepath):
                 metrics["LLC Total Hit"] = int(llc_total_match.group(2))
                 metrics["LLC Total Miss"] = int(llc_total_match.group(3))
                 metrics["LLC Total MPKI"] = float(llc_total_match.group(4))
+
+            llc_load_match = re.search(r"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if llc_load_match:
+                metrics["LLC Load Miss"] = int(llc_load_match.group(1))
+                metrics["LLC Load MPKI"] = float(llc_load_match.group(2))
             
             llc_prefetch_access_match = re.search(r"LLC PREFETCH\s+ACCESS:\s+(\d+)", content)
             if llc_prefetch_access_match:
@@ -151,6 +188,10 @@ def parse_champsim_file(filepath):
             if llc_prefetch_match:
                 metrics["LLC Prefetch Issued"] = int(llc_prefetch_match.group(1))
                 metrics["LLC Prefetch Useful"] = int(llc_prefetch_match.group(2))
+            
+            llc_useful_load_match = re.search(r"LLC USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if llc_useful_load_match:
+                metrics["LLC Useful Load Prefetches"] = int(llc_useful_load_match.group(1))
 
             llc_accuracy_match = re.search(r"LLC USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
             if llc_accuracy_match:
@@ -161,6 +202,10 @@ def parse_champsim_file(filepath):
             llc_latency_match = re.search(r"LLC AVERAGE MISS LATENCY:\s+([\d.]+)", content)
             if llc_latency_match:
                 metrics["LLC Average Miss Latency"] = float(llc_latency_match.group(1))
+
+            llc_late_prefetch_match = re.search(r"LLC TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if llc_late_prefetch_match:
+                metrics["LLC Late Prefetches"] = int(llc_late_prefetch_match.group(1))
 
     except IOError as e:
         print(f"Error reading file {filepath}: {e}")
@@ -182,7 +227,7 @@ def main():
     # --- CONFIGURATION ---
     RESULTS_DIR = "../results/"
     OUTPUT_DIR = "/home/neeraj/OneDrive/Research_Data"
-    EXCEL_OUTPUT_FILE = "data_dump1.xlsx"
+    EXCEL_OUTPUT_FILE = "data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -288,6 +333,8 @@ def main():
         data_header_fill = PatternFill(start_color="A9A9A9", end_color="A9A9A9", fill_type="solid") # Dark Gray
         sub_header_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid") # Light Blue
         center_alignment = Alignment(horizontal='center', vertical='center')
+        left_alignment = Alignment(horizontal='left', vertical='center')
+        right_alignment = Alignment(horizontal='right', vertical='center')
         
         # Get the defined headers safely
         headers = parse_champsim_file(None)
@@ -324,7 +371,7 @@ def main():
             # Write and Style the data column headers on row 3
             for col_num, col_name in enumerate(headers, 1):
                 cell = worksheet.cell(row=3, column=col_num, value=col_name)
-                cell.font = Font(bold=True, color="FFFFFF")
+                cell.font = Font(bold=True, color="FFFFFF", size=12)
                 cell.fill = data_header_fill
                 cell.border = thin_border
                 cell.alignment = center_alignment
@@ -361,13 +408,38 @@ def main():
                 apply_border_to_range(worksheet, (current_row + 1, current_row + 1), (1, num_cols), thin_border)
                 worksheet.row_dimensions[current_row + 1].height = 30
 
-                df_to_write = df_experiment[headers]
+                # Reindex to ensure all columns are present, then fill missing with 'NaN'
+                df_to_write = df_experiment.reindex(columns=headers).fillna('NaN')
                 
-                # Write data using openpyxl to avoid pandas overwriting styles
+                # Write data using openpyxl to apply styles cell by cell
                 for r_idx, row_data in enumerate(df_to_write.itertuples(index=False), start=current_row + 2):
                     for c_idx, value in enumerate(row_data, 1):
-                        worksheet.cell(row=r_idx, column=c_idx, value=value)
+                        cell = worksheet.cell(row=r_idx, column=c_idx, value=value)
+                        # First column is left-aligned, others are right-aligned
+                        if c_idx == 1:
+                            cell.alignment = left_alignment
+                        else:
+                            cell.alignment = right_alignment
                 
+                # --- Add Coverage Formulas ---
+                # Get column letters for the calculation
+                l1d_useful_col = get_column_letter(headers.index("L1D Useful Load Prefetches") + 1)
+                l1d_load_miss_col = get_column_letter(headers.index("L1D Load Miss") + 1)
+                l1d_coverage_col = get_column_letter(headers.index("L1D Prefetch Coverage") + 1)
+                
+                l2c_useful_col = get_column_letter(headers.index("L2C Useful Load Prefetches") + 1)
+                l2c_load_miss_col = get_column_letter(headers.index("L2C Load Miss") + 1)
+                l2c_coverage_col = get_column_letter(headers.index("L2C Prefetch Coverage") + 1)
+
+                llc_useful_col = get_column_letter(headers.index("LLC Useful Load Prefetches") + 1)
+                llc_load_miss_col = get_column_letter(headers.index("LLC Load Miss") + 1)
+                llc_coverage_col = get_column_letter(headers.index("LLC Prefetch Coverage") + 1)
+
+                for r_idx in range(current_row + 2, current_row + 2 + len(df_to_write)):
+                    worksheet[f"{l1d_coverage_col}{r_idx}"] = f'=IF({l1d_load_miss_col}{r_idx}=0, 0, {l1d_useful_col}{r_idx}/{l1d_load_miss_col}{r_idx})'
+                    worksheet[f"{l2c_coverage_col}{r_idx}"] = f'=IF({l2c_load_miss_col}{r_idx}=0, 0, {l2c_useful_col}{r_idx}/{l2c_load_miss_col}{r_idx})'
+                    worksheet[f"{llc_coverage_col}{r_idx}"] = f'=IF({llc_load_miss_col}{r_idx}=0, 0, {llc_useful_col}{r_idx}/{llc_load_miss_col}{r_idx})'
+
                 current_row += 1 + len(df_experiment)
             
             bold_font_for_trace = Font(bold=True)

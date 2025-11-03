@@ -8,7 +8,7 @@ import shutil
 
 # Try to import openpyxl and guide the user if it's not installed.
 try:
-    from openpyxl import load_workbook
+    from openpyxl import load_workbook, Workbook
     from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
     from openpyxl.utils import get_column_letter
     from openpyxl.cell import MergedCell
@@ -57,16 +57,22 @@ def parse_champsim_file(filepath):
         "Trace File": os.path.basename(filepath) if filepath else None,
         "IPC": None,
         "L1D Total Access": None, "L1D Total Hit": None, "L1D Total Miss": None, "L1D Total MPKI": None,
-        "L1D Prefetch Access": None, "L1D Prefetch Issued": None, "L1D Prefetch Useful": None,
-        "L1D Prefetch Accuracy": None, "L1D Average Miss Latency": None,
-        
+        "L1D Load Miss": None, "L1D Load MPKI": None,
+        "L1D Prefetch Access": None, "L1D Prefetch Issued": None, "L1D Prefetch Useful": None, "L1D Useful Load Prefetches": None,
+        "L1D Prefetch Accuracy": None, "L1D Average Miss Latency": None, "L1D Late Prefetches": None,
+        "L1D Prefetch Coverage": None, 
+
         "L2C Total Access": None, "L2C Total Hit": None, "L2C Total Miss": None, "L2C Total MPKI": None,
-        "L2C Prefetch Access": None, "L2C Prefetch Issued": None, "L2C Prefetch Useful": None,
-        "L2C Prefetch Accuracy": None, "L2C Average Miss Latency": None,
+        "L2C Load Miss": None, "L2C Load MPKI": None,
+        "L2C Prefetch Access": None, "L2C Prefetch Issued": None, "L2C Prefetch Useful": None, "L2C Useful Load Prefetches": None,
+        "L2C Prefetch Accuracy": None, "L2C Average Miss Latency": None, "L2C Late Prefetches": None,
+        "L2C Prefetch Coverage": None,"L2C Pollution":None,
 
         "LLC Total Access": None, "LLC Total Hit": None, "LLC Total Miss": None, "LLC Total MPKI": None,
-        "LLC Prefetch Access": None, "LLC Prefetch Issued": None, "LLC Prefetch Useful": None,
-        "LLC Prefetch Accuracy": None, "LLC Average Miss Latency": None
+        "LLC Load Miss": None, "LLC Load MPKI": None,
+        "LLC Prefetch Access": None, "LLC Prefetch Issued": None, "LLC Prefetch Useful": None, "LLC Useful Load Prefetches": None,
+        "LLC Prefetch Accuracy": None, "LLC Average Miss Latency": None, "LLC Late Prefetches": None,
+        "LLC Prefetch Coverage": None,"LLC Pollution":None,
     }
     
     if not filepath:
@@ -89,6 +95,11 @@ def parse_champsim_file(filepath):
                 metrics["L1D Total Miss"] = int(l1d_total_match.group(3))
                 metrics["L1D Total MPKI"] = float(l1d_total_match.group(4))
             
+            l1d_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if l1d_load_match:
+                metrics["L1D Load Miss"] = int(l1d_load_match.group(1))
+                metrics["L1D Load MPKI"] = float(l1d_load_match.group(2))
+
             l1d_prefetch_access_match = re.search(r"L1D PREFETCH\s+ACCESS:\s+(\d+)", content)
             if l1d_prefetch_access_match:
                 metrics["L1D Prefetch Access"] = int(l1d_prefetch_access_match.group(1))
@@ -98,6 +109,10 @@ def parse_champsim_file(filepath):
                 metrics["L1D Prefetch Issued"] = int(l1d_prefetch_match.group(1))
                 metrics["L1D Prefetch Useful"] = int(l1d_prefetch_match.group(2))
             
+            l1d_useful_load_match = re.search(r"L1D USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if l1d_useful_load_match:
+                metrics["L1D Useful Load Prefetches"] = int(l1d_useful_load_match.group(1))
+
             l1d_accuracy_match = re.search(r"L1D USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
             if l1d_accuracy_match:
                 accuracy_str = l1d_accuracy_match.group(1)
@@ -107,14 +122,24 @@ def parse_champsim_file(filepath):
             l1d_latency_match = re.search(r"L1D AVERAGE MISS LATENCY:\s+([\d.]+)", content)
             if l1d_latency_match:
                 metrics["L1D Average Miss Latency"] = float(l1d_latency_match.group(1))
+            
+            l1d_late_prefetch_match = re.search(r"L1D TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if l1d_late_prefetch_match:
+                metrics["L1D Late Prefetches"] = int(l1d_late_prefetch_match.group(1))
 
             # --- L2C Stats (L2) ---
+
             l2c_total_match = re.search(r"L2C TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if l2c_total_match:
                 metrics["L2C Total Access"] = int(l2c_total_match.group(1))
                 metrics["L2C Total Hit"] = int(l2c_total_match.group(2))
                 metrics["L2C Total Miss"] = int(l2c_total_match.group(3))
                 metrics["L2C Total MPKI"] = float(l2c_total_match.group(4))
+
+            l2c_load_match = re.search(r"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if l2c_load_match:
+                metrics["L2C Load Miss"] = int(l2c_load_match.group(1))
+                metrics["L2C Load MPKI"] = float(l2c_load_match.group(2))
 
             l2c_prefetch_access_match = re.search(r"L2C PREFETCH\s+ACCESS:\s+(\d+)", content)
             if l2c_prefetch_access_match:
@@ -124,6 +149,10 @@ def parse_champsim_file(filepath):
             if l2c_prefetch_match:
                 metrics["L2C Prefetch Issued"] = int(l2c_prefetch_match.group(1))
                 metrics["L2C Prefetch Useful"] = int(l2c_prefetch_match.group(2))
+            
+            l2c_useful_load_match = re.search(r"L2C USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if l2c_useful_load_match:
+                 metrics["L2C Useful Load Prefetches"] = int(l2c_useful_load_match.group(1))
             
             l2c_accuracy_match = re.search(r"L2C USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
             if l2c_accuracy_match:
@@ -135,6 +164,16 @@ def parse_champsim_file(filepath):
             if l2c_latency_match:
                 metrics["L2C Average Miss Latency"] = float(l2c_latency_match.group(1))
 
+            l2c_late_prefetch_match = re.search(r"L2C TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if l2c_late_prefetch_match:
+                metrics["L2C Late Prefetches"] = int(l2c_late_prefetch_match.group(1))
+
+            
+            # *** MODIFICATION 1: Updated regex to handle space "L2 :" ***
+            l2c_pollution_match = re.search(r"Total pollution count in L2\s*:\s+([\d.]+)", content)
+            if l2c_pollution_match:
+                metrics["L2C Pollution"] = float(l2c_pollution_match.group(1))
+
             # --- LLC Stats (L3) ---
             llc_total_match = re.search(r"LLC TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if llc_total_match:
@@ -142,6 +181,11 @@ def parse_champsim_file(filepath):
                 metrics["LLC Total Hit"] = int(llc_total_match.group(2))
                 metrics["LLC Total Miss"] = int(llc_total_match.group(3))
                 metrics["LLC Total MPKI"] = float(llc_total_match.group(4))
+
+            llc_load_match = re.search(r"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if llc_load_match:
+                metrics["LLC Load Miss"] = int(llc_load_match.group(1))
+                metrics["LLC Load MPKI"] = float(llc_load_match.group(2))
             
             llc_prefetch_access_match = re.search(r"LLC PREFETCH\s+ACCESS:\s+(\d+)", content)
             if llc_prefetch_access_match:
@@ -151,6 +195,10 @@ def parse_champsim_file(filepath):
             if llc_prefetch_match:
                 metrics["LLC Prefetch Issued"] = int(llc_prefetch_match.group(1))
                 metrics["LLC Prefetch Useful"] = int(llc_prefetch_match.group(2))
+            
+            llc_useful_load_match = re.search(r"LLC USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if llc_useful_load_match:
+                metrics["LLC Useful Load Prefetches"] = int(llc_useful_load_match.group(1))
 
             llc_accuracy_match = re.search(r"LLC USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
             if llc_accuracy_match:
@@ -161,6 +209,16 @@ def parse_champsim_file(filepath):
             llc_latency_match = re.search(r"LLC AVERAGE MISS LATENCY:\s+([\d.]+)", content)
             if llc_latency_match:
                 metrics["LLC Average Miss Latency"] = float(llc_latency_match.group(1))
+
+            llc_late_prefetch_match = re.search(r"LLC TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if llc_late_prefetch_match:
+                metrics["LLC Late Prefetches"] = int(llc_late_prefetch_match.group(1))
+            
+
+            # *** MODIFICATION 2: Corrected variable names (was l2c_... by mistake) ***
+            llc_pollution_match = re.search(r"Total pollution count in LLC:\s+([\d.]+)", content)
+            if llc_pollution_match:
+                metrics["LLC Pollution"] = float(llc_pollution_match.group(1))
 
     except IOError as e:
         print(f"Error reading file {filepath}: {e}")
@@ -181,7 +239,7 @@ def main():
     """
     # --- CONFIGURATION ---
     RESULTS_DIR = "../results/"
-    OUTPUT_DIR = "/home/neeraj/OneDrive/Research_Data"
+    OUTPUT_DIR = "/home/neeraj/Berti-MICRO2022/ChampSim/Other_PF/Extracted_Data"
     EXCEL_OUTPUT_FILE = "data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
@@ -253,32 +311,30 @@ def main():
 
     print(f"\nProcessing data and updating {EXCEL_OUTPUT_FILE}...")
     final_output_path = os.path.join(OUTPUT_DIR, EXCEL_OUTPUT_FILE)
-    temp_output_path = os.path.join("/tmp", EXCEL_OUTPUT_FILE) # Write to a safe temporary location first
+    temp_output_path = os.path.join("/tmp", f"{os.getpid()}_{EXCEL_OUTPUT_FILE}") # Unique temp file name
     
     try:
         from openpyxl import Workbook
         book = Workbook()
         if 'Sheet' in book.sheetnames:
-            book.remove(book.active)
+             # Ensure there's always at least one sheet before removing the default one
+            if len(book.sheetnames) > 1:
+                book.remove(book.active)
+            else: # If it's the only sheet, just clear it instead of removing
+                book.active.title = "Placeholder" # Rename temporarily if needed
+                for row in book.active.iter_rows():
+                    for cell in row:
+                        cell.value = None
 
+        existing_custom_sheets = {}
         if os.path.exists(final_output_path):
             try:
                 old_book = load_workbook(final_output_path)
                 for sheet_name in old_book.sheetnames:
                     if not sheet_name.startswith('raw_'):
                         print(f"Preserving your custom sheet: {sheet_name}")
-                        old_ws = old_book[sheet_name]
-                        new_ws = book.create_sheet(title=sheet_name)
-                        for row in old_ws.iter_rows():
-                            for cell in row:
-                                new_ws[cell.coordinate].value = cell.value
-                                if cell.has_style:
-                                    new_ws[cell.coordinate].font = cell.font.copy()
-                                    new_ws[cell.coordinate].border = cell.border.copy()
-                                    new_ws[cell.coordinate].fill = cell.fill.copy()
-                                    new_ws[cell.coordinate].number_format = cell.number_format
-                                    new_ws[cell.coordinate].protection = cell.protection.copy()
-                                    new_ws[cell.coordinate].alignment = cell.alignment.copy()
+                        existing_custom_sheets[sheet_name] = old_book[sheet_name]
+
             except Exception as e:
                 print(f"Warning: Could not load or copy sheets from existing workbook. It might be corrupted. A new file will be created. Error: {e}")
 
@@ -294,6 +350,7 @@ def main():
         # Get the defined headers safely
         headers = parse_champsim_file(None)
 
+        # Build the new workbook content first
         for group_key in sorted(data_by_prefetcher.keys()):
             data_list = list(data_by_prefetcher[group_key].values())
             if not data_list: continue
@@ -301,8 +358,9 @@ def main():
             print(f"Processing group: {group_key}")
             
             df = pd.DataFrame(data_list)
-            sheet_name = f"raw_{group_key}"
+            sheet_name = f"{group_key}"
             
+            # Create sheet in the new book
             worksheet = book.create_sheet(title=sheet_name)
             
             # --- Create and Write Main Header ---
@@ -376,6 +434,33 @@ def main():
                         else:
                             cell.alignment = right_alignment
                 
+                # --- Add Coverage Formulas ---
+                # Get column letters for the calculation
+                l1d_useful_col = get_column_letter(headers.index("L1D Useful Load Prefetches") + 1)
+                l1d_load_miss_col = get_column_letter(headers.index("L1D Load Miss") + 1)
+                l1d_coverage_col = get_column_letter(headers.index("L1D Prefetch Coverage") + 1)
+                
+                l2c_useful_col = get_column_letter(headers.index("L2C Useful Load Prefetches") + 1)
+                l2c_load_miss_col = get_column_letter(headers.index("L2C Load Miss") + 1)
+                l2c_coverage_col = get_column_letter(headers.index("L2C Prefetch Coverage") + 1)
+
+                llc_useful_col = get_column_letter(headers.index("LLC Useful Load Prefetches") + 1)
+                llc_load_miss_col = get_column_letter(headers.index("LLC Load Miss") + 1)
+                llc_coverage_col = get_column_letter(headers.index("LLC Prefetch Coverage") + 1)
+
+                for r_idx in range(current_row + 2, current_row + 2 + len(df_to_write)):
+                    # L1D Coverage Formula
+                    l1d_denominator = f"({l1d_useful_col}{r_idx}+{l1d_load_miss_col}{r_idx})"
+                    worksheet[f"{l1d_coverage_col}{r_idx}"] = f'=IF({l1d_denominator}=0, 0, {l1d_useful_col}{r_idx}/{l1d_denominator})'
+
+                    # L2C Coverage Formula
+                    l2c_denominator = f"({l2c_useful_col}{r_idx}+{l2c_load_miss_col}{r_idx})"
+                    worksheet[f"{l2c_coverage_col}{r_idx}"] = f'=IF({l2c_denominator}=0, 0, {l2c_useful_col}{r_idx}/{l2c_denominator})'
+
+                    # LLC Coverage Formula
+                    llc_denominator = f"({llc_useful_col}{r_idx}+{llc_load_miss_col}{r_idx})"
+                    worksheet[f"{llc_coverage_col}{r_idx}"] = f'=IF({llc_denominator}=0, 0, {llc_useful_col}{r_idx}/{llc_denominator})'
+
                 current_row += 1 + len(df_experiment)
             
             bold_font_for_trace = Font(bold=True)
@@ -392,7 +477,22 @@ def main():
                 worksheet.column_dimensions[column_letter].width = max_length + 2
             
             print(f" -> Finished processing sheet: {sheet_name}")
-        
+
+        # Add the preserved custom sheets back into the workbook
+        for sheet_name, old_ws in existing_custom_sheets.items():
+            new_ws = book.create_sheet(title=sheet_name)
+            for row in old_ws.iter_rows():
+                for cell in row:
+                    new_ws[cell.coordinate].value = cell.value
+                    if cell.has_style:
+                        new_ws[cell.coordinate].font = cell.font.copy()
+                        new_ws[cell.coordinate].border = cell.border.copy()
+                        new_ws[cell.coordinate].fill = cell.fill.copy()
+                        new_ws[cell.coordinate].number_format = cell.number_format
+                        new_ws[cell.coordinate].protection = cell.protection.copy()
+                        new_ws[cell.coordinate].alignment = cell.alignment.copy()
+
+
         # Save the entire workbook to the temporary path first
         book.save(temp_output_path)
 
@@ -410,6 +510,13 @@ def main():
 
     except Exception as e:
         print(f"\nAn error occurred while writing the Excel file: {e}")
+        # Clean up the temporary file if it exists and writing failed
+        if os.path.exists(temp_output_path):
+            try:
+                os.remove(temp_output_path)
+            except OSError:
+                pass
+
 
 if __name__ == "__main__":
     main()
