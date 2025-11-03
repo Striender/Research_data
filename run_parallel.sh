@@ -97,12 +97,13 @@ echo "==========================================================================
 echo "✅ All traces completed. Results are in $RESULTS_DIR"
 echo "===================================================================================================================="
 
-
 echo ""
 echo "======================================"
 echo "$4: Pushing to GitHub"
 echo "======================================"
 
+
+ #Pushing Original directory to GitHub
 git add "$RESULTS_DIR"
 git commit -m "Update  $3 -- $4 results"
 git push origin master
@@ -113,6 +114,7 @@ echo "======================================"
 echo "Pushed to GitHub successfully."
 echo "======================================"
 echo ""
+
 
 # ============================
 # Step 2: Extract IPC values
