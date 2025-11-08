@@ -5,7 +5,7 @@ import pandas as pd
 from collections import defaultdict
 import json
 import shutil
-import copy 
+import copy
 
 # Try to import openpyxl and guide the user if it's not installed.
 try:
@@ -170,7 +170,8 @@ def parse_champsim_file(filepath):
                 metrics["L2C Late Prefetches"] = int(l2c_late_prefetch_match.group(1))
 
             
-            # --- MODIFIED: Regex for L2C Pollution ---
+            # *** MODIFICATION 1: Updated regex to handle space "L2 :" ***
+             # --- MODIFIED: Regex for L2C Pollution ---
             l2c_pollution_match = re.search(r"Total pollution count in L2\s*:\s+([\d.]+)", content)
             if l2c_pollution_match:
                 metrics["L2C Pollution"] = float(l2c_pollution_match.group(1))
@@ -216,7 +217,7 @@ def parse_champsim_file(filepath):
                 metrics["LLC Late Prefetches"] = int(llc_late_prefetch_match.group(1))
             
 
-            # --- MODIFIED: Regex for LLC Pollution ---
+            # *** MODIFICATION 2: Corrected variable names (was l2c_... by mistake) ***
             llc_pollution_match = re.search(r"Total pollution count in LLC:\s+([\d.]+)", content)
             if llc_pollution_match:
                 metrics["LLC Pollution"] = float(llc_pollution_match.group(1))
@@ -239,9 +240,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/"
+    RESULTS_DIR = "../results_gap/"
     OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data"
-    EXCEL_OUTPUT_FILE = "data_dump.xlsx"
+    EXCEL_OUTPUT_FILE = "gap_data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -486,13 +487,12 @@ def main():
                 for cell in row:
                     new_ws[cell.coordinate].value = cell.value
                     if cell.has_style:
-                        # --- MODIFIED: Use copy.copy() to prevent DeprecationWarning ---
-                        new_ws[cell.coordinate].font = copy.copy(cell.font)
-                        new_ws[cell.coordinate].border = copy.copy(cell.border)
-                        new_ws[cell.coordinate].fill = copy.copy(cell.fill)
+                        new_ws[cell.coordinate].font = cell.font.copy()
+                        new_ws[cell.coordinate].border = cell.border.copy()
+                        new_ws[cell.coordinate].fill = cell.fill.copy()
                         new_ws[cell.coordinate].number_format = cell.number_format
-                        new_ws[cell.coordinate].protection = copy.copy(cell.protection)
-                        new_ws[cell.coordinate].alignment = copy.copy(cell.alignment)
+                        new_ws[cell.coordinate].protection = cell.protection.copy()
+                        new_ws[cell.coordinate].alignment = cell.alignment.copy()
 
 
         # Save the entire workbook to the temporary path first
@@ -522,3 +522,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

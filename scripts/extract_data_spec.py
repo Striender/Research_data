@@ -5,6 +5,7 @@ import pandas as pd
 from collections import defaultdict
 import json
 import shutil
+import copy
 
 # Try to import openpyxl and guide the user if it's not installed.
 try:
@@ -170,6 +171,7 @@ def parse_champsim_file(filepath):
 
             
             # *** MODIFICATION 1: Updated regex to handle space "L2 :" ***
+             # --- MODIFIED: Regex for L2C Pollution ---
             l2c_pollution_match = re.search(r"Total pollution count in L2\s*:\s+([\d.]+)", content)
             if l2c_pollution_match:
                 metrics["L2C Pollution"] = float(l2c_pollution_match.group(1))
@@ -239,7 +241,7 @@ def main():
     """
     # --- CONFIGURATION ---
     RESULTS_DIR = "../results/"
-    OUTPUT_DIR = "/home/neeraj/Berti-MICRO2022/ChampSim/Other_PF/Extracted_Data"
+    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data"
     EXCEL_OUTPUT_FILE = "data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
