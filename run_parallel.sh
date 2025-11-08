@@ -21,7 +21,7 @@ WARMUP=50000000
 SIM=50000000
 
 # The temporary file to store the list of commands to run
-TMP_COMMAND_FILE="champsim_commands.tmp"
+TMP_COMMAND_FILE=$(mktemp champsim_commands.XXXXXX.tmp)
 
 # Check binary exists
 if [ ! -x "$BINARY" ]; then
@@ -77,7 +77,7 @@ do
     fi
 
     # Build the full command with proper quoting and append it to our "to-do list"
-    echo "\"$BINARY\" -warmup_instructions $WARMUP -simulation_instructions $SIM -traces \"$TRACE\" > \"$OUTPUT_FILE\"" >> "$TMP_COMMAND_FILE"
+    echo "\"$BINARY\" -warmup_instructions $WARMUP -simulation_instructions $SIM -traces \"$TRACE\" > \"$OUTPUT_FILE\""  >> "$TMP_COMMAND_FILE"
 
 done
 
