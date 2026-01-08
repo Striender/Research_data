@@ -1,15 +1,29 @@
+Initialize SIGNATURE TABLE
+ST_SET: 1
+ST_WAY: 256
+ST_TAG_BIT: 16
+ST_TAG_MASK: ffff
+
+Initialize PATTERN TABLE
+PT_SET: 512
+PT_WAY: 4
+SIG_DELTA_BIT: 7
+C_SIG_BIT: 4
+C_DELTA_BIT: 4
+
+Initialize PREFETCH FILTER
+FILTER_SET: 1024
 
 *** ChampSim Multicore Out-of-Order Simulator ***
 
 Warmup Instructions: 50000000
 Simulation Instructions: 50000000
 Number of CPUs: 1
-LLC sets: 2048
+LLC sets: 4096
 LLC ways: 16
 Off-chip DRAM Size: 4096 MB Channels: 1 Width: 64-bit Data Rate: 6400 MT/s
 CPU 0 runs /home1/sweta/traces/gaptraces//bfs-10.trace.gz
 .gz
-CPU 0 Bimodal branch predictor
 BTB has LRU replacement policy
 ITLB has LRU replacement policy
 DTLB has LRU replacement policy
@@ -17,677 +31,369 @@ STLB has LRU replacement policy
 L1I has LRU replacement policy
 CPU 0 L1D Berti prefetcher
 L1D has LRU replacement policy
-CPU 0 L2C IP-based stride prefetcher
+ST_WAYS: 256
+PT_SETS: 512
 L2C has LRU replacement policy
 LLC has LRU replacement policy
-Heartbeat CPU 0 instructions: 10000000 cycles: 2953904 heartbeat IPC: 3.38535 cumulative IPC: 3.38535 (Simulation time: 0 hr 0 min 11 sec) 
-Heartbeat CPU 0 instructions: 20000002 cycles: 5901136 heartbeat IPC: 3.39301 cumulative IPC: 3.38918 (Simulation time: 0 hr 0 min 33 sec) 
-Heartbeat CPU 0 instructions: 30000002 cycles: 8835059 heartbeat IPC: 3.40841 cumulative IPC: 3.39556 (Simulation time: 0 hr 0 min 55 sec) 
-Heartbeat CPU 0 instructions: 40000003 cycles: 11769274 heartbeat IPC: 3.40807 cumulative IPC: 3.39868 (Simulation time: 0 hr 1 min 17 sec) 
-Heartbeat CPU 0 instructions: 50000001 cycles: 14702095 heartbeat IPC: 3.40969 cumulative IPC: 3.40088 (Simulation time: 0 hr 1 min 39 sec) 
+DEADLOCK! CPU 0 instr_id: 0 translated: 2 fetched: 2 scheduled: 2 executed: 1 is_memory: 1 event: 9 current: 1000009
 
-Warmup complete CPU 0 instructions: 50000001 cycles: 14702095 (Simulation time: 0 hr 1 min 39 sec) 
+Load Queue Entry
+[LQ] entry: 0 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 1 instr_id: 14 address: 0 translated: 0 fetched: 1
+[LQ] entry: 2 instr_id: 23 address: 0 translated: 0 fetched: 1
+[LQ] entry: 3 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 4 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 5 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 6 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 7 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 8 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 9 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 10 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 11 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 12 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 13 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 14 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 15 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 16 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 17 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 18 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 19 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 20 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 21 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 22 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 23 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 24 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 25 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 26 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 27 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 28 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 29 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 30 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 31 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 32 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 33 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 34 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 35 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 36 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 37 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 38 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 39 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 40 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 41 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 42 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 43 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 44 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 45 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 46 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 47 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 48 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 49 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 50 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 51 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 52 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 53 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 54 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 55 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 56 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 57 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 58 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 59 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 60 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 61 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 62 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 63 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 64 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 65 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 66 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 67 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 68 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 69 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 70 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 71 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 72 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 73 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 74 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 75 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 76 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 77 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 78 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 79 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 80 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 81 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 82 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 83 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 84 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 85 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 86 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 87 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 88 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 89 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 90 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 91 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 92 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 93 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 94 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 95 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 96 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 97 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 98 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 99 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 100 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 101 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 102 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 103 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 104 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 105 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 106 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 107 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 108 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 109 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 110 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 111 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 112 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 113 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 114 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 115 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 116 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 117 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 118 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 119 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 120 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 121 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 122 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 123 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 124 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 125 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 126 instr_id: 0 address: 0 translated: 0 fetched: 1
+[LQ] entry: 127 instr_id: 0 address: 0 translated: 0 fetched: 1
 
-Heartbeat CPU 0 instructions: 60000001 cycles: 55750874 heartbeat IPC: 0.243613 cumulative IPC: 0.243613 (Simulation time: 0 hr 2 min 16 sec) 
-Heartbeat CPU 0 instructions: 70000003 cycles: 104415574 heartbeat IPC: 0.205488 cumulative IPC: 0.222932 (Simulation time: 0 hr 2 min 55 sec) 
-Heartbeat CPU 0 instructions: 80000002 cycles: 138144542 heartbeat IPC: 0.296481 cumulative IPC: 0.243028 (Simulation time: 0 hr 3 min 25 sec) 
-Heartbeat CPU 0 instructions: 90000000 cycles: 152540602 heartbeat IPC: 0.694634 cumulative IPC: 0.290195 (Simulation time: 0 hr 3 min 41 sec) 
-Heartbeat CPU 0 instructions: 100000000 cycles: 170756110 heartbeat IPC: 0.548983 cumulative IPC: 0.320402 (Simulation time: 0 hr 4 min 0 sec) 
-Finished CPU 0 instructions: 50000001 cycles: 156054030 cumulative IPC: 0.320402 (Simulation time: 0 hr 4 min 0 sec) 
+Store Queue Entry
+[SQ] entry: 0 instr_id: 2 address: 0 translated: 0 fetched: 2
+[SQ] entry: 1 instr_id: 3 address: 0 translated: 0 fetched: 2
+[SQ] entry: 2 instr_id: 5 address: 0 translated: 0 fetched: 2
+[SQ] entry: 3 instr_id: 9 address: 0 translated: 0 fetched: 2
+[SQ] entry: 4 instr_id: 10 address: 0 translated: 0 fetched: 2
+[SQ] entry: 5 instr_id: 11 address: 0 translated: 0 fetched: 2
+[SQ] entry: 6 instr_id: 12 address: 0 translated: 0 fetched: 2
+[SQ] entry: 7 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 8 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 9 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 10 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 11 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 12 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 13 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 14 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 15 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 16 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 17 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 18 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 19 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 20 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 21 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 22 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 23 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 24 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 25 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 26 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 27 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 28 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 29 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 30 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 31 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 32 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 33 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 34 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 35 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 36 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 37 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 38 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 39 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 40 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 41 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 42 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 43 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 44 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 45 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 46 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 47 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 48 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 49 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 50 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 51 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 52 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 53 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 54 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 55 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 56 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 57 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 58 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 59 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 60 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 61 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 62 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 63 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 64 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 65 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 66 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 67 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 68 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 69 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 70 instr_id: 0 address: 0 translated: 0 fetched: 2
+[SQ] entry: 71 instr_id: 0 address: 0 translated: 0 fetched: 2
 
-ChampSim completed all CPUs
+L1D_MSHR Entry
+[L1D_MSHR] entry: 0 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 1 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 2 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 3 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 4 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 5 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 6 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 7 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 8 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 9 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 10 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 11 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 12 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 13 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 14 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1D_MSHR] entry: 15 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-Region of Interest Statistics
+ITLB_RQ Entry 
+[ITLB_RQ] entry: 0 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 1 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 2 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 3 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 4 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 5 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 6 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 7 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 8 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 9 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 10 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 11 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 12 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 13 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 14 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_RQ] entry: 15 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-CPU 0 cumulative IPC: 0.320402 instructions: 50000001 cycles: 156054030
-ITLB TOTAL     ACCESS:    8402475  HIT:    8402475  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-ITLB LOAD TRANSLATION ACCESS:    8402475  HIT:    8402475  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-ITLB PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
-ITLB USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
-ITLB TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-ITLB PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-ITLB AVERAGE MISS LATENCY: -nan cycles
-ITLB RQ	ACCESS:   10516183	FORWARD:          0	MERGED:    2113708	TO_CACHE:    8402475
+ITLB_PQ Entry 
 
-DTLB TOTAL     ACCESS:    9343501  HIT:    9293282  MISS:      50219  HIT %:    99.4625  MISS %:   0.537475   MPKI: 1.00438
-DTLB LOAD TRANSLATION ACCESS:    9343501  HIT:    9293282  MISS:      50219  HIT %:    99.4625  MISS %:   0.537475   MPKI: 1.00438
-DTLB PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
-DTLB USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
-DTLB TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-DTLB PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-DTLB AVERAGE MISS LATENCY: 59.9451 cycles
-DTLB RQ	ACCESS:    9952153	FORWARD:          0	MERGED:     607888	TO_CACHE:    9344265
+ITLB_MSHR Entry 
+[ITLB_MSHR] entry: 0 instr_id: 0 prefetch_id: 0 rob_index: 0 address: 14f989ea5 full_addr: 14f989ea5390 type: 4 fill_level: 1 lq_index: 0 sq_index: 0
+[ITLB_MSHR] entry: 1 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_MSHR] entry: 2 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_MSHR] entry: 3 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_MSHR] entry: 4 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_MSHR] entry: 5 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_MSHR] entry: 6 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[ITLB_MSHR] entry: 7 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-STLB TOTAL     ACCESS:    6671541  HIT:    6625422  MISS:      46119  HIT %:    99.3087  MISS %:    0.69128   MPKI: 0.92238
-STLB LOAD TRANSLATION ACCESS:      50219  HIT:      28229  MISS:      21990  HIT %:    56.2118  MISS %:    43.7882   MPKI: 0.4398
-STLB TRANSLATION FROM L1D PREFETCHER ACCESS:    6621322  HIT:    6597193  MISS:      24129  HIT %:    99.6356  MISS %:   0.364414   MPKI: 0.48258
-STLB PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:      21605  USELESS:       2524
-STLB USEFUL LOAD PREFETCHES:      21605 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: inf
-STLB TIMELY PREFETCHES:      21605 LATE PREFETCHES: 578 DROPPED PREFETCHES: 20293
-STLB PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-STLB AVERAGE MISS LATENCY: 85.8228 cycles
-STLB RQ	ACCESS:    6938554	FORWARD:          0	MERGED:     244260	TO_CACHE:    6694294
+DTLB_RQ Entry 
+[DTLB_RQ] entry: 0 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 1 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 2 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 3 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 4 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 5 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 6 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 7 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 8 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 9 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 10 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 11 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 12 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 13 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 14 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_RQ] entry: 15 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-STLB Hit, L1D data hit: 0
-STLB Hit, L2C data hit: 0
-STLB Hit, LLC data hit: 0
-STLB Hit, LLC data miss: 0
-STLB STLB hints to L2: 0
-L1D TOTAL     ACCESS:   16415128  HIT:   14666203  MISS:    1748925  HIT %:    89.3457  MISS %:    10.6543   MPKI: 34.9785
-L1D LOAD      ACCESS:    8935492  HIT:    8319920  MISS:     615572  HIT %:    93.1109  MISS %:    6.88907   MPKI: 12.3114
-L1D RFO       ACCESS:     873110  HIT:     852787  MISS:      20323  HIT %:    97.6723  MISS %:    2.32766   MPKI: 0.40646
-L1D PREFETCH  ACCESS:    6606526  HIT:    5493496  MISS:    1113030  HIT %:    83.1526  MISS %:    16.8474   MPKI: 22.2606
-AGUS PREFETCH L1 MISS: 0
-L1D PREFETCH  REQUESTED:   14376822  ISSUED:   14376822  USEFUL:     612635  USELESS:     500641
-L1D USEFUL LOAD PREFETCHES:     612635 PREFETCH ISSUED TO LOWER LEVEL:    1115852  ACCURACY: 54.9029
-L1D TIMELY PREFETCHES:     612635 LATE PREFETCHES: 2822 DROPPED PREFETCHES: 21680
-L1D PREFETCHES SAME FILL-ORIGIN LEVEL: 1115852 DIFFERENT FILL-ORIGIN LEVEL: 0
-L1D AVERAGE MISS LATENCY: 175416 cycles
-L1D RQ	ACCESS:   11970295	FORWARD:          0	MERGED:    2980972	TO_CACHE:    8988214
-L1D WQ	ACCESS:     980745	FORWARD:       1109	MERGED:      16806	TO_CACHE:     963939
-L1D PQ	ACCESS:    7488487	FORWARD:          0	MERGED:     600152	TO_CACHE:    6888335
+DTLB_PQ Entry 
+[DTLB_PQ] entry: 0 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_PQ] entry: 1 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_PQ] entry: 2 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_PQ] entry: 3 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_PQ] entry: 4 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_PQ] entry: 5 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_PQ] entry: 6 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_PQ] entry: 7 instr_id: 0 prefetch_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-L1D UNIQUE REGIONS ACCESSED: 0
-L1D REGIONS CONFLICTS: 0
-L1D Cross Page Prefetch Requests: 0
-L1D Same Page Prefetch Requests: 16392229
-L1D ROI Sum of L1D PQ occupancy: 94331453
-L1D PREFETCHES PUSHED FROM L2C: 0
-L1I TOTAL     ACCESS:   10516180  HIT:   10516165  MISS:         15  HIT %:    99.9999  MISS %: 0.000142637   MPKI: 0.0003
-L1I LOAD      ACCESS:   10516180  HIT:   10516165  MISS:         15  HIT %:    99.9999  MISS %: 0.000142637   MPKI: 0.0003
-L1I PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
-L1I USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
-L1I TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-L1I PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-L1I AVERAGE MISS LATENCY: 203.2 cycles
-L1I RQ	ACCESS:   17078927	FORWARD:          0	MERGED:    6562744	TO_CACHE:   10516183
+DTLB_MSHR Entry 
+[DTLB_MSHR] entry: 0 instr_id: 0 rob_index: 0 address: 55b5b87c1 full_addr: 55b5b87c1dc0 type: 4 fill_level: 1 lq_index: 0 sq_index: 0
+[DTLB_MSHR] entry: 1 instr_id: 14 rob_index: 14 address: 14f98ad36 full_addr: 14f98ad36f28 type: 4 fill_level: 1 lq_index: 1 sq_index: 0
+[DTLB_MSHR] entry: 2 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_MSHR] entry: 3 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_MSHR] entry: 4 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_MSHR] entry: 5 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_MSHR] entry: 6 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[DTLB_MSHR] entry: 7 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-BTB TOTAL     ACCESS:   10248813  HIT:   10248589  MISS:        224  HIT %:    99.9978  MISS %: 0.00218562   MPKI: 0.00448
-BTB BRANCH_DIRECT_JUMP	ACCESS:       3586  HIT:       3542  MISS:         44
-BTB BRANCH_INDIRECT	ACCESS:          1  HIT:          0  MISS:          1
-BTB BRANCH_CONDITIONAL	ACCESS:   10245092  HIT:   10244993  MISS:         99
-BTB BRANCH_DIRECT_CALL	ACCESS:         64  HIT:         30  MISS:         34
-BTB BRANCH_INDIRECT_CALL	ACCESS:          3  HIT:          0  MISS:          3
-BTB BRANCH_RETURN	ACCESS:         67  HIT:         24  MISS:         43
-BTB BRANCH_OTHER ACCESS:           0  HIT:          0  MISS:          0
+L1I_MSHR Entry
+[L1I_MSHR] entry: 0 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1I_MSHR] entry: 1 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1I_MSHR] entry: 2 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1I_MSHR] entry: 3 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1I_MSHR] entry: 4 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1I_MSHR] entry: 5 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1I_MSHR] entry: 6 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[L1I_MSHR] entry: 7 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-L2C TOTAL     ACCESS:    2898648  HIT:    1882616  MISS:    1016032  HIT %:    64.9481  MISS %:    35.0519   MPKI: 20.3206
-L2C LOAD      ACCESS:     612764  HIT:     399343  MISS:     213421  HIT %:    65.1708  MISS %:    34.8292   MPKI: 4.26842
-L2C DATA LOAD MPKI: 4.26812
-L2C INSTRUCTION LOAD MPKI: 0.0003
-L2C RFO       ACCESS:      20323  HIT:       3449  MISS:      16874  HIT %:    16.9709  MISS %:    83.0291   MPKI: 0.33748
-L2C PREFETCH  ACCESS:    2098631  HIT:    1323315  MISS:     775316  HIT %:    63.0561  MISS %:    36.9439   MPKI: 15.5063
-AGUS PREFETCH L1 MISS: 0
-L2C DATA PREFETCH MPKI: 15.5063
-L2C INSTRUCTION PREFETCH MPKI: 0
-L2C WRITEBACK ACCESS:     100211  HIT:     100206  MISS:          5  HIT %:     99.995  MISS %: 0.00498947   MPKI: 0.0001
-L2C LOAD TRANSLATION ACCESS:      21642  HIT:      15837  MISS:       5805  HIT %:    73.1772  MISS %:    26.8228   MPKI: 0.1161
-L2C TRANSLATION FROM L1D PREFETCHER ACCESS:      45077  HIT:      40466  MISS:       4611  HIT %:    89.7708  MISS %:    10.2292   MPKI: 0.09222
-L2C PREFETCH  REQUESTED:     996352  ISSUED:     996352  USEFUL:      21489  USELESS:     757140
-L2C USEFUL LOAD PREFETCHES:      21489 PREFETCH ISSUED TO LOWER LEVEL:     775414  ACCURACY: 2.77129
-L2C TIMELY PREFETCHES:      21489 LATE PREFETCHES: 98 DROPPED PREFETCHES: 0
-L2C PREFETCHES SAME FILL-ORIGIN LEVEL: 422679 DIFFERENT FILL-ORIGIN LEVEL: 0
-L2C AVERAGE MISS LATENCY: 157.5 cycles
-L2C RQ	ACCESS:     699807	FORWARD:          0	MERGED:          0	TO_CACHE:     699807
-L2C WQ	ACCESS:     100211	FORWARD:          0	MERGED:          0	TO_CACHE:     100211
-L2C PQ	ACCESS:    2112204	FORWARD:          0	MERGED:       2027	TO_CACHE:    2110177
+STLB_MSHR Entry 
+[STLB_MSHR] entry: 0 instr_id: 0 rob_index: 0 address: 55b5b87c1 full_addr: 55b5b87c1dc0 type: 4 fill_level: 1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 1 instr_id: 14 rob_index: 14 address: 14f98ad36 full_addr: 14f98ad36f28 type: 4 fill_level: 1 lq_index: 1 sq_index: 0
+[STLB_MSHR] entry: 2 instr_id: 0 rob_index: 0 address: 14f989ea5 full_addr: 14f989ea5390 type: 4 fill_level: 1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 3 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 4 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 5 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 6 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 7 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 8 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 9 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 10 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 11 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 12 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 13 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 14 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[STLB_MSHR] entry: 15 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-L2C Instructions Evicting Data 15
-L2C Translations Evicting Data 10084
-L2C Data Evicting Data 995475
-L2C Instructions Evicting Instructions 0
-L2C Translations Evicting Instructions 0
-L2C Data Evicting Instructions 15
-L2C Instructions Evicting Translations 0
-L2C Translations Evicting Translations 332
-L2C Data Evicting Translations 10106
-L2C Dense regions hint from L2: 0
-PSCL5 TOTAL     ACCESS:      66473  HIT:      66473  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL5 LOAD TRANSLATION ACCESS:      21473  HIT:      21473  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL5 TRANSLATION FROM L1D PREFETCHER ACCESS:      45000  HIT:      45000  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL5 PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
-PSCL5 USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
-PSCL5 TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-PSCL5 PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
+PTW_MSHR Entry 
+[PTW_MSHR] entry: 0 instr_id: 0 rob_index: 0 address: a3a0df2238 full_addr: 28e837c88e18 type: 4 fill_level: 1 lq_index: 0 sq_index: 0
+[PTW_MSHR] entry: 1 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_MSHR] entry: 2 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_MSHR] entry: 3 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_MSHR] entry: 4 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-PSCL4 TOTAL     ACCESS:      66473  HIT:      66473  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL4 LOAD TRANSLATION ACCESS:      21473  HIT:      21473  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL4 TRANSLATION FROM L1D PREFETCHER ACCESS:      45000  HIT:      45000  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL4 PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
-PSCL4 USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
-PSCL4 TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-PSCL4 PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
+PTW_RQ Entry 
+[PTW_RQ] entry: 0 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 1 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 2 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 3 instr_id: 14 rob_index: 14 address: 14f98ad36 full_addr: 14f98ad36f28 type: 4 fill_level: 1 lq_index: 1 sq_index: 0
+[PTW_RQ] entry: 4 instr_id: 0 rob_index: 0 address: 14f989ea5 full_addr: 14f989ea5390 type: 4 fill_level: 1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 5 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 6 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 7 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 8 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 9 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 10 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 11 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 12 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 13 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 14 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_RQ] entry: 15 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
 
-PSCL3 TOTAL     ACCESS:      66473  HIT:      66473  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL3 LOAD TRANSLATION ACCESS:      21473  HIT:      21473  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL3 TRANSLATION FROM L1D PREFETCHER ACCESS:      45000  HIT:      45000  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL3 PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
-PSCL3 USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
-PSCL3 TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-PSCL3 PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-
-PSCL2 TOTAL     ACCESS:      66431  HIT:      66178  MISS:        253  HIT %:    99.6192  MISS %:   0.380846   MPKI: 0.00506
-PSCL2 LOAD TRANSLATION ACCESS:      21550  HIT:      21297  MISS:        253  HIT %:     98.826  MISS %:    1.17401   MPKI: 0.00506
-PSCL2 TRANSLATION FROM L1D PREFETCHER ACCESS:      44881  HIT:      44881  MISS:          0  HIT %:        100  MISS %:          0   MPKI: 0
-PSCL2 PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
-PSCL2 USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
-PSCL2 TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-PSCL2 PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-
-LLC TOTAL     ACCESS:    1114232  HIT:     126784  MISS:     987448  HIT %:    11.3786  MISS %:    88.6214   MPKI: 19.749
-LLC LOAD      ACCESS:     213323  HIT:      17762  MISS:     195561  HIT %:    8.32634  MISS %:    91.6737   MPKI: 3.91122
-LLC RFO       ACCESS:      16874  HIT:        220  MISS:      16654  HIT %:    1.30378  MISS %:    98.6962   MPKI: 0.33308
-LLC PREFETCH  ACCESS:     775414  HIT:      13076  MISS:     762338  HIT %:    1.68632  MISS %:    98.3137   MPKI: 15.2468
-AGUS PREFETCH L1 MISS: 0
-LLC WRITEBACK ACCESS:      98205  HIT:      95406  MISS:       2799  HIT %:    97.1498  MISS %:    2.85016   MPKI: 0.05598
-LLC LOAD TRANSLATION ACCESS:       5805  HIT:        165  MISS:       5640  HIT %:    2.84238  MISS %:    97.1576   MPKI: 0.1128
-LLC TRANSLATION FROM L1D PREFETCHER ACCESS:       4611  HIT:        155  MISS:       4456  HIT %:    3.36153  MISS %:    96.6385   MPKI: 0.08912
-LLC PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:       2776  USELESS:     765378
-LLC USEFUL LOAD PREFETCHES:       2776 PREFETCH ISSUED TO LOWER LEVEL:     762338  ACCURACY: 0.364143
-LLC TIMELY PREFETCHES:       2776 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
-LLC PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-LLC AVERAGE MISS LATENCY: 131.176 cycles
-LLC RQ	ACCESS:     240613	FORWARD:          0	MERGED:          0	TO_CACHE:     240613
-LLC WQ	ACCESS:      98205	FORWARD:          0	MERGED:          0	TO_CACHE:      98205
-LLC PQ	ACCESS:     775414	FORWARD:          0	MERGED:          0	TO_CACHE:     775414
-
-LLC Dense regions hint to LLC: 0
-
-RAW hits: 29085
-Loads Generated: 11999382
-Loads sent to L1D: 11970295
-Stores Generated: 980746
-Stores sent to L1D: 980745
-Major fault: 0 Minor fault: 27166
-Allocated PAGES: 27166
-CPU 0 L1D berti prefetcher final stats
-c-> Hits: 2, Late: 0, Early: 0, Misses: 0
-10-> Hits: 208, Late: 0, Early: 0, Misses: 0
-15-> Hits: 2196, Late: 28, Early: 0, Misses: 1
-19-> Hits: 2263, Late: 0, Early: 0, Misses: 1
-1f-> Hits: 6, Late: 0, Early: 0, Misses: 0
-20-> Hits: 26, Late: 3375, Early: 0, Misses: 0
-24-> Hits: 33, Late: 438, Early: 0, Misses: 0
-27-> Hits: 6, Late: 0, Early: 0, Misses: 0
-2c-> Hits: 7, Late: 0, Early: 0, Misses: 0
-32-> Hits: 693, Late: 0, Early: 0, Misses: 0
-40-> Hits: 2, Late: 2, Early: 0, Misses: 0
-51-> Hits: 1614, Late: 2858, Early: 0, Misses: 0
-54-> Hits: 3193, Late: 0, Early: 0, Misses: 2
-63-> Hits: 33, Late: 4721, Early: 0, Misses: 0
-76-> Hits: 6, Late: 3, Early: 0, Misses: 2
-7d-> Hits: 3, Late: 5, Early: 0, Misses: 3
-8d-> Hits: 131, Late: 0, Early: 0, Misses: 0
-90-> Hits: 1, Late: 0, Early: 0, Misses: 0
-97-> Hits: 1989, Late: 0, Early: 0, Misses: 0
-9c-> Hits: 2251, Late: 0, Early: 0, Misses: 1
-9e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-af-> Hits: 10, Late: 1, Early: 0, Misses: 0
-b5-> Hits: 3, Late: 0, Early: 0, Misses: 0
-c1-> Hits: 6, Late: 3, Early: 0, Misses: 2
-cf-> Hits: 6, Late: 3, Early: 0, Misses: 2
-db-> Hits: 1, Late: 0, Early: 0, Misses: 0
-e2-> Hits: 4, Late: 0, Early: 0, Misses: 0
-e3-> Hits: 7, Late: 2, Early: 0, Misses: 2
-e6-> Hits: 1, Late: 0, Early: 0, Misses: 0
-ec-> Hits: 2, Late: 0, Early: 0, Misses: 2
-ed-> Hits: 4, Late: 0, Early: 0, Misses: 0
-ee-> Hits: 1, Late: 0, Early: 0, Misses: 0
-ef-> Hits: 4, Late: 0, Early: 0, Misses: 0
-f0-> Hits: 3, Late: 0, Early: 0, Misses: 0
-f1-> Hits: 4, Late: 0, Early: 0, Misses: 0
-f3-> Hits: 4, Late: 0, Early: 0, Misses: 0
-f5-> Hits: 4, Late: 0, Early: 0, Misses: 0
-100-> Hits: 2, Late: 0, Early: 0, Misses: 0
-103-> Hits: 1, Late: 0, Early: 0, Misses: 0
-108-> Hits: 3, Late: 0, Early: 0, Misses: 0
-10e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-112-> Hits: 1, Late: 0, Early: 0, Misses: 0
-121-> Hits: 1, Late: 0, Early: 0, Misses: 0
-123-> Hits: 2, Late: 2, Early: 0, Misses: 0
-12c-> Hits: 1, Late: 0, Early: 0, Misses: 0
-12d-> Hits: 1, Late: 0, Early: 0, Misses: 0
-131-> Hits: 1, Late: 0, Early: 0, Misses: 0
-135-> Hits: 1, Late: 0, Early: 0, Misses: 0
-143-> Hits: 2, Late: 2, Early: 0, Misses: 0
-159-> Hits: 1, Late: 0, Early: 0, Misses: 0
-163-> Hits: 1, Late: 0, Early: 0, Misses: 0
-167-> Hits: 2, Late: 0, Early: 0, Misses: 0
-16a-> Hits: 1, Late: 1, Early: 0, Misses: 0
-173-> Hits: 0, Late: 1, Early: 0, Misses: 0
-183-> Hits: 1, Late: 0, Early: 0, Misses: 0
-188-> Hits: 1, Late: 0, Early: 0, Misses: 0
-18c-> Hits: 2, Late: 0, Early: 0, Misses: 0
-1af-> Hits: 1, Late: 0, Early: 0, Misses: 0
-1b7-> Hits: 1, Late: 0, Early: 0, Misses: 0
-1ce-> Hits: 1, Late: 0, Early: 0, Misses: 0
-1cf-> Hits: 1, Late: 0, Early: 0, Misses: 0
-1d1-> Hits: 1, Late: 0, Early: 0, Misses: 0
-20e-> Hits: 3, Late: 0, Early: 0, Misses: 0
-214-> Hits: 2, Late: 0, Early: 0, Misses: 0
-218-> Hits: 2, Late: 0, Early: 0, Misses: 0
-219-> Hits: 11, Late: 0, Early: 0, Misses: 0
-21a-> Hits: 11, Late: 0, Early: 0, Misses: 0
-21b-> Hits: 13, Late: 0, Early: 0, Misses: 0
-21e-> Hits: 4, Late: 0, Early: 0, Misses: 0
-230-> Hits: 4, Late: 3, Early: 0, Misses: 0
-240-> Hits: 0, Late: 2, Early: 0, Misses: 0
-242-> Hits: 3, Late: 0, Early: 0, Misses: 0
-247-> Hits: 0, Late: 2, Early: 0, Misses: 0
-24b-> Hits: 0, Late: 2, Early: 0, Misses: 0
-24c-> Hits: 1, Late: 0, Early: 0, Misses: 0
-252-> Hits: 3, Late: 0, Early: 0, Misses: 0
-254-> Hits: 0, Late: 2, Early: 0, Misses: 0
-25d-> Hits: 10, Late: 0, Early: 0, Misses: 0
-25e-> Hits: 10, Late: 0, Early: 0, Misses: 0
-264-> Hits: 1, Late: 1, Early: 0, Misses: 0
-26f-> Hits: 1, Late: 1, Early: 0, Misses: 0
-280-> Hits: 1, Late: 0, Early: 0, Misses: 0
-281-> Hits: 1, Late: 0, Early: 0, Misses: 0
-28e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-29b-> Hits: 1, Late: 1, Early: 0, Misses: 0
-2a6-> Hits: 1, Late: 0, Early: 0, Misses: 0
-2a8-> Hits: 1, Late: 0, Early: 0, Misses: 0
-2a9-> Hits: 819300, Late: 0, Early: 0, Misses: 0
-2ac-> Hits: 1, Late: 0, Early: 0, Misses: 0
-2af-> Hits: 1, Late: 0, Early: 0, Misses: 0
-2b3-> Hits: 1, Late: 0, Early: 0, Misses: 0
-2ba-> Hits: 815646, Late: 28, Early: 0, Misses: 0
-2c0-> Hits: 0, Late: 1, Early: 0, Misses: 0
-2f3-> Hits: 2, Late: 0, Early: 0, Misses: 0
-2f7-> Hits: 2, Late: 0, Early: 0, Misses: 0
-2ff-> Hits: 2, Late: 0, Early: 0, Misses: 0
-300-> Hits: 2, Late: 0, Early: 0, Misses: 0
-307-> Hits: 2, Late: 0, Early: 0, Misses: 0
-30b-> Hits: 1, Late: 0, Early: 0, Misses: 0
-30e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-310-> Hits: 5, Late: 0, Early: 0, Misses: 0
-314-> Hits: 6, Late: 1, Early: 0, Misses: 0
-317-> Hits: 1, Late: 0, Early: 0, Misses: 0
-31c-> Hits: 8, Late: 4, Early: 0, Misses: 0
-31f-> Hits: 1, Late: 0, Early: 0, Misses: 0
-320-> Hits: 0, Late: 0, Early: 0, Misses: 1
-321-> Hits: 1, Late: 0, Early: 0, Misses: 0
-323-> Hits: 7, Late: 3, Early: 0, Misses: 2
-325-> Hits: 1, Late: 0, Early: 0, Misses: 0
-327-> Hits: 1, Late: 0, Early: 0, Misses: 0
-329-> Hits: 1, Late: 0, Early: 0, Misses: 0
-32c-> Hits: 2, Late: 0, Early: 0, Misses: 0
-330-> Hits: 1, Late: 2, Early: 0, Misses: 0
-340-> Hits: 4, Late: 3, Early: 0, Misses: 3
-342-> Hits: 1, Late: 0, Early: 0, Misses: 0
-343-> Hits: 1, Late: 0, Early: 0, Misses: 0
-344-> Hits: 1, Late: 0, Early: 0, Misses: 0
-346-> Hits: 3, Late: 0, Early: 0, Misses: 0
-34b-> Hits: 2, Late: 0, Early: 0, Misses: 0
-350-> Hits: 1, Late: 0, Early: 0, Misses: 0
-35f-> Hits: 2, Late: 0, Early: 0, Misses: 0
-360-> Hits: 2, Late: 0, Early: 0, Misses: 0
-361-> Hits: 2, Late: 0, Early: 0, Misses: 0
-363-> Hits: 2, Late: 0, Early: 0, Misses: 0
-376-> Hits: 0, Late: 1, Early: 0, Misses: 0
-397-> Hits: 1, Late: 0, Early: 0, Misses: 0
-3ad-> Hits: 2, Late: 0, Early: 0, Misses: 0
-3bc-> Hits: 0, Late: 2, Early: 0, Misses: 0
-3c3-> Hits: 0, Late: 2, Early: 0, Misses: 0
-3cc-> Hits: 0, Late: 2, Early: 0, Misses: 0
-3da-> Hits: 1, Late: 0, Early: 0, Misses: 0
-3e0-> Hits: 2, Late: 0, Early: 0, Misses: 0
-3e2-> Hits: 1, Late: 0, Early: 0, Misses: 0
-3e3-> Hits: 1, Late: 0, Early: 0, Misses: 0
-3e4-> Hits: 2, Late: 1, Early: 0, Misses: 0
-3f0-> Hits: 5, Late: 5, Early: 0, Misses: 0
-40c-> Hits: 1, Late: 0, Early: 0, Misses: 0
-430-> Hits: 1, Late: 3, Early: 0, Misses: 1
-434-> Hits: 11, Late: 0, Early: 0, Misses: 0
-435-> Hits: 11, Late: 0, Early: 0, Misses: 0
-436-> Hits: 11, Late: 0, Early: 0, Misses: 0
-438-> Hits: 11, Late: 0, Early: 0, Misses: 0
-439-> Hits: 2, Late: 0, Early: 0, Misses: 0
-43a-> Hits: 11, Late: 0, Early: 0, Misses: 0
-43c-> Hits: 11, Late: 0, Early: 0, Misses: 0
-43e-> Hits: 11, Late: 0, Early: 0, Misses: 0
-44d-> Hits: 1, Late: 0, Early: 0, Misses: 0
-450-> Hits: 2, Late: 0, Early: 0, Misses: 0
-453-> Hits: 1, Late: 0, Early: 0, Misses: 0
-457-> Hits: 1, Late: 0, Early: 0, Misses: 0
-459-> Hits: 2, Late: 0, Early: 0, Misses: 0
-47c-> Hits: 2, Late: 0, Early: 0, Misses: 0
-493-> Hits: 1, Late: 0, Early: 0, Misses: 0
-494-> Hits: 2, Late: 0, Early: 0, Misses: 0
-49b-> Hits: 2, Late: 0, Early: 0, Misses: 0
-4a0-> Hits: 1245125, Late: 21510, Early: 0, Misses: 0
-4a4-> Hits: 2, Late: 0, Early: 0, Misses: 0
-4a5-> Hits: 367555, Late: 549, Early: 0, Misses: 0
-4d5-> Hits: 0, Late: 1, Early: 0, Misses: 0
-4e8-> Hits: 2, Late: 0, Early: 0, Misses: 0
-4ea-> Hits: 0, Late: 1, Early: 0, Misses: 0
-4ec-> Hits: 2, Late: 0, Early: 0, Misses: 0
-4ed-> Hits: 1, Late: 0, Early: 0, Misses: 0
-4f8-> Hits: 6, Late: 3, Early: 0, Misses: 2
-4fc-> Hits: 0, Late: 1, Early: 0, Misses: 0
-504-> Hits: 11, Late: 0, Early: 0, Misses: 0
-513-> Hits: 11, Late: 0, Early: 0, Misses: 0
-51a-> Hits: 1, Late: 0, Early: 0, Misses: 0
-51b-> Hits: 1, Late: 0, Early: 0, Misses: 0
-51c-> Hits: 1, Late: 0, Early: 0, Misses: 0
-51d-> Hits: 2, Late: 0, Early: 0, Misses: 0
-51e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-520-> Hits: 1, Late: 0, Early: 0, Misses: 0
-522-> Hits: 1, Late: 0, Early: 0, Misses: 0
-524-> Hits: 12, Late: 0, Early: 0, Misses: 0
-530-> Hits: 0, Late: 2, Early: 0, Misses: 0
-532-> Hits: 9, Late: 0, Early: 0, Misses: 0
-543-> Hits: 2, Late: 0, Early: 0, Misses: 0
-54a-> Hits: 1, Late: 0, Early: 0, Misses: 0
-54c-> Hits: 2, Late: 0, Early: 0, Misses: 0
-553-> Hits: 2, Late: 0, Early: 0, Misses: 0
-559-> Hits: 6, Late: 0, Early: 0, Misses: 0
-55d-> Hits: 2, Late: 0, Early: 0, Misses: 0
-56f-> Hits: 0, Late: 0, Early: 0, Misses: 1
-574-> Hits: 6, Late: 3, Early: 0, Misses: 2
-578-> Hits: 4, Late: 0, Early: 0, Misses: 0
-57d-> Hits: 2, Late: 0, Early: 0, Misses: 0
-57e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-581-> Hits: 6, Late: 5, Early: 0, Misses: 0
-586-> Hits: 2, Late: 0, Early: 0, Misses: 0
-58a-> Hits: 2, Late: 0, Early: 0, Misses: 0
-58e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-58f-> Hits: 6, Late: 3, Early: 0, Misses: 2
-5a1-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5a3-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5a5-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5a7-> Hits: 7, Late: 2, Early: 0, Misses: 1
-5a9-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5aa-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5c0-> Hits: 0, Late: 1, Early: 0, Misses: 0
-5c5-> Hits: 1, Late: 0, Early: 0, Misses: 0
-5d0-> Hits: 4, Late: 6, Early: 0, Misses: 0
-5d5-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5dc-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5e5-> Hits: 0, Late: 2, Early: 0, Misses: 0
-5e8-> Hits: 1, Late: 0, Early: 0, Misses: 1
-5f0-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5f3-> Hits: 2, Late: 0, Early: 0, Misses: 0
-5f4-> Hits: 7, Late: 2, Early: 0, Misses: 1
-5fe-> Hits: 2, Late: 0, Early: 0, Misses: 2
-601-> Hits: 2, Late: 0, Early: 0, Misses: 0
-603-> Hits: 0, Late: 0, Early: 0, Misses: 1
-60c-> Hits: 0, Late: 1, Early: 0, Misses: 0
-61c-> Hits: 3, Late: 0, Early: 0, Misses: 0
-621-> Hits: 1, Late: 0, Early: 0, Misses: 0
-629-> Hits: 1, Late: 0, Early: 0, Misses: 0
-62e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-636-> Hits: 4, Late: 0, Early: 0, Misses: 0
-63e-> Hits: 0, Late: 1, Early: 0, Misses: 1
-641-> Hits: 1, Late: 0, Early: 0, Misses: 0
-646-> Hits: 1, Late: 0, Early: 0, Misses: 0
-64b-> Hits: 1, Late: 0, Early: 0, Misses: 0
-650-> Hits: 1, Late: 0, Early: 0, Misses: 0
-65b-> Hits: 4, Late: 4, Early: 0, Misses: 2
-65e-> Hits: 2, Late: 0, Early: 0, Misses: 0
-664-> Hits: 4, Late: 0, Early: 0, Misses: 0
-672-> Hits: 0, Late: 2, Early: 0, Misses: 0
-67a-> Hits: 0, Late: 2, Early: 0, Misses: 0
-67e-> Hits: 0, Late: 2, Early: 0, Misses: 0
-67f-> Hits: 200, Late: 90, Early: 0, Misses: 0
-682-> Hits: 3, Late: 0, Early: 0, Misses: 0
-686-> Hits: 5, Late: 0, Early: 0, Misses: 0
-68a-> Hits: 31, Late: 0, Early: 0, Misses: 0
-690-> Hits: 16, Late: 6, Early: 0, Misses: 2
-692-> Hits: 1, Late: 0, Early: 0, Misses: 0
-697-> Hits: 1, Late: 0, Early: 0, Misses: 0
-699-> Hits: 2, Late: 0, Early: 0, Misses: 0
-6a0-> Hits: 1, Late: 2, Early: 0, Misses: 1
-6b4-> Hits: 1, Late: 0, Early: 0, Misses: 0
-6c0-> Hits: 1182, Late: 1, Early: 0, Misses: 0
-6c3-> Hits: 2, Late: 0, Early: 0, Misses: 0
-6d0-> Hits: 2, Late: 5, Early: 0, Misses: 3
-6d7-> Hits: 712, Late: 502, Early: 0, Misses: 0
-6db-> Hits: 1201, Late: 0, Early: 0, Misses: 0
-6f7-> Hits: 1, Late: 0, Early: 0, Misses: 0
-70d-> Hits: 1, Late: 0, Early: 0, Misses: 0
-71d-> Hits: 1, Late: 0, Early: 0, Misses: 0
-722-> Hits: 1, Late: 0, Early: 0, Misses: 0
-73d-> Hits: 0, Late: 0, Early: 0, Misses: 1
-782-> Hits: 0, Late: 0, Early: 0, Misses: 3
-789-> Hits: 0, Late: 0, Early: 0, Misses: 3
-7a1-> Hits: 0, Late: 0, Early: 0, Misses: 3
-7bd-> Hits: 2828981, Late: 12102, Early: 0, Misses: 0
-7c7-> Hits: 1903240, Late: 0, Early: 0, Misses: 1
-7cb-> Hits: 2143624, Late: 1097, Early: 0, Misses: 1
-7cf-> Hits: 276172, Late: 1231, Early: 0, Misses: 0
-7d9-> Hits: 629671, Late: 329295, Early: 0, Misses: 0
-7e7-> Hits: 452030, Late: 16119, Early: 0, Misses: 493660
-7fd-> Hits: 1984951, Late: 222692, Early: 0, Misses: 0
-80b-> Hits: 1175881, Late: 6099, Early: 0, Misses: 1345971
-82f-> Hits: 641189, Late: 0, Early: 0, Misses: 0
-838-> Hits: 605888, Late: 2809, Early: 0, Misses: 65
-83c-> Hits: 638755, Late: 0, Early: 0, Misses: 0
-850-> Hits: 3, Late: 0, Early: 0, Misses: 0
-866-> Hits: 0, Late: 0, Early: 0, Misses: 3
-86b-> Hits: 1, Late: 1, Early: 0, Misses: 0
-87a-> Hits: 1, Late: 0, Early: 0, Misses: 0
-87e-> Hits: 1, Late: 0, Early: 0, Misses: 2
-88b-> Hits: 2, Late: 0, Early: 0, Misses: 0
-891-> Hits: 2, Late: 0, Early: 0, Misses: 0
-8b2-> Hits: 1, Late: 0, Early: 0, Misses: 0
-8d5-> Hits: 1, Late: 0, Early: 0, Misses: 0
-8d8-> Hits: 8, Late: 0, Early: 0, Misses: 0
-8db-> Hits: 2, Late: 0, Early: 0, Misses: 0
-8e8-> Hits: 2, Late: 5, Early: 0, Misses: 2
-8eb-> Hits: 1, Late: 0, Early: 0, Misses: 0
-8f4-> Hits: 4, Late: 1, Early: 0, Misses: 0
-8f6-> Hits: 2, Late: 0, Early: 0, Misses: 0
-8f9-> Hits: 1, Late: 0, Early: 0, Misses: 0
-8fe-> Hits: 1, Late: 0, Early: 0, Misses: 0
-900-> Hits: 523024, Late: 36, Early: 0, Misses: 0
-902-> Hits: 2, Late: 0, Early: 0, Misses: 0
-913-> Hits: 3, Late: 0, Early: 0, Misses: 0
-914-> Hits: 0, Late: 1, Early: 0, Misses: 0
-930-> Hits: 2, Late: 1, Early: 0, Misses: 0
-937-> Hits: 2, Late: 0, Early: 0, Misses: 0
-93f-> Hits: 0, Late: 1, Early: 0, Misses: 0
-947-> Hits: 1, Late: 0, Early: 0, Misses: 0
-94f-> Hits: 6, Late: 0, Early: 0, Misses: 0
-950-> Hits: 1, Late: 0, Early: 0, Misses: 0
-951-> Hits: 4, Late: 2, Early: 0, Misses: 0
-95e-> Hits: 0, Late: 1, Early: 0, Misses: 0
-95f-> Hits: 1, Late: 0, Early: 0, Misses: 0
-960-> Hits: 1, Late: 0, Early: 0, Misses: 0
-961-> Hits: 5, Late: 5, Early: 0, Misses: 0
-962-> Hits: 1, Late: 0, Early: 0, Misses: 0
-963-> Hits: 2, Late: 0, Early: 0, Misses: 0
-964-> Hits: 1, Late: 0, Early: 0, Misses: 0
-966-> Hits: 0, Late: 1, Early: 0, Misses: 0
-968-> Hits: 1, Late: 0, Early: 0, Misses: 0
-970-> Hits: 2, Late: 0, Early: 0, Misses: 0
-971-> Hits: 6, Late: 3, Early: 0, Misses: 1
-978-> Hits: 5, Late: 5, Early: 0, Misses: 0
-97f-> Hits: 0, Late: 0, Early: 0, Misses: 5
-980-> Hits: 11, Late: 0, Early: 0, Misses: 0
-984-> Hits: 2, Late: 0, Early: 0, Misses: 0
-98d-> Hits: 18, Late: 5, Early: 0, Misses: 1
-99f-> Hits: 8, Late: 2, Early: 0, Misses: 0
-9a6-> Hits: 6, Late: 3, Early: 0, Misses: 1
-9a7-> Hits: 2, Late: 0, Early: 0, Misses: 0
-9aa-> Hits: 5, Late: 0, Early: 0, Misses: 0
-9ab-> Hits: 6, Late: 0, Early: 0, Misses: 0
-9ac-> Hits: 6, Late: 0, Early: 0, Misses: 0
-9ae-> Hits: 6, Late: 0, Early: 0, Misses: 0
-9b0-> Hits: 6, Late: 0, Early: 0, Misses: 0
-9b2-> Hits: 6, Late: 0, Early: 0, Misses: 0
-9b4-> Hits: 6, Late: 0, Early: 0, Misses: 0
-9bb-> Hits: 1, Late: 0, Early: 0, Misses: 0
-9c6-> Hits: 2, Late: 0, Early: 0, Misses: 0
-9d0-> Hits: 2, Late: 0, Early: 0, Misses: 0
-9ea-> Hits: 0, Late: 1, Early: 0, Misses: 0
-9f6-> Hits: 1, Late: 0, Early: 0, Misses: 0
-9f7-> Hits: 1, Late: 0, Early: 0, Misses: 0
-9fa-> Hits: 1, Late: 0, Early: 0, Misses: 0
-a09-> Hits: 6, Late: 3, Early: 0, Misses: 1
-a18-> Hits: 2, Late: 0, Early: 0, Misses: 0
-a27-> Hits: 6, Late: 3, Early: 0, Misses: 1
-a80-> Hits: 2, Late: 0, Early: 0, Misses: 0
-a8c-> Hits: 2, Late: 0, Early: 0, Misses: 0
-a9c-> Hits: 1, Late: 0, Early: 0, Misses: 0
-aa0-> Hits: 10, Late: 0, Early: 0, Misses: 0
-aa1-> Hits: 1, Late: 0, Early: 0, Misses: 0
-aa5-> Hits: 10, Late: 0, Early: 0, Misses: 0
-ab6-> Hits: 1, Late: 0, Early: 0, Misses: 0
-ab8-> Hits: 4, Late: 0, Early: 0, Misses: 0
-ab9-> Hits: 10, Late: 0, Early: 0, Misses: 0
-aba-> Hits: 10, Late: 0, Early: 0, Misses: 0
-abc-> Hits: 10, Late: 0, Early: 0, Misses: 0
-abe-> Hits: 10, Late: 0, Early: 0, Misses: 0
-ac0-> Hits: 10, Late: 0, Early: 0, Misses: 0
-ac2-> Hits: 10, Late: 0, Early: 0, Misses: 0
-ace-> Hits: 0, Late: 1, Early: 0, Misses: 0
-ad2-> Hits: 1, Late: 0, Early: 0, Misses: 0
-aeb-> Hits: 2, Late: 0, Early: 0, Misses: 0
-aee-> Hits: 0, Late: 1, Early: 0, Misses: 0
-af1-> Hits: 2, Late: 0, Early: 0, Misses: 0
-b10-> Hits: 0, Late: 1, Early: 0, Misses: 0
-b1c-> Hits: 1, Late: 0, Early: 0, Misses: 0
-b30-> Hits: 2, Late: 5, Early: 0, Misses: 3
-b44-> Hits: 2, Late: 0, Early: 0, Misses: 0
-bc5-> Hits: 2, Late: 0, Early: 0, Misses: 0
-bd9-> Hits: 2, Late: 0, Early: 0, Misses: 0
-be6-> Hits: 2, Late: 0, Early: 0, Misses: 0
-bf7-> Hits: 2, Late: 0, Early: 0, Misses: 0
-bfe-> Hits: 2, Late: 0, Early: 0, Misses: 0
-c02-> Hits: 2, Late: 0, Early: 0, Misses: 0
-c45-> Hits: 6, Late: 3, Early: 0, Misses: 1
-c4f-> Hits: 9, Late: 1, Early: 0, Misses: 0
-c61-> Hits: 6, Late: 3, Early: 0, Misses: 1
-c6b-> Hits: 6, Late: 4, Early: 0, Misses: 0
-c88-> Hits: 6, Late: 3, Early: 0, Misses: 1
-c95-> Hits: 7, Late: 2, Early: 0, Misses: 1
-ca0-> Hits: 0, Late: 2, Early: 0, Misses: 0
-ca3-> Hits: 9, Late: 1, Early: 0, Misses: 0
-cab-> Hits: 1, Late: 0, Early: 0, Misses: 0
-cb3-> Hits: 1, Late: 2, Early: 0, Misses: 0
-cb6-> Hits: 1, Late: 0, Early: 0, Misses: 0
-cc1-> Hits: 1, Late: 0, Early: 0, Misses: 0
-ccc-> Hits: 1, Late: 0, Early: 0, Misses: 0
-cd4-> Hits: 1, Late: 0, Early: 0, Misses: 0
-cde-> Hits: 1, Late: 0, Early: 0, Misses: 0
-cf9-> Hits: 1, Late: 0, Early: 0, Misses: 0
-d00-> Hits: 4, Late: 6, Early: 0, Misses: 0
-d10-> Hits: 5, Late: 0, Early: 0, Misses: 0
-d13-> Hits: 1, Late: 1, Early: 0, Misses: 0
-d1a-> Hits: 5, Late: 4, Early: 0, Misses: 1
-d20-> Hits: 3, Late: 2, Early: 0, Misses: 0
-d24-> Hits: 1, Late: 0, Early: 0, Misses: 0
-d26-> Hits: 1, Late: 1, Early: 0, Misses: 0
-d31-> Hits: 1, Late: 1, Early: 0, Misses: 0
-d3b-> Hits: 2, Late: 0, Early: 0, Misses: 0
-d3f-> Hits: 1, Late: 0, Early: 0, Misses: 0
-d43-> Hits: 6, Late: 2, Early: 0, Misses: 1
-d49-> Hits: 8, Late: 0, Early: 0, Misses: 0
-d4d-> Hits: 2, Late: 0, Early: 0, Misses: 0
-d67-> Hits: 6, Late: 0, Early: 0, Misses: 0
-d75-> Hits: 13, Late: 8, Early: 0, Misses: 3
-d77-> Hits: 2, Late: 0, Early: 0, Misses: 0
-d7f-> Hits: 2, Late: 1, Early: 0, Misses: 0
-d8b-> Hits: 1, Late: 0, Early: 0, Misses: 1
-d9b-> Hits: 6, Late: 0, Early: 0, Misses: 0
-dbd-> Hits: 3, Late: 0, Early: 0, Misses: 0
-dc3-> Hits: 17, Late: 0, Early: 0, Misses: 0
-df0-> Hits: 1, Late: 0, Early: 0, Misses: 0
-df1-> Hits: 17, Late: 1, Early: 0, Misses: 3
-df4-> Hits: 4, Late: 0, Early: 0, Misses: 0
-dfd-> Hits: 2, Late: 0, Early: 0, Misses: 0
-e00-> Hits: 0, Late: 2, Early: 0, Misses: 0
-e18-> Hits: 1, Late: 0, Early: 0, Misses: 0
-e2e-> Hits: 21, Late: 0, Early: 0, Misses: 0
-e2f-> Hits: 21, Late: 0, Early: 0, Misses: 0
-e31-> Hits: 22, Late: 0, Early: 0, Misses: 0
-e33-> Hits: 22, Late: 0, Early: 0, Misses: 0
-e35-> Hits: 22, Late: 0, Early: 0, Misses: 0
-e37-> Hits: 22, Late: 0, Early: 0, Misses: 0
-e3c-> Hits: 22, Late: 0, Early: 0, Misses: 0
-e46-> Hits: 1, Late: 0, Early: 0, Misses: 0
-e4a-> Hits: 24, Late: 0, Early: 0, Misses: 0
-e51-> Hits: 2, Late: 0, Early: 0, Misses: 0
-e55-> Hits: 4, Late: 4, Early: 0, Misses: 2
-e57-> Hits: 22, Late: 0, Early: 0, Misses: 0
-e5a-> Hits: 3, Late: 0, Early: 0, Misses: 0
-e6a-> Hits: 2, Late: 1, Early: 0, Misses: 0
-e6c-> Hits: 3, Late: 0, Early: 0, Misses: 0
-e73-> Hits: 0, Late: 3, Early: 0, Misses: 0
-e77-> Hits: 3, Late: 0, Early: 0, Misses: 0
-e80-> Hits: 2, Late: 0, Early: 0, Misses: 0
-ea7-> Hits: 1, Late: 0, Early: 0, Misses: 0
-ed7-> Hits: 1, Late: 0, Early: 0, Misses: 0
-edd-> Hits: 1, Late: 0, Early: 0, Misses: 0
-ef2-> Hits: 7, Late: 0, Early: 0, Misses: 0
-f0e-> Hits: 2, Late: 0, Early: 0, Misses: 0
-f10-> Hits: 4, Late: 1, Early: 0, Misses: 2
-f19-> Hits: 3, Late: 0, Early: 0, Misses: 0
-f1c-> Hits: 1, Late: 0, Early: 0, Misses: 0
-f1d-> Hits: 1, Late: 0, Early: 0, Misses: 0
-f21-> Hits: 3, Late: 0, Early: 0, Misses: 0
-f36-> Hits: 2, Late: 0, Early: 0, Misses: 0
-f46-> Hits: 3, Late: 0, Early: 0, Misses: 0
-f73-> Hits: 6, Late: 3, Early: 0, Misses: 2
-f8e-> Hits: 1, Late: 0, Early: 0, Misses: 0
-f97-> Hits: 1, Late: 0, Early: 0, Misses: 0
-fc8-> Hits: 4, Late: 0, Early: 0, Misses: 0
-fce-> Hits: 1, Late: 0, Early: 0, Misses: 0
-fea-> Hits: 2, Late: 0, Early: 0, Misses: 0
-ff1-> Hits: 1, Late: 0, Early: 0, Misses: 0
-ff2-> Hits: 2, Late: 0, Early: 0, Misses: 0
-ff8-> Hits: 2, Late: 0, Early: 0, Misses: 0
-Total misses (from ip) 2465614
-Total accesses (misses) 19535951 2465614
-Pref: Addr 0 IP 0 Current 0
-CPU 0 L2C PC-based stride prefetcher final stats
-========================================================
-Total pollution count in L2: 2795
-========================================================
-
-DRAM Statistics
- CHANNEL 0
- RQ ROW_BUFFER_HIT:     540287  ROW_BUFFER_MISS:     444362
- DBUS_CONGESTED:        643
- WQ ROW_BUFFER_HIT:      23139  ROW_BUFFER_MISS:      68713  FULL:          0
-
- AVG_CONGESTED_CYCLE: 4
- All warmup complete: 2
-Channel 0 Bank busy for read cycles: 0
-Channel 0 Bank busy for write cycles: 0
-Channel 0
-Rank 0
-0banks busy for read cycles: 78457656
-0banks busy for write cycles: 64337
-1banks busy for read cycles: 45231664
-1banks busy for write cycles: 10335178
-2banks busy for read cycles: 12328693
-2banks busy for write cycles: 2216822
-3banks busy for read cycles: 3382058
-3banks busy for write cycles: 491984
-4banks busy for read cycles: 2485176
-4banks busy for write cycles: 155610
-5banks busy for read cycles: 610529
-5banks busy for write cycles: 62317
-6banks busy for read cycles: 90660
-6banks busy for write cycles: 36806
-7banks busy for read cycles: 10292
-7banks busy for write cycles: 23542
-8banks busy for read cycles: 3457
-8banks busy for write cycles: 67250
-
-CPU 0 Branch Prediction Accuracy: 86.8957% MPKI: 29.8325 Average ROB Occupancy at Mispredict: 6.90724
-Branch types
-NOT_BRANCH: 38617311 77.2346%
-BRANCH_DIRECT_JUMP: 3586 0.007172%
-BRANCH_INDIRECT: 1 2e-06%
-BRANCH_CONDITIONAL: 11378964 22.7579%
-BRANCH_DIRECT_CALL: 64 0.000128%
-BRANCH_INDIRECT_CALL: 3 6e-06%
-BRANCH_RETURN: 67 0.000134%
-BRANCH_OTHER: 0 0%
-
-DRAM PAGES: 1048576
-Allocated PAGES: 27166
+PTW_PQ Entry 
+[PTW_PQ] entry: 0 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 1 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 2 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 3 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 4 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 5 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 6 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 7 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 8 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 9 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 10 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 11 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 12 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 13 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 14 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
+[PTW_PQ] entry: 15 instr_id: 0 rob_index: -1 address: 0 full_addr: 0 type: 0 fill_level: -1 lq_index: 0 sq_index: 0
