@@ -17,21 +17,21 @@ L1I has LRU replacement policy
 CPU 0 L1D Berti prefetcher
 L1D has LRU replacement policy
 Bingo PHT WAYS: 16 and PHT_SIZE: 16384
-L2C has LRU replacement policy
-Heartbeat CPU 0 instructions: 10000000 cycles: 2235171 heartbeat IPC: 4.47393 cumulative IPC: 4.47393 (Simulation time: 0 hr 0 min 58 sec) 
-Heartbeat CPU 0 instructions: 20000004 cycles: 4504897 heartbeat IPC: 4.40582 cumulative IPC: 4.43961 (Simulation time: 0 hr 2 min 4 sec) 
-Heartbeat CPU 0 instructions: 30000002 cycles: 6801418 heartbeat IPC: 4.35441 cumulative IPC: 4.41085 (Simulation time: 0 hr 3 min 9 sec) 
-Heartbeat CPU 0 instructions: 40000004 cycles: 9118129 heartbeat IPC: 4.31646 cumulative IPC: 4.38687 (Simulation time: 0 hr 4 min 10 sec) 
-Heartbeat CPU 0 instructions: 50000002 cycles: 11448505 heartbeat IPC: 4.29115 cumulative IPC: 4.36738 (Simulation time: 0 hr 5 min 8 sec) 
+L2C using LRU + Pollution Tracking
+Heartbeat CPU 0 instructions: 10000000 cycles: 2235171 heartbeat IPC: 4.47393 cumulative IPC: 4.47393 (Simulation time: 0 hr 0 min 48 sec) 
+Heartbeat CPU 0 instructions: 20000004 cycles: 4504897 heartbeat IPC: 4.40582 cumulative IPC: 4.43961 (Simulation time: 0 hr 1 min 47 sec) 
+Heartbeat CPU 0 instructions: 30000002 cycles: 6801418 heartbeat IPC: 4.35441 cumulative IPC: 4.41085 (Simulation time: 0 hr 2 min 50 sec) 
+Heartbeat CPU 0 instructions: 40000004 cycles: 9118129 heartbeat IPC: 4.31646 cumulative IPC: 4.38687 (Simulation time: 0 hr 3 min 48 sec) 
+Heartbeat CPU 0 instructions: 50000002 cycles: 11448505 heartbeat IPC: 4.29115 cumulative IPC: 4.36738 (Simulation time: 0 hr 4 min 45 sec) 
 
-Warmup complete CPU 0 instructions: 50000002 cycles: 11448505 (Simulation time: 0 hr 5 min 8 sec) 
+Warmup complete CPU 0 instructions: 50000002 cycles: 11448505 (Simulation time: 0 hr 4 min 45 sec) 
 
-Heartbeat CPU 0 instructions: 60000001 cycles: 43513771 heartbeat IPC: 0.311864 cumulative IPC: 0.311864 (Simulation time: 0 hr 6 min 21 sec) 
-Heartbeat CPU 0 instructions: 70000006 cycles: 74219616 heartbeat IPC: 0.325671 cumulative IPC: 0.318618 (Simulation time: 0 hr 7 min 30 sec) 
-Heartbeat CPU 0 instructions: 80000000 cycles: 105170346 heartbeat IPC: 0.323094 cumulative IPC: 0.320096 (Simulation time: 0 hr 8 min 43 sec) 
-Heartbeat CPU 0 instructions: 90000000 cycles: 136505411 heartbeat IPC: 0.319131 cumulative IPC: 0.319854 (Simulation time: 0 hr 10 min 1 sec) 
-Heartbeat CPU 0 instructions: 100000004 cycles: 166662529 heartbeat IPC: 0.331597 cumulative IPC: 0.322136 (Simulation time: 0 hr 11 min 21 sec) 
-Finished CPU 0 instructions: 50000002 cycles: 155214024 cumulative IPC: 0.322136 (Simulation time: 0 hr 11 min 21 sec) 
+Heartbeat CPU 0 instructions: 60000001 cycles: 43513771 heartbeat IPC: 0.311864 cumulative IPC: 0.311864 (Simulation time: 0 hr 5 min 53 sec) 
+Heartbeat CPU 0 instructions: 70000006 cycles: 74219616 heartbeat IPC: 0.325671 cumulative IPC: 0.318618 (Simulation time: 0 hr 6 min 58 sec) 
+Heartbeat CPU 0 instructions: 80000000 cycles: 105170346 heartbeat IPC: 0.323094 cumulative IPC: 0.320096 (Simulation time: 0 hr 8 min 7 sec) 
+Heartbeat CPU 0 instructions: 90000000 cycles: 136505411 heartbeat IPC: 0.319131 cumulative IPC: 0.319854 (Simulation time: 0 hr 9 min 21 sec) 
+Heartbeat CPU 0 instructions: 100000004 cycles: 166662529 heartbeat IPC: 0.331597 cumulative IPC: 0.322136 (Simulation time: 0 hr 10 min 31 sec) 
+Finished CPU 0 instructions: 50000002 cycles: 155214024 cumulative IPC: 0.322136 (Simulation time: 0 hr 10 min 31 sec) 
 
 ChampSim completed all CPUs
 
@@ -446,12 +446,9 @@ FT tag read accesses: 167630770
 FT tag write accesses: 3312792
 PS tag read accesses: 135690396
 PS tag write accesses: 7357307
+================ Mockingjay (LLC) Pollution Stats ================
 Total pollution count in LLC: 0
---- Prefetch Eviction Debug ---
-Total prefetches sent to find_victim: 0
-Prefetches that found empty slots:    0
-Prefetches that were bypassed:        0
-Prefetches that caused an eviction:   0
+==================================================================
 
 DRAM Statistics
  CHANNEL 0

@@ -17,21 +17,21 @@ L1I has LRU replacement policy
 CPU 0 L1D Berti prefetcher
 L1D has LRU replacement policy
 Bingo PHT WAYS: 16 and PHT_SIZE: 16384
-L2C has LRU replacement policy
-Heartbeat CPU 0 instructions: 10000000 cycles: 2825057 heartbeat IPC: 3.53975 cumulative IPC: 3.53975 (Simulation time: 0 hr 0 min 44 sec) 
-Heartbeat CPU 0 instructions: 20000005 cycles: 5065913 heartbeat IPC: 4.46258 cumulative IPC: 3.94796 (Simulation time: 0 hr 1 min 48 sec) 
-Heartbeat CPU 0 instructions: 30000001 cycles: 7325720 heartbeat IPC: 4.42515 cumulative IPC: 4.09516 (Simulation time: 0 hr 2 min 49 sec) 
-Heartbeat CPU 0 instructions: 40000002 cycles: 9568095 heartbeat IPC: 4.45956 cumulative IPC: 4.18056 (Simulation time: 0 hr 3 min 49 sec) 
-Heartbeat CPU 0 instructions: 50000003 cycles: 11812455 heartbeat IPC: 4.45561 cumulative IPC: 4.23282 (Simulation time: 0 hr 4 min 44 sec) 
+L2C using LRU + Pollution Tracking
+Heartbeat CPU 0 instructions: 10000000 cycles: 2825057 heartbeat IPC: 3.53975 cumulative IPC: 3.53975 (Simulation time: 0 hr 0 min 41 sec) 
+Heartbeat CPU 0 instructions: 20000005 cycles: 5065913 heartbeat IPC: 4.46258 cumulative IPC: 3.94796 (Simulation time: 0 hr 1 min 31 sec) 
+Heartbeat CPU 0 instructions: 30000001 cycles: 7325720 heartbeat IPC: 4.42515 cumulative IPC: 4.09516 (Simulation time: 0 hr 2 min 21 sec) 
+Heartbeat CPU 0 instructions: 40000002 cycles: 9568095 heartbeat IPC: 4.45956 cumulative IPC: 4.18056 (Simulation time: 0 hr 3 min 13 sec) 
+Heartbeat CPU 0 instructions: 50000003 cycles: 11812455 heartbeat IPC: 4.45561 cumulative IPC: 4.23282 (Simulation time: 0 hr 4 min 5 sec) 
 
-Warmup complete CPU 0 instructions: 50000003 cycles: 11812455 (Simulation time: 0 hr 4 min 44 sec) 
+Warmup complete CPU 0 instructions: 50000003 cycles: 11812455 (Simulation time: 0 hr 4 min 5 sec) 
 
-Heartbeat CPU 0 instructions: 60000003 cycles: 71496325 heartbeat IPC: 0.167549 cumulative IPC: 0.167549 (Simulation time: 0 hr 5 min 55 sec) 
-Heartbeat CPU 0 instructions: 70000001 cycles: 131647518 heartbeat IPC: 0.166248 cumulative IPC: 0.166896 (Simulation time: 0 hr 7 min 10 sec) 
-Heartbeat CPU 0 instructions: 80000005 cycles: 191558414 heartbeat IPC: 0.166915 cumulative IPC: 0.166902 (Simulation time: 0 hr 8 min 21 sec) 
-Heartbeat CPU 0 instructions: 90000000 cycles: 252179047 heartbeat IPC: 0.16496 cumulative IPC: 0.166412 (Simulation time: 0 hr 9 min 36 sec) 
-Heartbeat CPU 0 instructions: 100000004 cycles: 311796229 heartbeat IPC: 0.167737 cumulative IPC: 0.166676 (Simulation time: 0 hr 10 min 55 sec) 
-Finished CPU 0 instructions: 50000001 cycles: 299983774 cumulative IPC: 0.166676 (Simulation time: 0 hr 10 min 55 sec) 
+Heartbeat CPU 0 instructions: 60000003 cycles: 71496325 heartbeat IPC: 0.167549 cumulative IPC: 0.167549 (Simulation time: 0 hr 5 min 22 sec) 
+Heartbeat CPU 0 instructions: 70000001 cycles: 131647518 heartbeat IPC: 0.166248 cumulative IPC: 0.166896 (Simulation time: 0 hr 6 min 41 sec) 
+Heartbeat CPU 0 instructions: 80000005 cycles: 191558414 heartbeat IPC: 0.166915 cumulative IPC: 0.166902 (Simulation time: 0 hr 7 min 51 sec) 
+Heartbeat CPU 0 instructions: 90000000 cycles: 252179047 heartbeat IPC: 0.16496 cumulative IPC: 0.166412 (Simulation time: 0 hr 8 min 58 sec) 
+Heartbeat CPU 0 instructions: 100000004 cycles: 311796229 heartbeat IPC: 0.167737 cumulative IPC: 0.166676 (Simulation time: 0 hr 10 min 7 sec) 
+Finished CPU 0 instructions: 50000001 cycles: 299983774 cumulative IPC: 0.166676 (Simulation time: 0 hr 10 min 7 sec) 
 
 ChampSim completed all CPUs
 
@@ -553,12 +553,9 @@ FT tag read accesses: 222965984
 FT tag write accesses: 3697983
 PS tag read accesses: 127592585
 PS tag write accesses: 6048869
+================ Mockingjay (LLC) Pollution Stats ================
 Total pollution count in LLC: 0
---- Prefetch Eviction Debug ---
-Total prefetches sent to find_victim: 0
-Prefetches that found empty slots:    0
-Prefetches that were bypassed:        0
-Prefetches that caused an eviction:   0
+==================================================================
 
 DRAM Statistics
  CHANNEL 0

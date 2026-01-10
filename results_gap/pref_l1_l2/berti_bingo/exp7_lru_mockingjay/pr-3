@@ -17,21 +17,21 @@ L1I has LRU replacement policy
 CPU 0 L1D Berti prefetcher
 L1D has LRU replacement policy
 Bingo PHT WAYS: 16 and PHT_SIZE: 16384
-L2C has LRU replacement policy
-Heartbeat CPU 0 instructions: 10000001 cycles: 2628067 heartbeat IPC: 3.80508 cumulative IPC: 3.80508 (Simulation time: 0 hr 0 min 16 sec) 
-Heartbeat CPU 0 instructions: 20000002 cycles: 8949458 heartbeat IPC: 1.58193 cumulative IPC: 2.23477 (Simulation time: 0 hr 2 min 33 sec) 
-Heartbeat CPU 0 instructions: 30000002 cycles: 15887281 heartbeat IPC: 1.44137 cumulative IPC: 1.8883 (Simulation time: 0 hr 5 min 3 sec) 
-Heartbeat CPU 0 instructions: 40000001 cycles: 22855304 heartbeat IPC: 1.43513 cumulative IPC: 1.75014 (Simulation time: 0 hr 7 min 38 sec) 
-Heartbeat CPU 0 instructions: 50000001 cycles: 29839189 heartbeat IPC: 1.43187 cumulative IPC: 1.67565 (Simulation time: 0 hr 10 min 9 sec) 
+L2C using LRU + Pollution Tracking
+Heartbeat CPU 0 instructions: 10000001 cycles: 2628067 heartbeat IPC: 3.80508 cumulative IPC: 3.80508 (Simulation time: 0 hr 0 min 13 sec) 
+Heartbeat CPU 0 instructions: 20000002 cycles: 8949458 heartbeat IPC: 1.58193 cumulative IPC: 2.23477 (Simulation time: 0 hr 2 min 7 sec) 
+Heartbeat CPU 0 instructions: 30000002 cycles: 15887281 heartbeat IPC: 1.44137 cumulative IPC: 1.8883 (Simulation time: 0 hr 4 min 19 sec) 
+Heartbeat CPU 0 instructions: 40000001 cycles: 22855304 heartbeat IPC: 1.43513 cumulative IPC: 1.75014 (Simulation time: 0 hr 6 min 30 sec) 
+Heartbeat CPU 0 instructions: 50000001 cycles: 29839189 heartbeat IPC: 1.43187 cumulative IPC: 1.67565 (Simulation time: 0 hr 8 min 41 sec) 
 
-Warmup complete CPU 0 instructions: 50000001 cycles: 29839189 (Simulation time: 0 hr 10 min 9 sec) 
+Warmup complete CPU 0 instructions: 50000001 cycles: 29839189 (Simulation time: 0 hr 8 min 41 sec) 
 
-Heartbeat CPU 0 instructions: 60000004 cycles: 187976454 heartbeat IPC: 0.0632362 cumulative IPC: 0.0632362 (Simulation time: 0 hr 14 min 12 sec) 
-Heartbeat CPU 0 instructions: 70000002 cycles: 348009044 heartbeat IPC: 0.0624873 cumulative IPC: 0.0628595 (Simulation time: 0 hr 18 min 21 sec) 
-Heartbeat CPU 0 instructions: 80000004 cycles: 508531552 heartbeat IPC: 0.0622966 cumulative IPC: 0.0626707 (Simulation time: 0 hr 22 min 27 sec) 
-Heartbeat CPU 0 instructions: 90000000 cycles: 668827245 heartbeat IPC: 0.0623847 cumulative IPC: 0.062599 (Simulation time: 0 hr 26 min 24 sec) 
-Heartbeat CPU 0 instructions: 100000003 cycles: 830014225 heartbeat IPC: 0.0620398 cumulative IPC: 0.0624863 (Simulation time: 0 hr 30 min 27 sec) 
-Finished CPU 0 instructions: 50000002 cycles: 800175036 cumulative IPC: 0.0624863 (Simulation time: 0 hr 30 min 27 sec) 
+Heartbeat CPU 0 instructions: 60000004 cycles: 187976454 heartbeat IPC: 0.0632362 cumulative IPC: 0.0632362 (Simulation time: 0 hr 12 min 18 sec) 
+Heartbeat CPU 0 instructions: 70000002 cycles: 348009044 heartbeat IPC: 0.0624873 cumulative IPC: 0.0628595 (Simulation time: 0 hr 15 min 51 sec) 
+Heartbeat CPU 0 instructions: 80000004 cycles: 508531552 heartbeat IPC: 0.0622966 cumulative IPC: 0.0626707 (Simulation time: 0 hr 19 min 35 sec) 
+Heartbeat CPU 0 instructions: 90000000 cycles: 668827245 heartbeat IPC: 0.0623847 cumulative IPC: 0.062599 (Simulation time: 0 hr 23 min 18 sec) 
+Heartbeat CPU 0 instructions: 100000003 cycles: 830014225 heartbeat IPC: 0.0620398 cumulative IPC: 0.0624863 (Simulation time: 0 hr 26 min 55 sec) 
+Finished CPU 0 instructions: 50000002 cycles: 800175036 cumulative IPC: 0.0624863 (Simulation time: 0 hr 26 min 55 sec) 
 
 ChampSim completed all CPUs
 
@@ -502,12 +502,9 @@ FT tag read accesses: 455543918
 FT tag write accesses: 8512011
 PS tag read accesses: 339006956
 PS tag write accesses: 18615278
+================ Mockingjay (LLC) Pollution Stats ================
 Total pollution count in LLC: 0
---- Prefetch Eviction Debug ---
-Total prefetches sent to find_victim: 0
-Prefetches that found empty slots:    0
-Prefetches that were bypassed:        0
-Prefetches that caused an eviction:   0
+==================================================================
 
 DRAM Statistics
  CHANNEL 0
