@@ -34,21 +34,21 @@ L1D has LRU replacement policy
 ST_WAYS: 256
 PT_SETS: 512
 Initialize SRRIP state for L2C (with pollution tracking)
-LLC using LRU + Pollution Tracking
-Heartbeat CPU 0 instructions: 10000005 cycles: 2500110 heartbeat IPC: 3.99983 cumulative IPC: 3.99983 (Simulation time: 0 hr 0 min 15 sec) 
-Heartbeat CPU 0 instructions: 20000002 cycles: 8169220 heartbeat IPC: 1.76394 cumulative IPC: 2.44821 (Simulation time: 0 hr 1 min 46 sec) 
-Heartbeat CPU 0 instructions: 30000004 cycles: 14404121 heartbeat IPC: 1.60388 cumulative IPC: 2.08274 (Simulation time: 0 hr 3 min 32 sec) 
-Heartbeat CPU 0 instructions: 40000004 cycles: 20609423 heartbeat IPC: 1.61153 cumulative IPC: 1.94086 (Simulation time: 0 hr 5 min 19 sec) 
-Heartbeat CPU 0 instructions: 50000000 cycles: 26813522 heartbeat IPC: 1.61184 cumulative IPC: 1.86473 (Simulation time: 0 hr 7 min 15 sec) 
+LLC has LRU replacement policy with pollution tracking
+Heartbeat CPU 0 instructions: 10000005 cycles: 2500110 heartbeat IPC: 3.99983 cumulative IPC: 3.99983 (Simulation time: 0 hr 0 min 14 sec) 
+Heartbeat CPU 0 instructions: 20000002 cycles: 8169220 heartbeat IPC: 1.76394 cumulative IPC: 2.44821 (Simulation time: 0 hr 1 min 44 sec) 
+Heartbeat CPU 0 instructions: 30000004 cycles: 14404121 heartbeat IPC: 1.60388 cumulative IPC: 2.08274 (Simulation time: 0 hr 3 min 26 sec) 
+Heartbeat CPU 0 instructions: 40000004 cycles: 20609423 heartbeat IPC: 1.61153 cumulative IPC: 1.94086 (Simulation time: 0 hr 5 min 10 sec) 
+Heartbeat CPU 0 instructions: 50000000 cycles: 26813522 heartbeat IPC: 1.61184 cumulative IPC: 1.86473 (Simulation time: 0 hr 6 min 56 sec) 
 
-Warmup complete CPU 0 instructions: 50000005 cycles: 26813525 (Simulation time: 0 hr 7 min 15 sec) 
+Warmup complete CPU 0 instructions: 50000005 cycles: 26813525 (Simulation time: 0 hr 6 min 56 sec) 
 
-Heartbeat CPU 0 instructions: 60000001 cycles: 153861798 heartbeat IPC: 0.0787102 cumulative IPC: 0.0787102 (Simulation time: 0 hr 10 min 18 sec) 
-Heartbeat CPU 0 instructions: 70000001 cycles: 280943119 heartbeat IPC: 0.0786898 cumulative IPC: 0.0787 (Simulation time: 0 hr 13 min 21 sec) 
-Heartbeat CPU 0 instructions: 80000002 cycles: 408478177 heartbeat IPC: 0.0784098 cumulative IPC: 0.078603 (Simulation time: 0 hr 16 min 25 sec) 
-Heartbeat CPU 0 instructions: 90000000 cycles: 535795713 heartbeat IPC: 0.0785438 cumulative IPC: 0.0785882 (Simulation time: 0 hr 19 min 26 sec) 
-Heartbeat CPU 0 instructions: 100000001 cycles: 662598527 heartbeat IPC: 0.0788626 cumulative IPC: 0.0786429 (Simulation time: 0 hr 22 min 25 sec) 
-Finished CPU 0 instructions: 50000000 cycles: 635785020 cumulative IPC: 0.0786429 (Simulation time: 0 hr 22 min 25 sec) 
+Heartbeat CPU 0 instructions: 60000001 cycles: 153861798 heartbeat IPC: 0.0787102 cumulative IPC: 0.0787102 (Simulation time: 0 hr 10 min 0 sec) 
+Heartbeat CPU 0 instructions: 70000001 cycles: 280943119 heartbeat IPC: 0.0786898 cumulative IPC: 0.0787 (Simulation time: 0 hr 13 min 4 sec) 
+Heartbeat CPU 0 instructions: 80000002 cycles: 408478177 heartbeat IPC: 0.0784098 cumulative IPC: 0.078603 (Simulation time: 0 hr 16 min 10 sec) 
+Heartbeat CPU 0 instructions: 90000000 cycles: 535795713 heartbeat IPC: 0.0785438 cumulative IPC: 0.0785882 (Simulation time: 0 hr 19 min 20 sec) 
+Heartbeat CPU 0 instructions: 100000001 cycles: 662598527 heartbeat IPC: 0.0788626 cumulative IPC: 0.0786429 (Simulation time: 0 hr 22 min 23 sec) 
+Finished CPU 0 instructions: 50000000 cycles: 635785020 cumulative IPC: 0.0786429 (Simulation time: 0 hr 22 min 23 sec) 
 
 ChampSim completed all CPUs
 
@@ -613,9 +613,9 @@ GHR counter read accesses: 99106778
 GHR counter write accesses: 15712960
 ST tag read accesses: 9967987026
 ST tag write accesses: 2200177418
--------------------------------------------
-Total pollution count in LLC: 0
--------------------------------------------
+================ LLC LRU Pollution Stats ================
+Total pollution count in LLC: 1226439
+=========================================================
 
 DRAM Statistics
  CHANNEL 0
@@ -659,5 +659,6 @@ BRANCH_INDIRECT_CALL: 0 0%
 BRANCH_RETURN: 0 0%
 BRANCH_OTHER: 0 0%
 
+Total pollution count in L2: 1682250
 DRAM PAGES: 1048576
 Allocated PAGES: 19675

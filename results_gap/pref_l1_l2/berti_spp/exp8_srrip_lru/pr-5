@@ -34,21 +34,21 @@ L1D has LRU replacement policy
 ST_WAYS: 256
 PT_SETS: 512
 Initialize SRRIP state for L2C (with pollution tracking)
-LLC using LRU + Pollution Tracking
+LLC has LRU replacement policy with pollution tracking
 Heartbeat CPU 0 instructions: 10000005 cycles: 2631785 heartbeat IPC: 3.7997 cumulative IPC: 3.7997 (Simulation time: 0 hr 0 min 15 sec) 
-Heartbeat CPU 0 instructions: 20000002 cycles: 8684691 heartbeat IPC: 1.6521 cumulative IPC: 2.3029 (Simulation time: 0 hr 2 min 2 sec) 
-Heartbeat CPU 0 instructions: 30000001 cycles: 15279447 heartbeat IPC: 1.51636 cumulative IPC: 1.96342 (Simulation time: 0 hr 3 min 50 sec) 
-Heartbeat CPU 0 instructions: 40000002 cycles: 21916199 heartbeat IPC: 1.50676 cumulative IPC: 1.82513 (Simulation time: 0 hr 5 min 42 sec) 
-Heartbeat CPU 0 instructions: 50000004 cycles: 28541525 heartbeat IPC: 1.50936 cumulative IPC: 1.75183 (Simulation time: 0 hr 7 min 33 sec) 
+Heartbeat CPU 0 instructions: 20000002 cycles: 8684691 heartbeat IPC: 1.6521 cumulative IPC: 2.3029 (Simulation time: 0 hr 1 min 50 sec) 
+Heartbeat CPU 0 instructions: 30000001 cycles: 15279447 heartbeat IPC: 1.51636 cumulative IPC: 1.96342 (Simulation time: 0 hr 3 min 33 sec) 
+Heartbeat CPU 0 instructions: 40000002 cycles: 21916199 heartbeat IPC: 1.50676 cumulative IPC: 1.82513 (Simulation time: 0 hr 5 min 18 sec) 
+Heartbeat CPU 0 instructions: 50000004 cycles: 28541525 heartbeat IPC: 1.50936 cumulative IPC: 1.75183 (Simulation time: 0 hr 7 min 4 sec) 
 
-Warmup complete CPU 0 instructions: 50000004 cycles: 28541525 (Simulation time: 0 hr 7 min 33 sec) 
+Warmup complete CPU 0 instructions: 50000004 cycles: 28541525 (Simulation time: 0 hr 7 min 4 sec) 
 
-Heartbeat CPU 0 instructions: 60000001 cycles: 160550257 heartbeat IPC: 0.0757525 cumulative IPC: 0.0757525 (Simulation time: 0 hr 10 min 41 sec) 
-Heartbeat CPU 0 instructions: 70000003 cycles: 294699302 heartbeat IPC: 0.074544 cumulative IPC: 0.0751434 (Simulation time: 0 hr 13 min 50 sec) 
-Heartbeat CPU 0 instructions: 80000002 cycles: 428461978 heartbeat IPC: 0.0747593 cumulative IPC: 0.0750149 (Simulation time: 0 hr 17 min 1 sec) 
-Heartbeat CPU 0 instructions: 90000000 cycles: 562240948 heartbeat IPC: 0.0747501 cumulative IPC: 0.0749485 (Simulation time: 0 hr 20 min 13 sec) 
-Heartbeat CPU 0 instructions: 100000001 cycles: 696068140 heartbeat IPC: 0.0747232 cumulative IPC: 0.0749034 (Simulation time: 0 hr 23 min 22 sec) 
-Finished CPU 0 instructions: 50000002 cycles: 667526652 cumulative IPC: 0.0749034 (Simulation time: 0 hr 23 min 22 sec) 
+Heartbeat CPU 0 instructions: 60000001 cycles: 160550257 heartbeat IPC: 0.0757525 cumulative IPC: 0.0757525 (Simulation time: 0 hr 10 min 5 sec) 
+Heartbeat CPU 0 instructions: 70000003 cycles: 294699302 heartbeat IPC: 0.074544 cumulative IPC: 0.0751434 (Simulation time: 0 hr 13 min 11 sec) 
+Heartbeat CPU 0 instructions: 80000002 cycles: 428461978 heartbeat IPC: 0.0747593 cumulative IPC: 0.0750149 (Simulation time: 0 hr 16 min 19 sec) 
+Heartbeat CPU 0 instructions: 90000000 cycles: 562240948 heartbeat IPC: 0.0747501 cumulative IPC: 0.0749485 (Simulation time: 0 hr 19 min 27 sec) 
+Heartbeat CPU 0 instructions: 100000001 cycles: 696068140 heartbeat IPC: 0.0747232 cumulative IPC: 0.0749034 (Simulation time: 0 hr 22 min 32 sec) 
+Finished CPU 0 instructions: 50000002 cycles: 667526652 cumulative IPC: 0.0749034 (Simulation time: 0 hr 22 min 32 sec) 
 
 ChampSim completed all CPUs
 
@@ -614,9 +614,9 @@ GHR counter read accesses: 98393698
 GHR counter write accesses: 15611218
 ST tag read accesses: 9972746099
 ST tag write accesses: 2199049939
--------------------------------------------
-Total pollution count in LLC: 0
--------------------------------------------
+================ LLC LRU Pollution Stats ================
+Total pollution count in LLC: 1295662
+=========================================================
 
 DRAM Statistics
  CHANNEL 0
@@ -660,5 +660,6 @@ BRANCH_INDIRECT_CALL: 0 0%
 BRANCH_RETURN: 0 0%
 BRANCH_OTHER: 0 0%
 
+Total pollution count in L2: 1689052
 DRAM PAGES: 1048576
 Allocated PAGES: 19654
