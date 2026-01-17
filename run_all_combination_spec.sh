@@ -14,7 +14,7 @@ if [ $# -lt 5 ] || [ $# -gt 6 ]; then
 fi
 
 BINARY=./bin/$1
-RESULTS_DIR=./results/$2/$3/$4
+RESULTS_DIR=./results_spec/$2/$3/$4
 NUM_CORES=$5
 TRACE_DIR=./tracer/traces
 
@@ -122,40 +122,40 @@ echo "✅ Completed"
 
 }
 
-if [ $# -lt 5 ]; then
-    echo "Usage: $0 <Prefetcher at L1d> <Perfetcher at L2> <Directory name of Prefetcher's level> <Prefetcher Name Directory> <NUM_CORES> "
-    echo "Example: $0 berti spp perf_l1_l2 berti_spp 8"
+if [ $# -lt 5 ]|| [ $# -gt 6 ]; then
+    echo "Usage: $0 <Prefetcher at L1d> <Perfetcher at L2> <Directory name of Prefetcher's level> <Prefetcher Name Directory> <NUM_CORES> [NO of replacement policy] "
+    echo "Example: $0 berti spp pref_l1_l2 berti_spp 20 [Repl. Policy index]"
+    echo "Replacement policy Index : { 1:lru 2:srrip 3:drrip 4:hawkeye 5:ship 6:ship++ 7:mockingjay &&  with srrip 8:lru 9:srrip 10:drrip 11:hawkeye 12:ship 13:ship++ 14:mockingjay }"
     exit 1
 fi
 
 L1D_PREFETCHER=$1
 L2_PREFETCHER=$2
 
+N=${6:-1} # no of Replacement policy
 
-repl_policies=("lru" "srrip" "drrip" "hawkeye" "ship" "ship++" "mockingjay")
+repl_policies=("lru" "srrip" "drrip" "hawkeye" "ship" "ship++" "mockingjay" "lru" "srrip" "drrip" "hawkeye" "ship" "ship++" "mockingjay")
 
-i=0
-for (( j=1; j<=14; j++ )); do
+
+for (( j=N; j<=14; j++ )); do
     if (( j < 8 )); then
         ./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" lru "${repl_policies[$((j-1))]}"
         
-        binary="bimodal-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-lru-${repl_policies[$((j-1))]}-lru-lru-lru-1core-no"
+        binary="hashed_perceptron-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-lru-${repl_policies[$((j-1))]}-lru-lru-lru-1core-no"
         exp_name="exp${j}_lru_${repl_policies[$((j-1))]}"
 
         if ! run "$binary" "$3" "$4" "$exp_name" "$5"; then
-            echo "⚠️ Run failed for $exp_name — skipping..."
+            echo "Run failed for $exp_name — skipping..."
         fi
 
     else
-        ./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" srrip "${repl_policies[$i]}"
+        ./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" srrip "${repl_policies[$((j-1))]}"
         
-        binary="bimodal-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-srrip-${repl_policies[$i]}-lru-lru-lru-1core-no"
-        exp_name="exp${j}_srrip_${repl_policies[$i]}"
+        binary="hashed_perceptron-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-srrip-${repl_policies[$((j-1))]}-lru-lru-lru-1core-no"
+        exp_name="exp${j}_srrip_${repl_policies[$((j-1))]}"
 
         if ! run "$binary" "$3" "$4" "$exp_name" "$5"; then
-            echo "⚠️ Run failed for $exp_name — skipping..."
+            echo "Run failed for $exp_name — skipping..."
         fi
-
-        ((i++))
     fi
 done
