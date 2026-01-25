@@ -139,7 +139,7 @@ repl_policies=("lru" "srrip" "drrip" "hawkeye" "ship" "ship++" "mockingjay" "lru
 
 for (( j=N; j<=14; j++ )); do
     if (( j < 8 )); then
-        ./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" lru "${repl_policies[$((j-1))]}"
+        #./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" lru "${repl_policies[$((j-1))]}"
         
         binary="hashed_perceptron-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-lru-${repl_policies[$((j-1))]}-lru-lru-lru-1core-no"
         exp_name="exp${j}_lru_${repl_policies[$((j-1))]}"
@@ -149,7 +149,7 @@ for (( j=N; j<=14; j++ )); do
         fi
 
     else
-        ./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" srrip "${repl_policies[$((j-1))]}"
+        #./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" srrip "${repl_policies[$((j-1))]}"
         
         binary="hashed_perceptron-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-srrip-${repl_policies[$((j-1))]}-lru-lru-lru-1core-no"
         exp_name="exp${j}_srrip_${repl_policies[$((j-1))]}"
