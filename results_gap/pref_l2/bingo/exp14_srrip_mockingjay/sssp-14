@@ -16,21 +16,22 @@ STLB has LRU replacement policy
 L1I has LRU replacement policy
 L1D has LRU replacement policy
 Bingo PHT WAYS: 16 and PHT_SIZE: 16384
-Initialize SRRIP state for L2C (with pollution tracking)
+Initialize SRRIP state for L2C
+Initialize Mockingjay state for LLC
 Heartbeat CPU 0 instructions: 10000002 cycles: 2507408 heartbeat IPC: 3.98818 cumulative IPC: 3.98818 (Simulation time: 0 hr 0 min 22 sec) 
-Heartbeat CPU 0 instructions: 20000004 cycles: 4985289 heartbeat IPC: 4.03571 cumulative IPC: 4.0118 (Simulation time: 0 hr 0 min 42 sec) 
-Heartbeat CPU 0 instructions: 30000006 cycles: 7548644 heartbeat IPC: 3.90114 cumulative IPC: 3.97422 (Simulation time: 0 hr 1 min 1 sec) 
-Heartbeat CPU 0 instructions: 40000000 cycles: 10154410 heartbeat IPC: 3.83764 cumulative IPC: 3.93918 (Simulation time: 0 hr 1 min 18 sec) 
-Heartbeat CPU 0 instructions: 50000001 cycles: 12804818 heartbeat IPC: 3.773 cumulative IPC: 3.90478 (Simulation time: 0 hr 1 min 36 sec) 
+Heartbeat CPU 0 instructions: 20000004 cycles: 4985289 heartbeat IPC: 4.03571 cumulative IPC: 4.0118 (Simulation time: 0 hr 0 min 44 sec) 
+Heartbeat CPU 0 instructions: 30000006 cycles: 7548644 heartbeat IPC: 3.90114 cumulative IPC: 3.97422 (Simulation time: 0 hr 1 min 4 sec) 
+Heartbeat CPU 0 instructions: 40000000 cycles: 10154410 heartbeat IPC: 3.83764 cumulative IPC: 3.93918 (Simulation time: 0 hr 1 min 23 sec) 
+Heartbeat CPU 0 instructions: 50000001 cycles: 12804818 heartbeat IPC: 3.773 cumulative IPC: 3.90478 (Simulation time: 0 hr 1 min 41 sec) 
 
-Warmup complete CPU 0 instructions: 50000001 cycles: 12804818 (Simulation time: 0 hr 1 min 36 sec) 
+Warmup complete CPU 0 instructions: 50000001 cycles: 12804818 (Simulation time: 0 hr 1 min 41 sec) 
 
-Heartbeat CPU 0 instructions: 60000007 cycles: 39711781 heartbeat IPC: 0.371651 cumulative IPC: 0.371651 (Simulation time: 0 hr 2 min 7 sec) 
-Heartbeat CPU 0 instructions: 70000001 cycles: 66594284 heartbeat IPC: 0.371989 cumulative IPC: 0.37182 (Simulation time: 0 hr 2 min 39 sec) 
-Heartbeat CPU 0 instructions: 80000000 cycles: 93368352 heartbeat IPC: 0.373496 cumulative IPC: 0.372377 (Simulation time: 0 hr 3 min 12 sec) 
-Heartbeat CPU 0 instructions: 90000000 cycles: 119807374 heartbeat IPC: 0.378229 cumulative IPC: 0.373823 (Simulation time: 0 hr 3 min 45 sec) 
-Heartbeat CPU 0 instructions: 100000001 cycles: 146085513 heartbeat IPC: 0.380544 cumulative IPC: 0.375148 (Simulation time: 0 hr 4 min 17 sec) 
-Finished CPU 0 instructions: 50000000 cycles: 133280695 cumulative IPC: 0.375148 (Simulation time: 0 hr 4 min 17 sec) 
+Heartbeat CPU 0 instructions: 60000007 cycles: 39711781 heartbeat IPC: 0.371651 cumulative IPC: 0.371651 (Simulation time: 0 hr 2 min 12 sec) 
+Heartbeat CPU 0 instructions: 70000001 cycles: 66594284 heartbeat IPC: 0.371989 cumulative IPC: 0.37182 (Simulation time: 0 hr 2 min 45 sec) 
+Heartbeat CPU 0 instructions: 80000000 cycles: 93368352 heartbeat IPC: 0.373496 cumulative IPC: 0.372377 (Simulation time: 0 hr 3 min 19 sec) 
+Heartbeat CPU 0 instructions: 90000000 cycles: 119807374 heartbeat IPC: 0.378229 cumulative IPC: 0.373823 (Simulation time: 0 hr 3 min 53 sec) 
+Heartbeat CPU 0 instructions: 100000001 cycles: 146085513 heartbeat IPC: 0.380544 cumulative IPC: 0.375148 (Simulation time: 0 hr 4 min 29 sec) 
+Finished CPU 0 instructions: 50000000 cycles: 133280695 cumulative IPC: 0.375148 (Simulation time: 0 hr 4 min 29 sec) 
 
 ChampSim completed all CPUs
 
@@ -43,7 +44,8 @@ ITLB PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  US
 ITLB USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
 ITLB TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
 ITLB PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-ITLB AVERAGE MISS LATENCY: -nan cycles
+ITLB AVERAGE MISS LATENCY:       -nan cycles AVERAGE LOAD MISS LATENCY:       -nan cycles Load Miss          0
+ITLB Average MSHR Occupancy: 1.49309e-06
 ITLB RQ	ACCESS:    5053226	FORWARD:          0	MERGED:       3937	TO_CACHE:    5049289
 
 DTLB TOTAL     ACCESS:   12791627  HIT:   11846559  MISS:     945068  HIT %:    92.6118  MISS %:    7.38818   MPKI: 18.9014
@@ -52,7 +54,8 @@ DTLB PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  US
 DTLB USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
 DTLB TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
 DTLB PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-DTLB AVERAGE MISS LATENCY: 11.6199 cycles
+DTLB AVERAGE MISS LATENCY:    11.6199 cycles AVERAGE LOAD MISS LATENCY:       -nan cycles Load Miss          0
+DTLB Average MSHR Occupancy:  0.0704147
 DTLB RQ	ACCESS:   14285807	FORWARD:          0	MERGED:    1480521	TO_CACHE:   12805286
 
 STLB TOTAL     ACCESS:     945068  HIT:     932704  MISS:      12364  HIT %:    98.6917  MISS %:    1.30827   MPKI: 0.24728
@@ -61,7 +64,8 @@ STLB PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  US
 STLB USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
 STLB TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
 STLB PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-STLB AVERAGE MISS LATENCY: 194.449 cycles
+STLB AVERAGE MISS LATENCY:    194.449 cycles AVERAGE LOAD MISS LATENCY:       -nan cycles Load Miss          0
+STLB Average MSHR Occupancy:  0.0128782
 STLB RQ	ACCESS:     945068	FORWARD:          0	MERGED:          0	TO_CACHE:     945068
 
 STLB Hit, L1D data hit: 0
@@ -76,7 +80,8 @@ L1D PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USE
 L1D USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
 L1D TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
 L1D PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-L1D AVERAGE MISS LATENCY: 41.8128 cycles
+L1D AVERAGE MISS LATENCY:    41.8128 cycles AVERAGE LOAD MISS LATENCY:     40.381 cycles Load Miss    2483073
+L1D Average MSHR Occupancy:   0.835615
 L1D RQ	ACCESS:   18760230	FORWARD:          0	MERGED:    5323538	TO_CACHE:   13435337
 L1D WQ	ACCESS:     850794	FORWARD:       1355	MERGED:        324	TO_CACHE:     850470
 
@@ -92,7 +97,8 @@ L1I PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USE
 L1I USEFUL LOAD PREFETCHES:          0 PREFETCH ISSUED TO LOWER LEVEL:          0  ACCURACY: -nan
 L1I TIMELY PREFETCHES:          0 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
 L1I PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-L1I AVERAGE MISS LATENCY: 14.0578 cycles
+L1I AVERAGE MISS LATENCY:    14.0578 cycles AVERAGE LOAD MISS LATENCY:    14.0578 cycles Load Miss    4828254
+L1I Average MSHR Occupancy:   0.483826
 L1I RQ	ACCESS:    7891323	FORWARD:          0	MERGED:    2838097	TO_CACHE:    5053226
 
 BTB TOTAL     ACCESS:    7137016  HIT:    7136870  MISS:        146  HIT %:     99.998  MISS %: 0.00204567   MPKI: 0.00292
@@ -119,7 +125,8 @@ L2C PREFETCH  REQUESTED:    2000764  ISSUED:    2000764  USEFUL:     476146  USE
 L2C USEFUL LOAD PREFETCHES:     476146 PREFETCH ISSUED TO LOWER LEVEL:    1415192  ACCURACY: 33.6453
 L2C TIMELY PREFETCHES:     476146 LATE PREFETCHES: 27175 DROPPED PREFETCHES: 0
 L2C PREFETCHES SAME FILL-ORIGIN LEVEL: 1415192 DIFFERENT FILL-ORIGIN LEVEL: 0
-L2C AVERAGE MISS LATENCY: 107.149 cycles
+L2C AVERAGE MISS LATENCY:    107.149 cycles AVERAGE LOAD MISS LATENCY:    80.1991 cycles Load Miss     785210
+L2C Average MSHR Occupancy:    1.78019
 L2C RQ	ACCESS:    7491636	FORWARD:          0	MERGED:          0	TO_CACHE:    7491630
 L2C WQ	ACCESS:     482688	FORWARD:          6	MERGED:          0	TO_CACHE:     482688
 L2C PQ	ACCESS:    2000764	FORWARD:          0	MERGED:          0	TO_CACHE:    2000764
@@ -173,7 +180,8 @@ LLC PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:       1741  USE
 LLC USEFUL LOAD PREFETCHES:       1741 PREFETCH ISSUED TO LOWER LEVEL:     631968  ACCURACY: 0.275489
 LLC TIMELY PREFETCHES:       1741 LATE PREFETCHES: 0 DROPPED PREFETCHES: 0
 LLC PREFETCHES SAME FILL-ORIGIN LEVEL: 0 DIFFERENT FILL-ORIGIN LEVEL: 0
-LLC AVERAGE MISS LATENCY: 151.472 cycles
+LLC AVERAGE MISS LATENCY:    151.472 cycles AVERAGE LOAD MISS LATENCY:    163.941 cycles Load Miss     162926
+LLC Average MSHR Occupancy:    1.03749
 LLC RQ	ACCESS:     802117	FORWARD:          0	MERGED:          0	TO_CACHE:     802116
 LLC WQ	ACCESS:     263942	FORWARD:          2	MERGED:          0	TO_CACHE:     263942
 LLC PQ	ACCESS:    1415192	FORWARD:          0	MERGED:          0	TO_CACHE:    1415191
@@ -220,7 +228,7 @@ FT tag write accesses: 1986732
 PS tag read accesses: 76522988
 PS tag write accesses: 3119722
 ================ Mockingjay (LLC) Pollution Stats ================
-Total pollution count in LLC: 41549
+Total pollution count in LLC: 59761
 ==================================================================
 
 DRAM Statistics
@@ -265,6 +273,8 @@ BRANCH_INDIRECT_CALL: 0 0%
 BRANCH_RETURN: 657 0.001314%
 BRANCH_OTHER: 0 0%
 
-Total pollution count in L2: 190026
+================ SRRIP (L2C) Pollution Stats ================
+Total pollution count in L2c: 681967
+==================================================================
 DRAM PAGES: 1048576
 Allocated PAGES: 14710
