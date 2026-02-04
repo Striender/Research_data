@@ -1,0 +1,181 @@
+#include "cache.h"
+
+#define maxRRPV 3
+uint32_t l2_rrpv[L2C_SET][L2C_WAY];
+
+struct PollutionCandidate
+{
+    uint64_t victim_addr;
+    uint64_t evictor_addr;
+    int set;
+    int victim_rrpv;
+    bool evictor_used;
+};
+vector<PollutionCandidate> l2c_pollution[L2C_SET];
+uint64_t l2c_pollution_count = 0;
+
+// initialize replacement state
+void CACHE::l2c_initialize_replacement()
+{
+    cout << "Initialize SRRIP state for L2C" << endl;
+
+    for (int i = 0; i < L2C_SET; i++)
+    {
+        for (int j = 0; j < L2C_WAY; j++)
+        {
+            l2_rrpv[i][j] = maxRRPV;
+        }
+        l2c_pollution[i].clear();
+    }
+}
+
+// find replacement victim
+uint32_t CACHE::l2c_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
+{
+
+   
+
+    // look for the maxRRPV line
+    while (1)
+    {
+        for (int i = 0; i < L2C_WAY; i++)
+            if (l2_rrpv[set][i] == maxRRPV)
+            {
+
+                if ( type == PREFETCH && !current_set[i].prefetch)
+                {
+                    // add to pollution candidates
+                    PollutionCandidate c;
+                    c.victim_addr = current_set[i].full_addr;
+                    c.evictor_addr = full_addr;
+                    c.set = set;
+                    c.victim_rrpv = l2_rrpv[set][i];
+                    c.evictor_used = false;
+                    l2c_pollution[set].push_back(c);
+                }
+
+
+                //--boundary check--//
+                auto &vec = l2c_pollution[set];
+                for (size_t i = 0; i < vec.size();)
+                {
+                    bool boundary = false;
+
+                    for (int w = 0; w < L2C_WAY; w++)
+                    {
+                        if (l2_rrpv[set][w] > 3)
+                        {
+                            boundary = true;
+                            break;
+                        }
+                    }
+
+                    if (boundary)
+                    {
+                        vec[i] = vec.back();
+                        vec.pop_back();
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+
+                //---------Victim Got Demanded----------//
+
+                if (type == LOAD)
+                {
+                    auto &vec = l2c_pollution[set];
+                    for (int i = 0; i < vec.size();)
+                    {
+                        if (vec[i].victim_addr == full_addr)
+                        {
+                            if (!vec[i].evictor_used)
+                            {
+                                l2c_pollution_count++;
+                                vec[i] = vec.back();
+                                vec.pop_back();
+                            }
+                            else
+                            {
+                                vec[i] = vec.back();
+                                vec.pop_back();
+                            }
+                        }
+                        else
+                        {
+                            i++;
+                        }
+                    }
+                }
+                return i;
+            }
+
+        for (int i = 0; i < L2C_WAY; i++)
+            l2_rrpv[set][i]++;
+    }
+    
+
+    // WE SHOULD NOT REACH HERE
+    assert(0);
+    return 0;
+}
+
+// called on every cache hit and cache fill
+void CACHE::l2c_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit)
+{
+    string TYPE_NAME;
+    if (type == LOAD)
+        TYPE_NAME = "LOAD";
+    else if (type == RFO)
+        TYPE_NAME = "RFO";
+    else if (type == PREFETCH)
+        TYPE_NAME = "PF";
+    else if (type == WRITEBACK)
+        TYPE_NAME = "WB";
+    else if (type == LOAD_TRANSLATION)
+        TYPE_NAME = "L_TN";
+    else if (type == PREFETCH_TRANSLATION)
+        TYPE_NAME = "P_TN";
+    else if (type == TRANSLATION_FROM_L1D)
+        TYPE_NAME = "TN_L1D";
+    else
+        assert(0);
+
+    if (hit)
+        TYPE_NAME += "_HIT";
+    else
+        TYPE_NAME += "_MISS";
+
+    if (type == LOAD && hit)
+    {
+        for (auto &c : l2c_pollution[set])
+        {
+            if (c.set == set)
+            {
+                if (c.evictor_addr == full_addr)
+                    c.evictor_used = true;
+            }
+        }
+    }
+    
+    if ((type == WRITEBACK) && ip)
+        assert(0);
+
+    // uncomment this line to see the L2C accesses
+    // cout << "CPU: " << cpu << "  L2C " << setw(9) << TYPE_NAME << " set: " << setw(5) << set << " way: " << setw(2) << way;
+    // cout << hex << " paddr: " << setw(12) << paddr << " ip: " << setw(8) << ip << " victim_addr: " << victim_addr << dec << endl;
+
+    if (hit)
+        l2_rrpv[set][way] = 0;
+    else
+        l2_rrpv[set][way] = maxRRPV - 1;
+}
+
+// use this function to print out your own stats at the end of simulation
+void CACHE::l2c_replacement_final_stats()
+{
+    cout << "===================== SRRIP L2C STATS =====================" << endl;
+    cout << "Total pollution count in L2C: " << l2c_pollution_count << endl;
+    cout << "===============================================================" << endl;
+}

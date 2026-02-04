@@ -1,0 +1,104 @@
+#include "cache.h"
+#include <unordered_set>
+
+#define maxRRPV 3
+uint32_t l2_rrpv[L2C_SET][L2C_WAY];
+unordered_set<uint64_t> l2c_demand_resident;
+unordered_set<uint64_t> l2c_evicted_by_prefetch;
+uint64_t l2c_pollution_count = 0;
+
+// initialize replacement state
+void CACHE::l2c_initialize_replacement()
+{
+    cout << "Initialize SRRIP state for L2C" << endl;
+
+    for (int i = 0; i < L2C_SET; i++)
+    {
+        for (int j = 0; j < L2C_WAY; j++)
+        {
+            l2_rrpv[i][j] = maxRRPV;
+        }
+    }
+    l2c_demand_resident.clear();
+    l2c_evicted_by_prefetch.clear();
+}
+
+// find replacement victim
+uint32_t CACHE::l2c_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
+{
+
+    // look for the maxRRPV line
+    while (1)
+    {
+        for (int i = 0; i < L2C_WAY; i++)
+        {
+            if (l2_rrpv[set][i] == maxRRPV)
+            {
+                if (!(current_set[i].prefetch && type == PREFETCH))
+                {
+                    l2c_evicted_by_prefetch.insert(current_set[i].full_addr >> LOG2_BLOCK_SIZE);
+                }
+                return i;
+            }
+        }
+
+        for (int i = 0; i < L2C_WAY; i++)
+            l2_rrpv[set][i]++;
+    }
+
+    // WE SHOULD NOT REACH HERE
+    assert(0);
+    return 0;
+}
+
+// called on every cache hit and cache fill
+void CACHE::l2c_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit)
+{
+    bool is_prefetched = (type == PREFETCH);
+    bool is_demand = (type == LOAD);
+
+    if ((type == WRITEBACK) && ip)
+        assert(0);
+
+    // uncomment this line to see the L2C accesses
+    // cout << "CPU: " << cpu << "  L2C " << setw(9) << TYPE_NAME << " set: " << setw(5) << set << " way: " << setw(2) << way;
+    // cout << hex << " paddr: " << setw(12) << paddr << " ip: " << setw(8) << ip << " victim_addr: " << victim_addr << dec << endl;
+    uint64_t line_addr = full_addr >> LOG2_BLOCK_SIZE;
+    // 1) Handle the victim if this access caused an eviction (on a miss)
+
+    if (!hit && is_demand)
+    {
+        auto it2 = l2c_evicted_by_prefetch.find(line_addr);
+        if (it2 != l2c_evicted_by_prefetch.end())
+        {
+            l2c_pollution_count++;
+            l2c_evicted_by_prefetch.erase(it2);
+        }
+        // If the miss results in an installation in LLC (not bypass), mark as resident demand line
+        if (way < L2C_WAY)
+        {
+            l2c_demand_resident.insert(line_addr);
+        }
+    }
+
+     if (hit && is_demand && way < L2C_WAY)
+    {
+        l2c_demand_resident.insert(line_addr);
+    }
+    // 3) If this is a demand hit in LLC, the line is definitely useful.
+    //    Mark it as demand-resident (if not already).
+
+
+    if (hit)
+        l2_rrpv[set][way] = 0;
+    else
+        l2_rrpv[set][way] = maxRRPV - 1;
+}
+
+// use this function to print out your own stats at the end of simulation
+void CACHE::l2c_replacement_final_stats()
+{
+    cout << "================ SRRIP (L2C) Pollution Stats ================" << endl;
+    cout << "Total pollution count in L2c: " << l2c_pollution_count << endl;
+    cout << "==================================================================" << endl;
+}

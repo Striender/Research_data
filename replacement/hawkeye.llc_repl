@@ -1,0 +1,251 @@
+#include "cache.h"
+#include "ooo_cpu.h"
+#include <unordered_set>
+#include <map>
+#include <cassert>
+#include <cmath>
+
+using namespace std;
+
+#define MAX_LLC_SETS LLC_SET
+#define LLC_WAYS LLC_WAY
+#define NUM_CORE NUM_CPUS
+#define LLC_SETS LLC_SET
+
+#define maxRRPV 7
+uint32_t rrpv[LLC_SETS][LLC_WAYS];
+
+uint64_t perset_mytimer[LLC_SETS];
+uint64_t signatures[LLC_SETS][LLC_WAYS];
+bool prefetched[LLC_SETS][LLC_WAYS];
+
+#define MAX_SHCT 31
+#define SHCT_SIZE_BITS 11
+#define SHCT_SIZE (1 << SHCT_SIZE_BITS)
+
+#include "hawkeye_predictor.h"
+HAWKEYE_PC_PREDICTOR *demand_predictor;
+HAWKEYE_PC_PREDICTOR *prefetch_predictor;
+
+#define OPTGEN_VECTOR_SIZE 128
+#include "optgen.h"
+OPTgen perset_optgen[LLC_SETS];
+
+#define bitmask(l) (((l) == 64) ? ~0ULL : ((1ULL << (l)) - 1))
+#define bits(x, i, l) (((x) >> (i)) & bitmask(l))
+#define SAMPLED_SET(set) (bits(set, 0, 6) == bits(set, ((unsigned long long)log2(LLC_SETS) - 6), 6))
+
+#define SAMPLED_CACHE_SIZE 2800
+#define SAMPLER_WAYS 8
+#define SAMPLER_SETS (SAMPLED_CACHE_SIZE / SAMPLER_WAYS)
+
+vector<map<uint64_t, ADDR_INFO>> addr_history;
+
+/* ===============================
+   POLLUTION TRACKING DATA TYPES
+   =============================== */
+
+static unordered_set<uint64_t> llc_demand_resident;
+static unordered_set<uint64_t> llc_evicted_by_prefetch;
+static uint64_t llc_pollution_count = 0;
+
+void InitReplacementState()
+{
+    for (int i = 0; i < LLC_SETS; i++)
+    {
+        for (int j = 0; j < LLC_WAYS; j++)
+        {
+            rrpv[i][j] = maxRRPV;
+            signatures[i][j] = 0;
+            prefetched[i][j] = false;
+        }
+        perset_mytimer[i] = 0;
+        perset_optgen[i].init(LLC_WAYS - 2);
+    }
+
+    addr_history.resize(SAMPLER_SETS);
+    for (int i = 0; i < SAMPLER_SETS; i++)
+        addr_history[i].clear();
+
+    demand_predictor = new HAWKEYE_PC_PREDICTOR();
+    prefetch_predictor = new HAWKEYE_PC_PREDICTOR();
+
+    llc_demand_resident.clear();
+    llc_evicted_by_prefetch.clear();
+    llc_pollution_count = 0;
+
+    cout << "Initialize Hawkeye state with pollution tracking" << endl;
+}
+
+
+uint32_t GetVictimInSet(uint32_t cpu, uint32_t set,
+                        const BLOCK *current_set,
+                        uint64_t PC, uint64_t paddr, uint32_t type)
+{
+    for (uint32_t i = 0; i < LLC_WAYS; i++)
+        if (rrpv[set][i] == maxRRPV)
+            return i;
+
+    uint32_t max_rrpv = 0;
+    int32_t victim = -1;
+    for (uint32_t i = 0; i < LLC_WAYS; i++)
+    {
+        if (rrpv[set][i] >= max_rrpv)
+        {
+            max_rrpv = rrpv[set][i];
+            victim = i;
+        }
+    }
+
+    assert(victim != -1);
+
+    if (SAMPLED_SET(set))
+    {
+        if (prefetched[set][victim])
+            prefetch_predictor->decrement(signatures[set][victim]);
+        else
+            demand_predictor->decrement(signatures[set][victim]);
+    }
+
+    return victim;
+}
+
+
+void UpdateReplacementState(uint32_t cpu, uint32_t set, uint32_t way,
+                            uint64_t paddr, uint64_t PC,
+                            uint64_t victim_addr, uint32_t type, uint8_t hit)
+{
+    bool is_pref =
+        (type == PREFETCH || type == PREFETCH_TRANSLATION);
+
+    bool is_demand =
+        (type == LOAD || type == RFO ||
+         type == LOAD_TRANSLATION || type == TRANSLATION_FROM_L1D);
+
+    uint64_t line_addr = paddr >> LOG2_BLOCK_SIZE;
+
+    if (!hit && victim_addr != 0)
+    {
+        uint64_t victim_line = victim_addr >> LOG2_BLOCK_SIZE;
+        auto it = llc_demand_resident.find(victim_line);
+        if (it != llc_demand_resident.end())
+        {
+            if (is_pref)
+                llc_evicted_by_prefetch.insert(victim_line);
+            llc_demand_resident.erase(it);
+        }
+    }
+
+    if (!hit && is_demand)
+    {
+        auto it2 = llc_evicted_by_prefetch.find(line_addr);
+        if (it2 != llc_evicted_by_prefetch.end())
+        {
+            llc_pollution_count++;
+            llc_evicted_by_prefetch.erase(it2);
+        }
+        llc_demand_resident.insert(line_addr);
+    }
+
+    if (hit && is_demand)
+        llc_demand_resident.insert(line_addr);
+
+    paddr = (paddr >> 6) << 6;
+
+    if (type == PREFETCH)
+    {
+        if (!hit)
+            prefetched[set][way] = true;
+    }
+    else
+        prefetched[set][way] = false;
+
+    if (type == WRITEBACK)
+        return;
+
+    if (SAMPLED_SET(set))
+    {
+        uint64_t curr_quanta = perset_mytimer[set] % OPTGEN_VECTOR_SIZE;
+        uint32_t sampler_set = (paddr >> 6) % SAMPLER_SETS;
+        uint64_t sampler_tag = CRC(paddr >> 12) % 256;
+
+        if (addr_history[sampler_set].count(sampler_tag) && type != PREFETCH)
+        {
+            auto &e = addr_history[sampler_set][sampler_tag];
+            uint64_t last_q = e.last_quanta % OPTGEN_VECTOR_SIZE;
+            if (perset_optgen[set].should_cache(curr_quanta, last_q))
+            {
+                if (e.prefetched)
+                    prefetch_predictor->increment(e.PC);
+                else
+                    demand_predictor->increment(e.PC);
+            }
+            else
+            {
+                if (e.prefetched)
+                    prefetch_predictor->decrement(e.PC);
+                else
+                    demand_predictor->decrement(e.PC);
+            }
+            perset_optgen[set].add_access(curr_quanta);
+            e.prefetched = false;
+        }
+        else if (!addr_history[sampler_set].count(sampler_tag))
+        {
+            if (addr_history[sampler_set].size() == SAMPLER_WAYS)
+                addr_history[sampler_set].erase(addr_history[sampler_set].begin());
+
+            addr_history[sampler_set][sampler_tag].init(curr_quanta);
+            if (type == PREFETCH)
+                perset_optgen[set].add_prefetch(curr_quanta);
+            else
+                perset_optgen[set].add_access(curr_quanta);
+        }
+
+        bool pred = demand_predictor->get_prediction(PC);
+        if (type == PREFETCH)
+            pred = prefetch_predictor->get_prediction(PC);
+
+        addr_history[sampler_set][sampler_tag].update(perset_mytimer[set], PC, pred);
+        perset_mytimer[set] = (perset_mytimer[set] + 1) % 1024;
+    }
+
+    bool prediction = demand_predictor->get_prediction(PC);
+    if (type == PREFETCH)
+        prediction = prefetch_predictor->get_prediction(PC);
+
+    signatures[set][way] = PC;
+
+    if (!prediction)
+        rrpv[set][way] = maxRRPV;
+    else
+        rrpv[set][way] = 0;
+}
+
+
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set,
+                                         uint32_t way, uint64_t full_addr,
+                                         uint64_t ip, uint64_t victim_addr,
+                                         uint32_t type, uint8_t hit)
+{
+    UpdateReplacementState(cpu, set, way, full_addr, ip, victim_addr, type, hit);
+}
+
+void CACHE::llc_initialize_replacement()
+{
+    InitReplacementState();
+}
+
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id,
+                                uint32_t set, const BLOCK *current_set,
+                                uint64_t ip, uint64_t full_addr, uint32_t type)
+{
+    return GetVictimInSet(cpu, set, current_set, ip, full_addr, type);
+}
+
+void CACHE::llc_replacement_final_stats()
+{
+    cout << "================ Hawkeye Pollution Stats ================" << endl;
+    cout << "Total pollution count in LLC: " << llc_pollution_count << endl;
+    cout << "========================================================" << endl;
+}

@@ -1,0 +1,123 @@
+#include "cache.h"
+#include <unordered_set>
+
+// ---------------------------
+// Pollution Tracking Structures
+// ---------------------------
+
+// Tracks demand-fetched lines currently resident in L2
+static std::unordered_set<uint64_t> l2c_demand_resident;
+
+// Tracks demand lines that were evicted BY a prefetch
+static std::unordered_set<uint64_t> l2c_evicted_by_prefetch;
+
+// Counts total pollution events
+static uint64_t l2c_pollution_count = 0;
+
+
+// --------------------------------------------------------------
+// 1) Initialize L2C replacement (LRU + clear pollution tracking)
+// --------------------------------------------------------------
+void CACHE::l2c_initialize_replacement()
+{
+    cout << NAME << " using LRU + Pollution Tracking\n";
+
+    // Reset tracking
+    l2c_demand_resident.clear();
+    l2c_evicted_by_prefetch.clear();
+    l2c_pollution_count = 0;
+}
+
+
+// --------------------------------------------------------------
+// 2) Victim selection (baseline LRU)
+// --------------------------------------------------------------
+uint32_t CACHE::l2c_find_victim(uint32_t cpu, uint64_t instr_id,
+                                uint32_t set, const BLOCK *current_set,
+                                uint64_t ip, uint64_t full_addr,
+                                uint32_t type)
+{
+    return lru_victim(cpu, instr_id, set, current_set, ip, full_addr, type);
+}
+
+
+// --------------------------------------------------------------
+// 3) Update replacement state (LRU + pollution tracking logic)
+// --------------------------------------------------------------
+void CACHE::l2c_update_replacement_state(uint32_t cpu, uint32_t set,
+                                         uint32_t way, uint64_t full_addr,
+                                         uint64_t ip, uint64_t victim_addr,
+                                         uint32_t type, uint8_t hit)
+{
+    // LRU does not update on writeback hit
+    if (hit && (type == WRITEBACK))
+        return;
+
+    // ---- Classify request type ----
+    bool is_prefetch =
+        (type == PREFETCH || type == PREFETCH_TRANSLATION);
+
+    bool is_demand =
+        (type == LOAD || type == RFO ||
+         type == LOAD_TRANSLATION || type == TRANSLATION_FROM_L1D);
+
+    // ----------------------------------------------------------
+    // (A) Mark pollution CANDIDATES: Prefetch evicts demand block
+    // ----------------------------------------------------------
+    if (!hit && victim_addr != 0)
+    {
+        // Was victim a demand line?
+        if (is_prefetch && l2c_demand_resident.count(victim_addr))
+        {
+            // Prefetch kicked out a demand line
+            l2c_evicted_by_prefetch.insert(victim_addr);
+        }
+
+        // Remove evicted line from resident set
+        l2c_demand_resident.erase(victim_addr);
+    }
+
+
+    // ----------------------------------------------------------
+    // (B) Count actual POLLUTION events
+    // ----------------------------------------------------------
+    // Condition for true pollution:
+    //    1. Demand miss
+    //    2. The block was previously evicted by a prefetch
+    if (!hit && is_demand)
+    {
+        if (l2c_evicted_by_prefetch.count(full_addr))
+        {
+            l2c_pollution_count++;
+
+            // Remove so we don't double-count
+            l2c_evicted_by_prefetch.erase(full_addr);
+        }
+    }
+
+
+    // ----------------------------------------------------------
+    // (C) Track new demand-resident lines
+    // ----------------------------------------------------------
+    if (!hit && is_demand)
+    {
+        l2c_demand_resident.insert(full_addr);
+    }
+
+
+    // ----------------------------------------------------------
+    // (D) Update baseline LRU state
+    // ----------------------------------------------------------
+    return lru_update(set, way);
+}
+
+
+// --------------------------------------------------------------
+// 4) Final pollution stats (printed at simulation end)
+// --------------------------------------------------------------
+void CACHE::l2c_replacement_final_stats()
+{
+    cout << "-------------------------------------------\n";
+    cout << "Total pollution count in L2: " << l2c_pollution_count << "\n";
+    cout << "-------------------------------------------\n";
+}
