@@ -51,37 +51,37 @@ sources for you to plagiarize.
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
-
+#include <unordered_map>
 #include "ooo_cpu.h"
 
 // this many tables
 
-#define NTABLES	16
+#define NTABLES 16
 
 // maximum history length
 
-#define MAXHIST	232
+#define MAXHIST 232
 
 // minimum history length (for table 1; table 0 is biases)
 
-#define MINHIST	3
+#define MINHIST 3
 
 // speed for dynamic threshold setting
 
-#define SPEED	18
+#define SPEED 18
 
 // geometric global history lengths
 
-int history_lengths[NTABLES] = { 0, 3, 4, 6, 8, 10, 14, 19, 26, 36, 49, 67, 91, 125, 170, MAXHIST };
+int history_lengths[NTABLES] = {0, 3, 4, 6, 8, 10, 14, 19, 26, 36, 49, 67, 91, 125, 170, MAXHIST};
 
 // 12-bit indices for the tables
 
-#define LOG_TABLE_SIZE	12
-#define TABLE_SIZE	(1<<LOG_TABLE_SIZE)
+#define LOG_TABLE_SIZE 12
+#define TABLE_SIZE (1 << LOG_TABLE_SIZE)
 
 // this many 12-bit words will be kept in the global history
 
-#define NGHIST_WORDS	(MAXHIST/LOG_TABLE_SIZE+1)
+#define NGHIST_WORDS (MAXHIST / LOG_TABLE_SIZE + 1)
 
 // tables of 8-bit weights
 
@@ -95,31 +95,55 @@ unsigned int ghist_words[NUM_CPUS][NGHIST_WORDS];
 
 unsigned int indices[NUM_CPUS][NTABLES];
 
-// initialize theta to something reasonable, 
-int 
-	theta[NUM_CPUS], 
+// initialize theta to something reasonable,
+int
+	theta[NUM_CPUS],
 
-// initialize counter for threshold setting algorithm
-	tc[NUM_CPUS], 	
+	// initialize counter for threshold setting algorithm
+	tc[NUM_CPUS],
 
-// perceptron sum
+	// perceptron sum
 	yout[NUM_CPUS];
 
-void O3_CPU::initialize_branch_predictor () {
+// loop iteration count
+
+struct loopBf_entry
+{
+	int trip_count;
+	uint64_t targetAddress ; 
+	int non_speculatie_counter;
+	int loop_instances; // number of times we've seen this loop execute
+};
+unordered_map<uint64_t, loopBf_entry> loopBuffer;
+
+void O3_CPU::print_loopPredictor_Table()
+{
+	cout << "Loop Predictor Table: " << endl;
+	for (auto it = loopBuffer.begin(); it != loopBuffer.end(); it++)
+	{
+		if(it->second.targetAddress > 0 && it->second.trip_count > 0)
+			cout << "PC: " << it->first  << ", Branch Target: " << it->second.targetAddress << ", Trip Count: " << it->second.trip_count << ", Non-speculative Counter: " << it->second.non_speculatie_counter  << endl;
+	}
+}
+
+void O3_CPU::initialize_branch_predictor()
+{
 	// zero out the weights tables
 
-	memset (tables, 0, sizeof (tables));
+	memset(tables, 0, sizeof(tables));
 
 	// zero out the global history
 
-	memset (ghist_words, 0, sizeof (ghist_words));
+	memset(ghist_words, 0, sizeof(ghist_words));
 
 	// make a reasonable theta
 
-	for (int i=0; i<NUM_CPUS; i++) theta[i] = 10;
+	for (int i = 0; i < NUM_CPUS; i++)
+		theta[i] = 10;
 }
 
-uint8_t O3_CPU::predict_branch(uint64_t pc) {
+uint8_t O3_CPU::predict_branch(uint64_t pc)
+{
 
 	// initialize perceptron sum
 
@@ -127,7 +151,8 @@ uint8_t O3_CPU::predict_branch(uint64_t pc) {
 
 	// for each table...
 
-	for (int i=0; i<NTABLES; i++) {
+	for (int i = 0; i < NTABLES; i++)
+	{
 
 		// n is the history length for this table
 
@@ -148,11 +173,12 @@ uint8_t O3_CPU::predict_branch(uint64_t pc) {
 		// XOR up to the next-to-the-last word
 
 		int j;
-		for (j=0; j<most_words; j++) x ^= ghist_words[cpu][j];
+		for (j = 0; j < most_words; j++)
+			x ^= ghist_words[cpu][j];
 
 		// XOR in the last word
 
-		x ^= ghist_words[cpu][j] & ((1<<last_word)-1);
+		x ^= ghist_words[cpu][j] & ((1 << last_word) - 1);
 
 		// XOR in the PC to spread accesses around (like gshare)
 
@@ -160,7 +186,7 @@ uint8_t O3_CPU::predict_branch(uint64_t pc) {
 
 		// stay within the table size
 
-		x &= TABLE_SIZE-1;
+		x &= TABLE_SIZE - 1;
 
 		// remember this index for update
 
@@ -173,16 +199,57 @@ uint8_t O3_CPU::predict_branch(uint64_t pc) {
 	return yout[cpu] >= 1;
 }
 
-void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
+void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t taken, uint8_t branch_type)
+{
+
+	
+	bool is_backward_conditional =   (branch_type == BRANCH_CONDITIONAL) && (branch_target < pc);
+	bool correct = taken == (yout[cpu] >= 1);
+	// Only process if it is a loop branch
+
+	if (is_backward_conditional)
+	{
+		// NOTE: If you only want to profile loops that mispredict,
+		// wrap this entire block in 'if (misprediction)' 
+
+		auto it = loopBuffer.find(pc);
+		if (it == loopBuffer.end() && !correct){
+			// This is the first time we've seen this loop, so we insert it into the loop buffer
+			loopBuffer[pc] = {0, branch_target, 0, 0};
+		}
+
+		loopBf_entry& entry = loopBuffer[pc];
+
+		if (taken)
+		{
+			// Loop is continuing
+			//cout << "Taken " << ", Non-speculative Counter: " << entry.non_speculatie_counter << endl;
+			entry.non_speculatie_counter++;
+		}
+		else
+		{ 
+
+			//entry.non_speculatie_counter++;
+			//cout << "----------------------->Not Taken " << ", Non-speculative Counter: " << entry.non_speculatie_counter << endl;
+			// 2. Store it as the trip count
+			entry.trip_count = entry.non_speculatie_counter;
+
+			// 3. Increment loop instances
+			//entry.loop_instances++;
+
+			// 4. Reset for the next time the loop runs
+			entry.non_speculatie_counter = 0;
+		}
+	}
 
 	// was this prediction correct?
 
-	bool correct = taken == (yout[cpu] >= 1);
-
+	//bool correct = taken == (yout[cpu] >= 1);
 	// insert this branch outcome into the global history
 
 	bool b = taken;
-	for (int i=0; i<NGHIST_WORDS; i++) {
+	for (int i = 0; i < NGHIST_WORDS; i++)
+	{
 
 		// shift b into the lsb of the current word
 
@@ -192,7 +259,7 @@ void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
 		// get b as the previous msb of the current word
 
 		b = !!(ghist_words[cpu][i] & TABLE_SIZE);
-		ghist_words[cpu][i] &= TABLE_SIZE-1;
+		ghist_words[cpu][i] &= TABLE_SIZE - 1;
 	}
 
 	// get the magnitude of yout
@@ -201,39 +268,51 @@ void O3_CPU::last_branch_result(uint64_t pc, uint8_t taken) {
 
 	// perceptron learning rule: train if misprediction or weak correct prediction
 
-	if (!correct || a < theta[cpu]) {
+	if (!correct || a < theta[cpu])
+	{
 		// update weights
-		for (int i=0; i<NTABLES; i++) {
+		for (int i = 0; i < NTABLES; i++)
+		{
 			// which weight did we use to compute yout?
 
 			int *c = &tables[cpu][i][indices[cpu][i]];
 
 			// increment if taken, decrement if not, saturating at 127/-128
 
-			if (taken) {
-				if (*c < 127) (*c)++;
-			} else {
-				if (*c > -128) (*c)--;
+			if (taken)
+			{
+				if (*c < 127)
+					(*c)++;
+			}
+			else
+			{
+				if (*c > -128)
+					(*c)--;
 			}
 		}
 
 		// dynamic threshold setting from Seznec's O-GEHL paper
 
-		if (!correct) {
+		if (!correct)
+		{
 
 			// increase theta after enough mispredictions
 
 			tc[cpu]++;
-			if (tc[cpu] >= SPEED) {
+			if (tc[cpu] >= SPEED)
+			{
 				theta[cpu]++;
 				tc[cpu] = 0;
 			}
-		} else if (a < theta[cpu]) {
+		}
+		else if (a < theta[cpu])
+		{
 
 			// decrease theta after enough weak but correct predictions
 
 			tc[cpu]--;
-			if (tc[cpu] <= -SPEED) {
+			if (tc[cpu] <= -SPEED)
+			{
 				theta[cpu]--;
 				tc[cpu] = 0;
 			}
