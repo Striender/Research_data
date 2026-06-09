@@ -5,6 +5,11 @@
 #define MAX_COUNTER 3
 int bimodal_table[NUM_CPUS][BIMODAL_TABLE_SIZE];
 
+void O3_CPU::print_loopPredictor_Table()
+{
+	
+}
+
 void O3_CPU::initialize_branch_predictor()
 {
     cout << "CPU " << cpu << " Bimodal branch predictor" << endl;
@@ -21,9 +26,9 @@ uint8_t O3_CPU::predict_branch(uint64_t ip)
     return prediction;
 }
 
-void O3_CPU::last_branch_result(uint64_t ip, uint8_t taken)
+void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t taken, uint8_t branch_type)
 {
-    uint32_t hash = ip % BIMODAL_PRIME;
+    uint32_t hash = pc % BIMODAL_PRIME;
 
     if (taken && (bimodal_table[cpu][hash] < MAX_COUNTER))
         bimodal_table[cpu][hash]++;

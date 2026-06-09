@@ -7,7 +7,7 @@ repl_policies=("lru" "srrip" "drrip" "hawkeye" "ship" "ship++" "mockingjay" "lru
 if [ "$#" -eq 4 ]; then
     ./build_champsim.sh hashed_perceptron no $1 $2 no no no no lru lru lru $3 $4 lru lru lru 1 no
 
-elif [ "$#" -eq 2 ] || [ "$#" -eq 3 ] ; then
+elif [ "$#" -eq 2 ] ; then
     N=${3:-1}
     for (( j=N; j<=14; j++ )); do
         if (( j < 8 )); then
@@ -16,6 +16,15 @@ elif [ "$#" -eq 2 ] || [ "$#" -eq 3 ] ; then
             ./build_champsim.sh hashed_perceptron no $1 $2 no no no no lru lru lru srrip "${repl_policies[$((j-1))]}" lru lru lru 1 no
         fi
     done
+
+elif [ "$#" -eq 3 ] ; then
+    j=$3
+    if (( j < 8 )); then
+        ./build_champsim.sh hashed_perceptron no $1 $2 no no no no lru lru lru lru "${repl_policies[$((j-1))]}" lru lru lru 1 no
+    else
+        ./build_champsim.sh hashed_perceptron no $1 $2 no no no no lru lru lru srrip "${repl_policies[$((j-1))]}" lru lru lru 1 no
+    fi
+    
 
 else
     echo "Invalid number of input"

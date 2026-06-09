@@ -57,6 +57,7 @@ def parse_champsim_file(filepath):
     metrics = {
         "Trace File": os.path.basename(filepath) if filepath else None,
         "IPC": None,
+
         "L1D Total Access": None, "L1D Total Hit": None, "L1D Total Miss": None, "L1D Total MPKI": None,
         "L1D Load Miss": None, "L1D Load MPKI": None,
         "L1D Prefetch Access": None, "L1D Prefetch Issued": None, "L1D Prefetch Useful": None, "L1D Useful Load Prefetches": None,
@@ -240,8 +241,8 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results_gap/"
-    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data"
+    RESULTS_DIR = "../results/results_gap/"
+    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/gap_workload"
     EXCEL_OUTPUT_FILE = "gap_data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")

@@ -167,6 +167,7 @@ void O3_CPU::read_from_trace()
 			
 				num_branch++;	
 				// handle branch prediction & branch predictor update
+                
 
 				uint8_t branch_prediction = predict_branch(IFETCH_BUFFER.entry[ifetch_buffer_index].ip);
 	    			if(IFETCH_BUFFER.entry[ifetch_buffer_index].branch_taken != branch_prediction)
@@ -190,8 +191,9 @@ void O3_CPU::read_from_trace()
 					}
 				}
 
-			last_branch_result(IFETCH_BUFFER.entry[ifetch_buffer_index].ip, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_taken);
-			}
+            last_branch_result(IFETCH_BUFFER.entry[ifetch_buffer_index].ip, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_target, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_taken, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_type);
+	
+        }
 
 
 				
@@ -485,7 +487,7 @@ void O3_CPU::read_from_trace()
 				}
 			}
 
-			last_branch_result(IFETCH_BUFFER.entry[ifetch_buffer_index].ip, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_taken);
+            last_branch_result(IFETCH_BUFFER.entry[ifetch_buffer_index].ip, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_target, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_taken, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_type);
 			}
 
 

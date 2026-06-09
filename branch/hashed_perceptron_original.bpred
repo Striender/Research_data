@@ -241,7 +241,7 @@ void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t tak
 	if (is_backward_conditional && it != loopBuffer.end())
 	{
 		// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << ", Correct: " << correct << endl;
-		//cout << "PC " << hex << pc << " TA " << branch_target << dec << " " << "trip count: " << it->second.trip_count << " NSC " << it->second.non_speculatie_counter << ", Confidence: " << it->second.confidence << ", Loop Exits " << it->second.loop_exit << ", Loop instances: " << it->second.instance << endl;
+		cout << "PC " << hex << pc << " TA " << branch_target << dec << " " << "trip count: " << it->second.trip_count << " NSC " << it->second.non_speculatie_counter << ", Confidence: " << it->second.confidence << ", Loop Exits " << it->second.loop_exit << ", Loop instances: " << it->second.instance << endl;
 
 		// NOTE: If you only want to profile loops that mispredict,
 		// wrap this entire block in 'if (misprediction)'
@@ -303,12 +303,12 @@ void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t tak
 			// 4. This condition indicates a potential break statement in the loop, so we update our loop buffer entry with the break information
 			if (loop_start != 0 && pc >= loop_start && pc < loop_pc && branch_target > loop_pc)
 			{
-				//cout << " ---> BREAK DETECTED! Updating Trip Count to: "
-				//	 << " loop PC: " << hex << loop_pc
-				//	 << " loop start: " << loop_start
-				//	 << " if PC: " << pc
-				//	 << " target PC: " << branch_target
-				//	 << " | Count: " << dec << entry.non_speculatie_counter << endl;
+				cout << " ---> BREAK DETECTED! Updating Trip Count to: "
+					 << " loop PC: " << hex << loop_pc
+					 << " loop start: " << loop_start
+					 << " if PC: " << pc
+					 << " target PC: " << branch_target
+					 << " | Count: " << dec << entry.non_speculatie_counter << endl;
 
 				entry.non_speculatie_counter++;
 				entry.confidence = (entry.non_speculatie_counter == entry.trip_count);
@@ -337,12 +337,12 @@ void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t tak
 			}
 			else if (loop_start != 0 && pc >= loop_start && pc < loop_pc && branch_target <= loop_pc)
 			{
-				//cout << " ---> IF condition DETECTED within loop! Updating Trip Count to: "
-				//		 << " loop PC: " << hex << loop_pc
-				//		 << " loop start: " << loop_start
-				//		 << " if PC: " << pc
-				//		 << " target PC: " << branch_target
-				//		 << " | Count: " << dec << entry.non_speculatie_counter << endl;
+				cout << " ---> IF condition DETECTED within loop! Updating Trip Count to: "
+						 << " loop PC: " << hex << loop_pc
+						 << " loop start: " << loop_start
+						 << " if PC: " << pc
+						 << " target PC: " << branch_target
+						 << " | Count: " << dec << entry.non_speculatie_counter << endl;
 				entry.non_speculatie_counter++;
 				entry.ifelse_PC = pc;			  // Store the PC of the if-else branch
 				entry.taken_path = branch_target; // Store the taken path (if or else) for this forward conditional branch

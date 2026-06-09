@@ -3,64 +3,59 @@ set -u
 set -o pipefail
 
 ###############################################################################
-# USAGE
-# ./run_spec_master.sh <TOTAL_CORES> [RP_SELECTOR]
-###############################################################################
-
-###############################################################################
 # INPUTS
 ###############################################################################
-TOTAL_CORES=${1:? "TOTAL_CORES missing"}
+TOTAL_CORES=${1:? "TOTAL_CORES required"}
 RP_SELECTOR=${2:-}
 
 ###############################################################################
 # PATHS & CONSTANTS
 ###############################################################################
-TRACE_DIR=./tracer/traces
-RESULT_ROOT=./rnd2/results_spec
+TRACE_DIR=/home1/sweta/traces/DPC4-Traces/AI_ML
+RESULT_ROOT=./results/results_ai_ml
 BIN_DIR=./bin
 
 WARMUP=50000000
 SIM=200000000
-MAX_CORES_PER_COMBO=64
+MAX_CORES_PER_COMBO=32
 
 ###############################################################################
 # PREFETCHER COMBINATIONS
 ###############################################################################
 PREFETCHER_COMBINATIONS=(
- #   "ipcp_isca2020:ppf"
- # "ipcp_isca2020:bingo_dpc3"
- # "ipcp_isca2020:spp"
- # "ipcp_isca2020:ip_stride"
-#
- # "vberti:ppf"
- # "vberti:spp"
- # "vberti:bingo_dpc3"
- # "vberti:ip_stride"
-#
- # "mlop_dpc3:ip_stride"
- # "mlop_dpc3:ppf"
- # "mlop_dpc3:spp"
- # "mlop_dpc3:bingo_dpc3"
-#
- # "ip_stride:ppf"
- # "ip_stride:bingo_dpc3"
- # "ip_stride:spp"
+ #d  "ipcp_isca2020:ppf"
+ #d "ipcp_isca2020:bingo_dpc3"
+ #d "ipcp_isca2020:spp"
+ #d "ipcp_isca2020:ip_stride"
+#d
+ #d "vberti:ppf"
+ #d "vberti:spp"
+ #d "vberti:bingo_dpc3"
+ #d "vberti:ip_stride"
+#d
+ #d "mlop_dpc3:ip_stride"
+ #d "mlop_dpc3:ppf"
+ #d "mlop_dpc3:spp"
+ #d "mlop_dpc3:bingo_dpc3"
+#d
+ #d "ip_stride:ppf"
+ #d "ip_stride:bingo_dpc3"
+ #d "ip_stride:spp"
 
-  "ipcp_isca2020:no"
-  "mlop_dpc3:no"
-  "vberti:no"
-  "ip_stride:no"
-
-  "no:spp"
-  "no:bingo_dpc3"
-  "no:ppf"
-  "no:ip_stride"
+  #"ipcp_isca2020:no"
+  #"mlop_dpc3:no"
+  #"vberti:no"
+  #"ip_stride:no"
+  #"no:spp"
+  #"no:bingo_dpc3"
+  #"no:ppf"
+  #"no:ip_stride"
   "no:no"
 )
 
+
 ###############################################################################
-# Replacement policies
+# REPLACEMENT POLICIES
 ###############################################################################
 repl_policies=(
   lru srrip drrip hawkeye ship ship++ mockingjay
@@ -68,7 +63,7 @@ repl_policies=(
 )
 
 ###############################################################################
-# Build RP list
+# BUILD RP LIST
 ###############################################################################
 RP_LIST=()
 
@@ -84,11 +79,9 @@ else
 fi
 
 ###############################################################################
-# Core utilization logic
+# TRACE / CORE CALCULATION
 ###############################################################################
-TRACE_COUNT=$(ls "$TRACE_DIR"/*.champsimtrace.xz 2>/dev/null | wc -l)
-[ "$TRACE_COUNT" -eq 0 ] && { echo "❌ No SPEC traces found"; exit 1; }
-
+TRACE_COUNT=$(ls "$TRACE_DIR"/*.champsimtrace.gz | wc -l)
 CORES_PER_COMBO=$TRACE_COUNT
 [ "$CORES_PER_COMBO" -gt "$MAX_CORES_PER_COMBO" ] && CORES_PER_COMBO=$MAX_CORES_PER_COMBO
 
@@ -96,34 +89,29 @@ MAX_PARALLEL_COMBOS=$(( TOTAL_CORES / CORES_PER_COMBO ))
 [ "$MAX_PARALLEL_COMBOS" -lt 1 ] && MAX_PARALLEL_COMBOS=1
 
 echo "=============================================================="
-echo "SPEC TRACE COUNT       : $TRACE_COUNT"
-echo "CORES PER COMBINATION  : $CORES_PER_COMBO"
-echo "TOTAL CORES            : $TOTAL_CORES"
-echo "PARALLEL COMBINATIONS  : $MAX_PARALLEL_COMBOS"
+echo "TOTAL CORES           : $TOTAL_CORES"
+echo "TRACE COUNT           : $TRACE_COUNT"
+echo "CORES PER COMBO       : $CORES_PER_COMBO"
+echo "PARALLEL COMBINATIONS : $MAX_PARALLEL_COMBOS"
 echo "=============================================================="
 
 ###############################################################################
-# Directory naming (simple & consistent)
+# PREFETCHER NAME → BINARY TOKEN
 ###############################################################################
-get_pref_dir() {
-    local L1=$1
-    local L2=$2
-
-    if [[ "$L1" != "no" && "$L2" != "no" ]]; then
-        echo "pref_l1_l2/${L1}_${L2}"
-    elif [[ "$L1" != "no" ]]; then
-        echo "pref_l1/${L1}"
-    elif [[ "$L2" != "no" ]]; then
-        echo "pref_l2/${L2}"
-    else
-        echo "baseline"
-    fi
+binary_name() {
+    case "$1" in
+        ipcp_isca2020) echo "ipcp_isca2020" ;;
+        mlop_dpc3)     echo "mlop_dpc3" ;;
+        ip_stride)     echo "ip_stride" ;;
+        no)            echo "no" ;;
+        *)             echo "$1" ;;
+    esac
 }
 
 ###############################################################################
-# Run SPEC traces in parallel (INNER LEVEL)
+# RUN TRACES (SKIPS rwkv)
 ###############################################################################
-run_spec_traces() {
+run_traces() {
     local BINARY=$1
     local OUT_DIR=$2
 
@@ -131,8 +119,14 @@ run_spec_traces() {
     local TMP
     TMP=$(mktemp)
 
-    for TRACE in "$TRACE_DIR"/*.champsimtrace.xz; do
-        NAME=$(basename "$TRACE" .champsimtrace.xz)
+    for TRACE in "$TRACE_DIR"/*.champsimtrace.gz; do
+        TRACE_FILE=$(basename "$TRACE")
+
+        # 🚫 Skip rwkv traces
+        [[ "$TRACE_FILE" == rwkv* ]] && continue
+
+        NAME="${TRACE_FILE%.champsimtrace.gz}"
+
         echo "\"$BINARY\" \
           -warmup_instructions $WARMUP \
           -simulation_instructions $SIM \
@@ -140,14 +134,15 @@ run_spec_traces() {
           > \"$OUT_DIR/$NAME.out\"" >> "$TMP"
     done
 
-    echo "🚀 Launching $(wc -l < "$TMP") SPEC traces using $CORES_PER_COMBO cores"
-    xargs -P "$CORES_PER_COMBO" -I CMD bash -c CMD < "$TMP"
+    JOBS=$(wc -l < "$TMP")
+    echo "🚀 Launching $JOBS traces using $CORES_PER_COMBO cores"
 
+    xargs -P "$CORES_PER_COMBO" -I CMD bash -c CMD < "$TMP"
     rm -f "$TMP"
 }
 
 ###############################################################################
-# Run ONE prefetcher combination
+# RUN ONE COMBINATION
 ###############################################################################
 run_one_combo() {
     local L1=$1
@@ -155,34 +150,40 @@ run_one_combo() {
     shift 2
     local RP_LIST_LOCAL=("$@")
 
-    local REL_PATH
-    REL_PATH=$(get_pref_dir "$L1" "$L2")
-    local BASE_OUT="$RESULT_ROOT/$REL_PATH"
+    if [[ "$L1" != "no" && "$L2" != "no" ]]; then
+        PREF_DIR="pref_l1_l2/${L1}_${L2}"
+    elif [[ "$L1" != "no" ]]; then
+        PREF_DIR="pref_l1/${L1}"
+    elif [[ "$L2" != "no" ]]; then
+        PREF_DIR="pref_l2/${L2}"
+    else
+        PREF_DIR="baseline"
+    fi
 
-    echo "--------------------------------------------------------------"
-    echo "STARTING SPEC COMBO: $REL_PATH"
-    echo "--------------------------------------------------------------"
+    L1_BIN=$(binary_name "$L1")
+    L2_BIN=$(binary_name "$L2")
 
     for j in "${RP_LIST_LOCAL[@]}"; do
         [ "$j" -le 7 ] && base="lru" || base="srrip"
         pol=${repl_policies[$((j-1))]}
 
-        binary="$BIN_DIR/hashed_perceptron-no-${L1}-${L2}-no-no-no-no-lru-lru-lru-${base}-${pol}-lru-lru-lru-1core-no"
+        binary="$BIN_DIR/hashed_perceptron-no-${L1_BIN}-${L2_BIN}-no-no-no-no-lru-lru-lru-${base}-${pol}-lru-lru-lru-1core-no"
 
         if [ ! -x "$binary" ]; then
-            echo "❌ Binary missing: $binary"
+            echo "❌ Binary not found: $binary"
             exit 1
         fi
 
-        EXP_DIR="$BASE_OUT/exp${j}_${base}_${pol}"
-        run_spec_traces "$binary" "$EXP_DIR"
-    done
+        exp_dir="$RESULT_ROOT/$PREF_DIR/exp${j}_${base}_${pol}"
 
-    echo "COMPLETED SPEC COMBO: $REL_PATH"
+        echo "[RUNNING] $PREF_DIR | RP=$j | ${base}/${pol}"
+        run_traces "$binary" "$exp_dir"
+        echo "[DONE]    $PREF_DIR | RP=$j"
+    done
 }
 
 ###############################################################################
-# OUTER PARALLELISM (ROBUST SEMAPHORE)
+# OUTER PARALLELISM
 ###############################################################################
 running_jobs=0
 
@@ -190,8 +191,8 @@ for combo in "${PREFETCHER_COMBINATIONS[@]}"; do
     IFS=":" read -r L1 L2 <<< "$combo"
 
     run_one_combo "$L1" "$L2" "${RP_LIST[@]}" &
-
     ((running_jobs++))
+
     if (( running_jobs >= MAX_PARALLEL_COMBOS )); then
         wait -n
         ((running_jobs--))
@@ -201,5 +202,5 @@ done
 wait
 
 echo "=============================================================="
-echo "✅ ALL SPEC EXPERIMENTS COMPLETED"
+echo "✅ ALL AI/ML TRACES COMPLETED SUCCESSFULLY"
 echo "=============================================================="

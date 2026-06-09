@@ -149,6 +149,11 @@ if [ ! -f ./replacement/${STLB_REPLACEMENT}.stlb_repl ]; then
     exit 1
 fi
 
+if [ "$L1D_PREFETCHER" == "vberti" ]; then
+    sed -i.bak -E "s/^#define[[:space:]]+berti_on[[:space:]]+[0-9]+/#define berti_on 1/" "inc/champsim.h"
+else
+    sed -i.bak -E "s/^#define[[:space:]]+berti_on[[:space:]]+[0-9]+/#define berti_on 0/" "inc/champsim.h"
+fi
 
 
 # Check num_core

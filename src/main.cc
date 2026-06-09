@@ -429,6 +429,7 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
     }
 
     cache->total_miss_latency = 0;
+    cache->average_mshr_occupancy=0;
 
     cache->RQ.ACCESS = 0;
     cache->RQ.MERGED = 0;
@@ -488,6 +489,9 @@ void finish_warmup()
              elapsed_hour = elapsed_minute / 60;
     elapsed_minute -= elapsed_hour*60;
     elapsed_second -= (elapsed_hour*3600 + elapsed_minute*60);
+
+    reset_l2c_pollution_stats();
+    reset_llc_pollution_stats();
 
     // reset core latency
     SCHEDULING_LATENCY = 6;
@@ -1854,6 +1858,7 @@ int main(int argc, char** argv)
 #endif
     ooo_cpu[0].L1D.l1d_replacement_final_stats();
     ooo_cpu[0].L2C.l2c_replacement_final_stats();
+    ooo_cpu[0].print_loopPredictor_Table();
     cout<<"DRAM PAGES: "<<DRAM_PAGES<<endl;
     cout<<"Allocated PAGES: "<<allocated_pages<<endl;
 

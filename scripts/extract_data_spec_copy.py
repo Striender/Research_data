@@ -24,58 +24,77 @@ class TColors:
     ENDC = '\033[0m'
 
 def natural_sort_key(s):
-    """
-    Create a sort key that handles numbers inside strings for natural sorting.
-    e.g., 'exp1', 'exp2', 'exp10'
-    """
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
 def load_json_data(file_path):
-    """Loads a JSON file."""
     if not os.path.exists(file_path):
         return {}
     try:
         with open(file_path, 'r') as f:
             return json.load(f)
-    except (IOError, json.JSONDecodeError):
-        # Return empty dict if file is corrupted or empty
+    except:
         return {}
 
 def save_json_data(file_path, data):
-    """Saves data to a JSON file."""
     try:
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=4)
-    except IOError as e:
-        print(f"Warning: Could not save the cache/log file at {file_path}: {e}")
+    except:
+        pass
+
 
 def parse_champsim_file(filepath):
-    """
-    Parses a single ChampSim output file to extract a specific list of metrics
-    for L1D, L2C, and LLC.
-    """
     metrics = {
         "Trace File": os.path.basename(filepath) if filepath else None,
         "IPC": None,
+
+        # L1D
         "L1D Total Access": None, "L1D Total Hit": None, "L1D Total Miss": None, "L1D Total MPKI": None,
         "L1D Load Miss": None, "L1D Load MPKI": None,
-        "L1D Prefetch Access": None, "L1D Prefetch Issued": None, "L1D Prefetch Useful": None, "L1D Useful Load Prefetches": None,
-        "L1D Prefetch Accuracy": None, "L1D Average Miss Latency": None, "L1D Late Prefetches": None,
-        "L1D Prefetch Coverage": None, 
+        "L1D Prefetch Access": None,
+        "L1D Prefetch Requested": None,
+        "L1D Prefetch Issued": None,
+        "L1D Prefetch Useful": None,
+        "L1D Prefetch Useless": None,
+        "L1D Useful Load Prefetches": None,
+        "L1D Prefetch Issued To Lower Level": None,
+        "L1D Prefetch Accuracy": None,
+        "L1D Average Miss Latency": None,
+        "L1D Late Prefetches": None,
+        "L1D Prefetch Coverage": None,
 
+        # L2C
         "L2C Total Access": None, "L2C Total Hit": None, "L2C Total Miss": None, "L2C Total MPKI": None,
         "L2C Load Miss": None, "L2C Load MPKI": None,
-        "L2C Prefetch Access": None, "L2C Prefetch Issued": None, "L2C Prefetch Useful": None, "L2C Useful Load Prefetches": None,
-        "L2C Prefetch Accuracy": None, "L2C Average Miss Latency": None, "L2C Late Prefetches": None,
-        "L2C Prefetch Coverage": None,"L2C Pollution":None,
+        "L2C Prefetch Access": None,
+        "L2C Prefetch Requested": None,
+        "L2C Prefetch Issued": None,
+        "L2C Prefetch Useful": None,
+        "L2C Prefetch Useless": None,
+        "L2C Useful Load Prefetches": None,
+        "L2C Prefetch Issued To Lower Level": None,
+        "L2C Prefetch Accuracy": None,
+        "L2C Average Miss Latency": None,
+        "L2C Late Prefetches": None,
+        "L2C Prefetch Coverage": None,
+        "L2C Pollution": None,
 
+        # LLC
         "LLC Total Access": None, "LLC Total Hit": None, "LLC Total Miss": None, "LLC Total MPKI": None,
         "LLC Load Miss": None, "LLC Load MPKI": None,
-        "LLC Prefetch Access": None, "LLC Prefetch Issued": None, "LLC Prefetch Useful": None, "LLC Useful Load Prefetches": None,
-        "LLC Prefetch Accuracy": None, "LLC Average Miss Latency": None, "LLC Late Prefetches": None,
-        "LLC Prefetch Coverage": None,"LLC Pollution":None,
+        "LLC Prefetch Access": None,
+        "LLC Prefetch Requested": None,
+        "LLC Prefetch Issued": None,
+        "LLC Prefetch Useful": None,
+        "LLC Prefetch Useless": None,
+        "LLC Useful Load Prefetches": None,
+        "LLC Prefetch Accuracy": None,
+        "LLC Average Miss Latency": None,
+        "LLC Late Prefetches": None,
+        "LLC Prefetch Coverage": None,
+        "LLC Pollution": None,
     }
-    
+
     if not filepath:
         return list(metrics.keys())
 
@@ -83,156 +102,175 @@ def parse_champsim_file(filepath):
         with open(filepath, 'r', errors='ignore') as f:
             content = f.read()
 
-            # --- IPC ---
-            ipc_match = re.search(r"CPU 0 cumulative IPC:\s+([\d.]+)", content)
-            if ipc_match:
-                metrics["IPC"] = float(ipc_match.group(1))
+            # IPC
+            m = re.search(r"CPU 0 cumulative IPC:\s+([\d.]+)", content)
+            if m:
+                metrics["IPC"] = float(m.group(1))
 
-            # --- L1D Stats ---
-            l1d_total_match = re.search(r"L1D TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
-            if l1d_total_match:
-                metrics["L1D Total Access"] = int(l1d_total_match.group(1))
-                metrics["L1D Total Hit"] = int(l1d_total_match.group(2))
-                metrics["L1D Total Miss"] = int(l1d_total_match.group(3))
-                metrics["L1D Total MPKI"] = float(l1d_total_match.group(4))
-            
-            l1d_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
-            if l1d_load_match:
-                metrics["L1D Load Miss"] = int(l1d_load_match.group(1))
-                metrics["L1D Load MPKI"] = float(l1d_load_match.group(2))
+            # L1D total
+            m = re.search(r"L1D TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if m:
+                metrics["L1D Total Access"] = int(m.group(1))
+                metrics["L1D Total Hit"] = int(m.group(2))
+                metrics["L1D Total Miss"] = int(m.group(3))
+                metrics["L1D Total MPKI"] = float(m.group(4))
 
-            l1d_prefetch_access_match = re.search(r"L1D PREFETCH\s+ACCESS:\s+(\d+)", content)
-            if l1d_prefetch_access_match:
-                metrics["L1D Prefetch Access"] = int(l1d_prefetch_access_match.group(1))
-            
-            l1d_prefetch_match = re.search(r"L1D PREFETCH\s+REQUESTED:\s+\d+\s+ISSUED:\s+(\d+)\s+USEFUL:\s+(\d+)", content)
-            if l1d_prefetch_match:
-                metrics["L1D Prefetch Issued"] = int(l1d_prefetch_match.group(1))
-                metrics["L1D Prefetch Useful"] = int(l1d_prefetch_match.group(2))
-            
-            l1d_useful_load_match = re.search(r"L1D USEFUL LOAD PREFETCHES:\s+(\d+)", content)
-            if l1d_useful_load_match:
-                metrics["L1D Useful Load Prefetches"] = int(l1d_useful_load_match.group(1))
+            # L1D load
+            m = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if m:
+                metrics["L1D Load Miss"] = int(m.group(1))
+                metrics["L1D Load MPKI"] = float(m.group(2))
 
-            l1d_accuracy_match = re.search(r"L1D USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
-            if l1d_accuracy_match:
-                accuracy_str = l1d_accuracy_match.group(1)
-                try: metrics["L1D Prefetch Accuracy"] = float(accuracy_str)
-                except ValueError: metrics["L1D Prefetch Accuracy"] = accuracy_str
-            
-            l1d_latency_match = re.search(r"L1D AVERAGE MISS LATENCY:\s+([\d.]+)", content)
-            if l1d_latency_match:
-                metrics["L1D Average Miss Latency"] = float(l1d_latency_match.group(1))
-            
-            l1d_late_prefetch_match = re.search(r"L1D TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
-            if l1d_late_prefetch_match:
-                metrics["L1D Late Prefetches"] = int(l1d_late_prefetch_match.group(1))
+            # L1D prefetch access
+            m = re.search(r"L1D PREFETCH\s+ACCESS:\s+(\d+)", content)
+            if m:
+                metrics["L1D Prefetch Access"] = int(m.group(1))
 
-            # --- L2C Stats (L2) ---
+            # UPDATED L1D REQUESTED / ISSUED / USEFUL / USELESS
+            m = re.search(r"L1D PREFETCH\s+REQUESTED:\s+(\d+)\s+ISSUED:\s+(\d+)\s+USEFUL:\s+(\d+)\s+USELESS:\s+(\d+)", content)
+            if m:
+                metrics["L1D Prefetch Requested"] = int(m.group(1))
+                metrics["L1D Prefetch Issued"] = int(m.group(2))
+                metrics["L1D Prefetch Useful"] = int(m.group(3))
+                metrics["L1D Prefetch Useless"] = int(m.group(4))
 
-            l2c_total_match = re.search(r"L2C TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
-            if l2c_total_match:
-                metrics["L2C Total Access"] = int(l2c_total_match.group(1))
-                metrics["L2C Total Hit"] = int(l2c_total_match.group(2))
-                metrics["L2C Total Miss"] = int(l2c_total_match.group(3))
-                metrics["L2C Total MPKI"] = float(l2c_total_match.group(4))
+            m = re.search(r"L1D USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if m:
+                metrics["L1D Useful Load Prefetches"] = int(m.group(1))
 
-            l2c_load_match = re.search(r"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
-            if l2c_load_match:
-                metrics["L2C Load Miss"] = int(l2c_load_match.group(1))
-                metrics["L2C Load MPKI"] = float(l2c_load_match.group(2))
+            # NEW: L1D PREFETCH ISSUED TO LOWER LEVEL
+            m = re.search(r"L1D USEFUL LOAD PREFETCHES:\s+\d+\s+PREFETCH ISSUED TO LOWER LEVEL:\s+(\d+)", content)
+            if m:
+                metrics["L1D Prefetch Issued To Lower Level"] = int(m.group(1))
 
-            l2c_prefetch_access_match = re.search(r"L2C PREFETCH\s+ACCESS:\s+(\d+)", content)
-            if l2c_prefetch_access_match:
-                metrics["L2C Prefetch Access"] = int(l2c_prefetch_access_match.group(1))
-            
-            l2c_prefetch_match = re.search(r"L2C PREFETCH\s+REQUESTED:\s+\d+\s+ISSUED:\s+(\d+)\s+USEFUL:\s+(\d+)", content)
-            if l2c_prefetch_match:
-                metrics["L2C Prefetch Issued"] = int(l2c_prefetch_match.group(1))
-                metrics["L2C Prefetch Useful"] = int(l2c_prefetch_match.group(2))
-            
-            l2c_useful_load_match = re.search(r"L2C USEFUL LOAD PREFETCHES:\s+(\d+)", content)
-            if l2c_useful_load_match:
-                 metrics["L2C Useful Load Prefetches"] = int(l2c_useful_load_match.group(1))
+            m = re.search(r"L1D USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
+            if m:
+                try:
+                    metrics["L1D Prefetch Accuracy"] = float(m.group(1))
+                except:
+                    metrics["L1D Prefetch Accuracy"] = m.group(1)
 
-            
-            
-            l2c_accuracy_match = re.search(r"L2C USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
-            if l2c_accuracy_match:
-                accuracy_str = l2c_accuracy_match.group(1)
-                try: metrics["L2C Prefetch Accuracy"] = float(accuracy_str)
-                except ValueError: metrics["L2C Prefetch Accuracy"] = accuracy_str
+            m = re.search(r"L1D AVERAGE MISS LATENCY:\s+([\d.]+)", content)
+            if m:
+                metrics["L1D Average Miss Latency"] = float(m.group(1))
 
-            l2c_latency_match = re.search(r"L2C AVERAGE MISS LATENCY:\s+([\d.]+)", content)
-            if l2c_latency_match:
-                metrics["L2C Average Miss Latency"] = float(l2c_latency_match.group(1))
+            m = re.search(r"L1D TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if m:
+                metrics["L1D Late Prefetches"] = int(m.group(1))
 
-            l2c_late_prefetch_match = re.search(r"L2C TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
-            if l2c_late_prefetch_match:
-                metrics["L2C Late Prefetches"] = int(l2c_late_prefetch_match.group(1))
 
-            
-            # *** MODIFICATION 1: Updated regex to handle space "L2 :" ***
-             # --- MODIFIED: Regex for L2C Pollution ---
-            l2c_pollution_match = re.search(r"Total pollution count in L2\s*:\s+([\d.]+)", content)
-            if l2c_pollution_match:
-                metrics["L2C Pollution"] = float(l2c_pollution_match.group(1))
+            # ----------------- L2C -------------------
+            m = re.search(r"L2C TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if m:
+                metrics["L2C Total Access"] = int(m.group(1))
+                metrics["L2C Total Hit"] = int(m.group(2))
+                metrics["L2C Total Miss"] = int(m.group(3))
+                metrics["L2C Total MPKI"] = float(m.group(4))
 
-            # --- LLC Stats (L3) ---
-            llc_total_match = re.search(r"LLC TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
-            if llc_total_match:
-                metrics["LLC Total Access"] = int(llc_total_match.group(1))
-                metrics["LLC Total Hit"] = int(llc_total_match.group(2))
-                metrics["LLC Total Miss"] = int(llc_total_match.group(3))
-                metrics["LLC Total MPKI"] = float(llc_total_match.group(4))
+            m = re.search(r"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if m:
+                metrics["L2C Load Miss"] = int(m.group(1))
+                metrics["L2C Load MPKI"] = float(m.group(2))
 
-            llc_load_match = re.search(r"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
-            if llc_load_match:
-                metrics["LLC Load Miss"] = int(llc_load_match.group(1))
-                metrics["LLC Load MPKI"] = float(llc_load_match.group(2))
-            
-            llc_prefetch_access_match = re.search(r"LLC PREFETCH\s+ACCESS:\s+(\d+)", content)
-            if llc_prefetch_access_match:
-                metrics["LLC Prefetch Access"] = int(llc_prefetch_access_match.group(1))
+            m = re.search(r"L2C PREFETCH\s+ACCESS:\s+(\d+)", content)
+            if m:
+                metrics["L2C Prefetch Access"] = int(m.group(1))
 
-            llc_prefetch_match = re.search(r"LLC PREFETCH\s+REQUESTED:\s+\d+\s+ISSUED:\s+(\d+)\s+USEFUL:\s+(\d+)", content)
-            if llc_prefetch_match:
-                metrics["LLC Prefetch Issued"] = int(llc_prefetch_match.group(1))
-                metrics["LLC Prefetch Useful"] = int(llc_prefetch_match.group(2))
-            
-            llc_useful_load_match = re.search(r"LLC USEFUL LOAD PREFETCHES:\s+(\d+)", content)
-            if llc_useful_load_match:
-                metrics["LLC Useful Load Prefetches"] = int(llc_useful_load_match.group(1))
+            # UPDATED L2C REQUESTED / ISSUED / USEFUL / USELESS
+            m = re.search(r"L2C PREFETCH\s+REQUESTED:\s+(\d+)\s+ISSUED:\s+(\d+)\s+USEFUL:\s+(\d+)\s+USELESS:\s+(\d+)", content)
+            if m:
+                metrics["L2C Prefetch Requested"] = int(m.group(1))
+                metrics["L2C Prefetch Issued"] = int(m.group(2))
+                metrics["L2C Prefetch Useful"] = int(m.group(3))
+                metrics["L2C Prefetch Useless"] = int(m.group(4))
 
-            llc_accuracy_match = re.search(r"LLC USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
-            if llc_accuracy_match:
-                accuracy_str = llc_accuracy_match.group(1)
-                try: metrics["LLC Prefetch Accuracy"] = float(accuracy_str)
-                except ValueError: metrics["LLC Prefetch Accuracy"] = accuracy_str
-            
-            llc_latency_match = re.search(r"LLC AVERAGE MISS LATENCY:\s+([\d.]+)", content)
-            if llc_latency_match:
-                metrics["LLC Average Miss Latency"] = float(llc_latency_match.group(1))
+            m = re.search(r"L2C USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if m:
+                metrics["L2C Useful Load Prefetches"] = int(m.group(1))
 
-            llc_late_prefetch_match = re.search(r"LLC TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
-            if llc_late_prefetch_match:
-                metrics["LLC Late Prefetches"] = int(llc_late_prefetch_match.group(1))
-            
+            # NEW: L2C PREFETCH ISSUED TO LOWER LEVEL
+            m = re.search(r"L2C USEFUL LOAD PREFETCHES:\s+\d+\s+PREFETCH ISSUED TO LOWER LEVEL:\s+(\d+)", content)
+            if m:
+                metrics["L2C Prefetch Issued To Lower Level"] = int(m.group(1))
 
-            # *** MODIFICATION 2: Corrected variable names (was l2c_... by mistake) ***
-            llc_pollution_match = re.search(r"Total pollution count in LLC:\s+([\d.]+)", content)
-            if llc_pollution_match:
-                metrics["LLC Pollution"] = float(llc_pollution_match.group(1))
+            m = re.search(r"L2C USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
+            if m:
+                try:
+                    metrics["L2C Prefetch Accuracy"] = float(m.group(1))
+                except:
+                    metrics["L2C Prefetch Accuracy"] = m.group(1)
 
-    except IOError as e:
-        print(f"Error reading file {filepath}: {e}")
+            m = re.search(r"L2C AVERAGE MISS LATENCY:\s+([\d.]+)", content)
+            if m:
+                metrics["L2C Average Miss Latency"] = float(m.group(1))
+
+            m = re.search(r"L2C TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if m:
+                metrics["L2C Late Prefetches"] = int(m.group(1))
+
+            m = re.search(r"Total pollution count in L2\s*:\s+([\d.]+)", content)
+            if m:
+                metrics["L2C Pollution"] = float(m.group(1))
+
+
+            # ----------------- LLC -------------------
+            m = re.search(r"LLC TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if m:
+                metrics["LLC Total Access"] = int(m.group(1))
+                metrics["LLC Total Hit"] = int(m.group(2))
+                metrics["LLC Total Miss"] = int(m.group(3))
+                metrics["LLC Total MPKI"] = float(m.group(4))
+
+            m = re.search(r"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if m:
+                metrics["LLC Load Miss"] = int(m.group(1))
+                metrics["LLC Load MPKI"] = float(m.group(2))
+
+            m = re.search(r"LLC PREFETCH\s+ACCESS:\s+(\d+)", content)
+            if m:
+                metrics["LLC Prefetch Access"] = int(m.group(1))
+
+            # UPDATED LLC REQUESTED / ISSUED / USEFUL / USELESS
+            m = re.search(r"LLC PREFETCH\s+REQUESTED:\s+(\d+)\s+ISSUED:\s+(\d+)\s+USEFUL:\s+(\d+)\s+USELESS:\s+(\d+)", content)
+            if m:
+                metrics["LLC Prefetch Requested"] = int(m.group(1))
+                metrics["LLC Prefetch Issued"] = int(m.group(2))
+                metrics["LLC Prefetch Useful"] = int(m.group(3))
+                metrics["LLC Prefetch Useless"] = int(m.group(4))
+
+            m = re.search(r"LLC USEFUL LOAD PREFETCHES:\s+(\d+)", content)
+            if m:
+                metrics["LLC Useful Load Prefetches"] = int(m.group(1))
+
+            m = re.search(r"LLC USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
+            if m:
+                try:
+                    metrics["LLC Prefetch Accuracy"] = float(m.group(1))
+                except:
+                    metrics["LLC Prefetch Accuracy"] = m.group(1)
+
+            m = re.search(r"LLC AVERAGE MISS LATENCY:\s+([\d.]+)", content)
+            if m:
+                metrics["LLC Average Miss Latency"] = float(m.group(1))
+
+            m = re.search(r"LLC TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
+            if m:
+                metrics["LLC Late Prefetches"] = int(m.group(1))
+
+            m = re.search(r"Total pollution count in LLC:\s+([\d.]+)", content)
+            if m:
+                metrics["LLC Pollution"] = float(m.group(1))
+
+    except IOError:
         return None
-        
+
     return metrics
+
 
 def apply_border_to_range(worksheet, row_range, col_range, border_style):
     """Helper function to apply a border to a range of cells."""
-    for row in worksheet.iter_rows(min_row=row_range[0], max_row=row_range[1], min_col=col_range[0], max_col=col_range[1]):
+    for row in worksheet.iter_rows(min_row=row_range[0], max_row=row_range[1],
+                                   min_col=col_range[0], max_col=col_range[1]):
         for cell in row:
             cell.border = border_style
 
@@ -242,9 +280,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results_spec/"
-    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/spec_workload"
-    EXCEL_OUTPUT_FILE = "data_dump_rnd2.xlsx"
+    RESULTS_DIR = "../results/results/"
+    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data"
+    EXCEL_OUTPUT_FILE = "data_dump_issued.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -264,24 +302,26 @@ def main():
     
     new_files_count = 0
     skipped_files_count = 0
-    announced_dirs = set() # To prevent printing the same directory multiple times
+    announced_dirs = set()  # To prevent printing the same directory multiple times
     
     print(f"Starting scan in directory: '{RESULTS_DIR}'...")
     # Walk through the directory tree to collect all data
     for root, dirs, files in os.walk(RESULTS_DIR):
-        if not files: continue
+        if not files:
+            continue
 
         relative_path = os.path.relpath(root, RESULTS_DIR)
         path_parts = relative_path.split(os.sep)
 
         group_key, experiment = None, None
 
-        if len(path_parts) == 3: # Standard case: results/pref_l1/berti/exp1
+        if len(path_parts) == 3:  # Standard case: results/pref_l1/berti/exp1
             cache_level, prefetcher, experiment = path_parts
             group_key = f"{cache_level}_{prefetcher}"
-        elif len(path_parts) == 2: # Edge case for no_pref: results/no_pref/exp1
+        elif len(path_parts) == 2:  # Edge case for no_pref: results/no_pref/exp1
             cache_level, experiment = path_parts
-            if cache_level == 'no_pref': group_key = cache_level
+            if cache_level == 'no_pref':
+                group_key = cache_level
         
         if group_key and experiment:
             for filename in sorted(files):
@@ -315,17 +355,17 @@ def main():
 
     print(f"\nProcessing data and updating {EXCEL_OUTPUT_FILE}...")
     final_output_path = os.path.join(OUTPUT_DIR, EXCEL_OUTPUT_FILE)
-    temp_output_path = os.path.join("/tmp", f"{os.getpid()}_{EXCEL_OUTPUT_FILE}") # Unique temp file name
+    temp_output_path = os.path.join("/tmp", f"{os.getpid()}_{EXCEL_OUTPUT_FILE}")  # Unique temp file name
     
     try:
         from openpyxl import Workbook
         book = Workbook()
         if 'Sheet' in book.sheetnames:
-             # Ensure there's always at least one sheet before removing the default one
+            # Ensure there's always at least one sheet before removing the default one
             if len(book.sheetnames) > 1:
                 book.remove(book.active)
-            else: # If it's the only sheet, just clear it instead of removing
-                book.active.title = "Placeholder" # Rename temporarily if needed
+            else:  # If it's the only sheet, just clear it instead of removing
+                book.active.title = "Placeholder"  # Rename temporarily if needed
                 for row in book.active.iter_rows():
                     for cell in row:
                         cell.value = None
@@ -343,10 +383,11 @@ def main():
                 print(f"Warning: Could not load or copy sheets from existing workbook. It might be corrupted. A new file will be created. Error: {e}")
 
         # Define styles once
-        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-        main_header_fill = PatternFill(start_color="FFDAB9", end_color="FFDAB9", fill_type="solid") # Peach
-        data_header_fill = PatternFill(start_color="A9A9A9", end_color="A9A9A9", fill_type="solid") # Dark Gray
-        sub_header_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid") # Light Blue
+        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                             top=Side(style='thin'), bottom=Side(style='thin'))
+        main_header_fill = PatternFill(start_color="FFDAB9", end_color="FFDAB9", fill_type="solid")  # Peach
+        data_header_fill = PatternFill(start_color="A9A9A9", end_color="A9A9A9", fill_type="solid")  # Dark Gray
+        sub_header_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")  # Light Blue
         center_alignment = Alignment(horizontal='center', vertical='center')
         left_alignment = Alignment(horizontal='left', vertical='center')
         right_alignment = Alignment(horizontal='right', vertical='center')
@@ -357,7 +398,8 @@ def main():
         # Build the new workbook content first
         for group_key in sorted(data_by_prefetcher.keys()):
             data_list = list(data_by_prefetcher[group_key].values())
-            if not data_list: continue
+            if not data_list:
+                continue
 
             print(f"Processing group: {group_key}")
             
@@ -394,7 +436,7 @@ def main():
                 cell.alignment = center_alignment
             worksheet.row_dimensions[3].height = 30
             
-            worksheet.freeze_panes = 'A4' # Freeze rows 1, 2, and 3
+            worksheet.freeze_panes = 'A4'  # Freeze rows 1, 2, and 3
 
             experiments = sorted(df['Experiment'].unique(), key=natural_sort_key)
             current_row = 3
@@ -402,7 +444,8 @@ def main():
             for experiment in experiments:
                 df_experiment = df[df['Experiment'] == experiment].copy()
                 
-                if current_row > 3: current_row += 1 
+                if current_row > 3:
+                    current_row += 1 
 
                 bold_font = Font(bold=True, size=12)
                 
@@ -416,7 +459,8 @@ def main():
                 except (IndexError, ValueError):
                     exp_header_text = experiment.replace('_', ' ').title()
 
-                worksheet.merge_cells(start_row=current_row + 1, start_column=1, end_row=current_row + 1, end_column=num_cols)
+                worksheet.merge_cells(start_row=current_row + 1, start_column=1,
+                                      end_row=current_row + 1, end_column=num_cols)
                 
                 header_cell = worksheet.cell(row=current_row + 1, column=1, value=exp_header_text)
                 header_cell.font = bold_font
@@ -455,15 +499,21 @@ def main():
                 for r_idx in range(current_row + 2, current_row + 2 + len(df_to_write)):
                     # L1D Coverage Formula
                     l1d_denominator = f"({l1d_useful_col}{r_idx}+{l1d_load_miss_col}{r_idx})"
-                    worksheet[f"{l1d_coverage_col}{r_idx}"] = f'=IF({l1d_denominator}=0, 0, {l1d_useful_col}{r_idx}/{l1d_denominator})'
+                    worksheet[f"{l1d_coverage_col}{r_idx}"] = (
+                        f'=IF({l1d_denominator}=0, 0, {l1d_useful_col}{r_idx}/{l1d_denominator})'
+                    )
 
                     # L2C Coverage Formula
                     l2c_denominator = f"({l2c_useful_col}{r_idx}+{l2c_load_miss_col}{r_idx})"
-                    worksheet[f"{l2c_coverage_col}{r_idx}"] = f'=IF({l2c_denominator}=0, 0, {l2c_useful_col}{r_idx}/{l2c_denominator})'
+                    worksheet[f"{l2c_coverage_col}{r_idx}"] = (
+                        f'=IF({l2c_denominator}=0, 0, {l2c_useful_col}{r_idx}/{l2c_denominator})'
+                    )
 
                     # LLC Coverage Formula
                     llc_denominator = f"({llc_useful_col}{r_idx}+{llc_load_miss_col}{r_idx})"
-                    worksheet[f"{llc_coverage_col}{r_idx}"] = f'=IF({llc_denominator}=0, 0, {llc_useful_col}{r_idx}/{llc_denominator})'
+                    worksheet[f"{llc_coverage_col}{r_idx}"] = (
+                        f'=IF({llc_denominator}=0, 0, {llc_useful_col}{r_idx}/{llc_denominator})'
+                    )
 
                 current_row += 1 + len(df_experiment)
             
@@ -476,8 +526,10 @@ def main():
                 column_letter = get_column_letter(col_idx)
                 max_length = 0
                 for cell in worksheet[column_letter]:
-                    if isinstance(cell, MergedCell): continue
-                    if cell.value: max_length = max(len(str(cell.value)), max_length)
+                    if isinstance(cell, MergedCell):
+                        continue
+                    if cell.value:
+                        max_length = max(len(str(cell.value)), max_length)
                 worksheet.column_dimensions[column_letter].width = max_length + 2
             
             print(f" -> Finished processing sheet: {sheet_name}")
@@ -495,7 +547,6 @@ def main():
                         new_ws[cell.coordinate].number_format = cell.number_format
                         new_ws[cell.coordinate].protection = cell.protection.copy()
                         new_ws[cell.coordinate].alignment = cell.alignment.copy()
-
 
         # Save the entire workbook to the temporary path first
         book.save(temp_output_path)
@@ -524,4 +575,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

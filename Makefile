@@ -1,3 +1,7 @@
+# app = champsim this app is a variable, i can use app in place of champsim 
+# for using a variable we use $(variable_name ) syntax
+
+# Variables
 app = champsim
 
 srcExt = cc
@@ -21,10 +25,10 @@ ifeq ($(debug),1)
 else
 	debug=
 endif
-inc := $(addprefix -I,$(inc))
+inc := $(addprefix -I,$(inc))    
 libs := $(addprefix -l,$(libs))
 libDir := $(addprefix -L,$(libDir))
-CFlags += -c $(debug) $(inc) $(libDir) $(libs)
+CFlags += -c $(debug) $(inc) $(libDir) $(libs) 
 sources := $(shell find $(srcDir) -name '*.$(srcExt)')
 srcDirs := $(shell find . -name '*.$(srcExt)' -exec dirname {} \; | uniq)
 objects := $(patsubst %.$(srcExt),$(objDir)/%.o,$(sources))

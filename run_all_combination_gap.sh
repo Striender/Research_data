@@ -1,165 +1,202 @@
 #!/bin/bash
+set -u
+set -o pipefail
 
-run(){
-# ============================
-# Step 1: Run ChampSim traces
-# ============================
+###############################################################################
+# INPUTS
+###############################################################################
+TOTAL_CORES=${1:? "TOTAL_CORES not provided"}
+RP_SELECTOR=${2:-}
 
-# The 5th argument is now the number of cores to use
-if [ $# -lt 5 ] || [ $# -gt 7 ]; then
-    echo "Usage: $0 <BINARY_NAME> <CACHE_LEVEL> <PREFETCHER_NAME> <EXP_NO_NAME> <NUM_CORES> [no of Replacement policy] [START_TRACE_NAME] "
-    echo "Example: $0 my_binary l1_cache spp_dev my_exp 8  { 1:lru 2:srrip 3:drrip 4:hawkeye 5:ship 6:ship++ 7:mockingjay }" 
+###############################################################################
+# PATHS & CONSTANTS
+###############################################################################
+TRACE_DIR=/home1/sweta/traces/gaptraces
+RESULT_ROOT=./loopCount/results/results_gap
+BIN_DIR=./bin
+
+WARMUP=50000000
+SIM=200000000
+MAX_CORES_PER_COMBO=64
+
+###############################################################################
+# Prefetcher combinations
+###############################################################################
+PREFETCHER_COMBINATIONS=(
+ #d  "ipcp_isca2020:ppf"
+ #d "ipcp_isca2020:bingo_dpc3"
+ #d "ipcp_isca2020:spp"
+ #d "ipcp_isca2020:ip_stride"
+#d
+ #d "vberti:ppf"
+ #d "vberti:spp"
+ #d "vberti:bingo_dpc3"
+ #d "vberti:ip_stride"
+#d
+ #d "mlop_dpc3:ip_stride"
+ #d "mlop_dpc3:ppf"
+ #d "mlop_dpc3:spp"
+ #d "mlop_dpc3:bingo_dpc3"
+#d
+ #d "ip_stride:ppf"
+ #d "ip_stride:bingo_dpc3"
+ #d "ip_stride:spp"
+
+  "ipcp_isca2020:no"
+  "mlop_dpc3:no"
+  "vberti:no"
+  "ip_stride:no"
+  "no:spp"
+  "no:bingo_dpc3"
+  "no:ppf"
+  "no:ip_stride"
+  "no:no"
+)
+
+
+###############################################################################
+# Replacement policies
+###############################################################################
+repl_policies=(
+  lru srrip drrip hawkeye ship ship++ mockingjay
+  lru srrip drrip hawkeye ship ship++ mockingjay
+)
+
+###############################################################################
+# Build RP list
+###############################################################################
+RP_LIST=()
+
+if [ -z "$RP_SELECTOR" ]; then
+    RP_LIST=($(seq 1 14))
+elif [[ "$RP_SELECTOR" =~ ^[0-9]+$ ]]; then
+    RP_LIST=("$RP_SELECTOR")
+elif [[ "$RP_SELECTOR" == rp:* ]]; then
+    IFS=',' read -ra RP_LIST <<< "${RP_SELECTOR#rp:}"
+else
+    echo "❌ Invalid RP selector"
     exit 1
 fi
 
-BINARY=./bin/$1
-RESULTS_DIR=./results_gap/$2/$3/$4
-NUM_CORES=$5
-TRACE_DIR=/home1/sweta/traces/gaptraces/
+###############################################################################
+# Trace / core calculation
+###############################################################################
+TRACE_COUNT=$(ls "$TRACE_DIR"/*.trace.gz 2>/dev/null | wc -l)
+[ "$TRACE_COUNT" -eq 0 ] && { echo "❌ No GAP traces found"; exit 1; }
 
-# Instructions
-WARMUP=50000000
-SIM=50000000
+CORES_PER_COMBO=$TRACE_COUNT
+[ "$CORES_PER_COMBO" -gt "$MAX_CORES_PER_COMBO" ] && CORES_PER_COMBO=$MAX_CORES_PER_COMBO
 
-# The temporary file to store the list of commands to run
-TMP_COMMAND_FILE=$(mktemp champsim_commands.XXXXXX.tmp)
+MAX_PARALLEL_COMBOS=$(( TOTAL_CORES / CORES_PER_COMBO ))
+[ "$MAX_PARALLEL_COMBOS" -lt 1 ] && MAX_PARALLEL_COMBOS=1
 
-# Check binary exists
-if [ ! -x "$BINARY" ]; then
-    echo "Error: Binary $BINARY not found or not executable."
-    return 1
-fi
+echo "=============================================================="
+echo "TOTAL CORES           : $TOTAL_CORES"
+echo "TRACES PER COMBO      : $TRACE_COUNT"
+echo "CORES PER COMBO       : $CORES_PER_COMBO"
+echo "PARALLEL COMBINATIONS : $MAX_PARALLEL_COMBOS"
+echo "=============================================================="
 
-# Check traces exist
-if [ ! -d "$TRACE_DIR" ] || [ -z "$(ls $TRACE_DIR/*.trace.gz 2>/dev/null)" ]; then   # .champsimtrace.xz at a place of .trace.gz when running champsim traces
-    echo "Error: No trace files found in $TRACE_DIR"
-    return 1 
-fi
+###############################################################################
+# Directory naming (unchanged logic, safer form)
+###############################################################################
+get_pref_group_and_dir() {
+    local L1=$1
+    local L2=$2
 
-# Make results directory if not exists
-mkdir -p "$RESULTS_DIR"
-
-# --- PHASE 1: Generate the command "to-do list" ---
-echo "Preparing command list for parallel execution..."
-
-# Ensure the temporary command file is empty before we start
-> "$TMP_COMMAND_FILE"
-
-# Handle optional start trace name
-if [ $# -eq 6 ]; then
-    START_TRACE_NAME=$6
-
-    # Try to match prefix (e.g., user gives "602.gcc" → matches "602.gcc_s-1850B.champsimtrace.xz")
-    MATCHING_TRACE=$(ls "$TRACE_DIR" | grep "^$START_TRACE_NAME" | head -n 1)
-
-    if [ -z "$MATCHING_TRACE" ]; then
-        echo "Error: No trace starting with '$START_TRACE_NAME' found in $TRACE_DIR"
-        return 1
+    if [[ "$L1" != "no" && "$L2" != "no" ]]; then
+        echo "pref_l1_l2/${L1}_${L2}"
+    elif [[ "$L1" != "no" ]]; then
+        echo "pref_l1/${L1}"
+    elif [[ "$L2" != "no" ]]; then
+        echo "pref_l2/${L2}"
+    else
+        echo "baseline"
     fi
-
-    START_TRACE_NAME="${MATCHING_TRACE%.trace.gz}"    # .champsimtrace.xz at a place of .trace.gz when running champsim traces
-    echo "Starting from trace: $START_TRACE_NAME"
-fi
-
-# This loop now WRITES commands to a file instead of executing them
-STARTED=false
-#for TRACE in "$TRACE_DIR"/*.champsimtrace.xz    #for champsim traces
-for TRACE in "$TRACE_DIR"/*.trace.gz             #for gap traces
-do
-    #TRACE_NAME=$(basename "$TRACE" .champsimtrace.xz)  #for champsim traces
-    TRACE_NAME=$(basename "$TRACE" .trace.gz)           #for gap traces
-    OUTPUT_FILE="$RESULTS_DIR/$TRACE_NAME"
-
-    # If start trace was given, skip until we reach it
-    if [ $# -eq 6 ] && [ "$STARTED" = false ]; then
-        if [ "$TRACE_NAME" = "$START_TRACE_NAME" ]; then
-            STARTED=true
-        else
-            continue
-        fi
-    fi
-
-    # Build the full command with proper quoting and append it to our "to-do list"
-    echo "\"$BINARY\" -warmup_instructions $WARMUP -simulation_instructions $SIM -traces \"$TRACE\" > \"$OUTPUT_FILE\""  >> "$TMP_COMMAND_FILE"
-
-done
-
-NUM_TASKS=$(wc -l < "$TMP_COMMAND_FILE")
-echo "Generated $NUM_TASKS simulation commands."
-echo "-----------------------------------"
-
-
-# --- PHASE 2: Execute the commands in parallel using xargs ---
-echo "Running $NUM_TASKS simulations in parallel using $NUM_CORES cores..."
-
-cat "$TMP_COMMAND_FILE" | xargs -I CMD -P "$NUM_CORES" bash -c "CMD"
-
-# --- Cleanup ---
-rm "$TMP_COMMAND_FILE"
-echo "===================================================================================================================="
-echo "All traces completed. Results are in $RESULTS_DIR"
-echo "===================================================================================================================="
-
-echo ""
-echo "======================================"
-echo "$4: Pushing to GitHub"
-echo "======================================"
-
-
- #Pushing Original directory to GitHub
-git add "$RESULTS_DIR"
-git commit -m "Update  $3 -- $4 results"
-git push origin master
-
-
-echo ""
-echo "======================================"
-echo "Pushed to GitHub successfully."
-echo "======================================"
-echo ""
-
-
-
-echo ""
-echo "Completed"
 }
 
+###############################################################################
+# Run traces in parallel (INNER LEVEL)
+###############################################################################
+run_traces() {
+    local BINARY=$1
+    local OUT_DIR=$2
 
-if [ $# -lt 5 ]|| [ $# -gt 6 ]; then
-    echo "Usage: $0 <Prefetcher at L1d> <Perfetcher at L2> <Directory name of Prefetcher's level> <Prefetcher Name Directory> <NUM_CORES> [NO of replacement policy] "
-    echo "Example: $0 berti spp pref_l1_l2 berti_spp 20 [Repl. Policy index]"
-    echo "Replacement policy Index : { 1:lru 2:srrip 3:drrip 4:hawkeye 5:ship 6:ship++ 7:mockingjay &&  with srrip 8:lru 9:srrip 10:drrip 11:hawkeye 12:ship 13:ship++ 14:mockingjay }"
-    exit 1
-fi
+    mkdir -p "$OUT_DIR"
+    local TMP
+    TMP=$(mktemp)
 
-L1D_PREFETCHER=$1
-L2_PREFETCHER=$2
+    for TRACE in "$TRACE_DIR"/*.trace.gz; do
+        NAME=$(basename "$TRACE" .trace.gz)
+        echo "\"$BINARY\" \
+          -warmup_instructions $WARMUP \
+          -simulation_instructions $SIM \
+          -traces \"$TRACE\" \
+          > \"$OUT_DIR/$NAME.out\"" >> "$TMP"
+    done
 
-N=${6:-1} # no of Replacement policy
+    echo "🚀 Launching $(wc -l < "$TMP") traces using $CORES_PER_COMBO cores"
+    xargs -P "$CORES_PER_COMBO" -I CMD bash -c CMD < "$TMP"
 
-repl_policies=("lru" "srrip" "drrip" "hawkeye" "ship" "ship++" "mockingjay" "lru" "srrip" "drrip" "hawkeye" "ship" "ship++" "mockingjay")
+    rm -f "$TMP"
+}
 
+###############################################################################
+# Run one prefetcher combination
+###############################################################################
+run_one_combo() {
+    local L1=$1
+    local L2=$2
+    shift 2
+    local RP_LIST_LOCAL=("$@")
 
+    local REL_PATH
+    REL_PATH=$(get_pref_group_and_dir "$L1" "$L2")
+    local BASE_OUT="$RESULT_ROOT/$REL_PATH"
 
-for (( j=N; j<=14; j++ )); do
-    if (( j < 8 )); then
-        #./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" lru "${repl_policies[$((j-1))]}"
-        
-        binary="hashed_perceptron-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-lru-${repl_policies[$((j-1))]}-lru-lru-lru-1core-no"
-        exp_name="exp${j}_lru_${repl_policies[$((j-1))]}"
+    echo "--------------------------------------------------------------"
+    echo "STARTING COMBINATION: $REL_PATH"
+    echo "--------------------------------------------------------------"
 
-        if ! run "$binary" "$3" "$4" "$exp_name" "$5"; then
-            echo "Run failed for $exp_name — skipping..."
+    for j in "${RP_LIST_LOCAL[@]}"; do
+        [ "$j" -le 7 ] && base="lru" || base="srrip"
+        pol=${repl_policies[$((j-1))]}
+
+        binary="$BIN_DIR/hashed_perceptron-no-${L1}-${L2}-no-no-no-no-lru-lru-lru-${base}-${pol}-lru-lru-lru-1core-no"
+
+        if [ ! -x "$binary" ]; then
+            echo "❌ Binary missing: $binary"
+            exit 1
         fi
 
-    else
-        #./build.sh "${L1D_PREFETCHER}" "${L2_PREFETCHER}" srrip "${repl_policies[$((j-1))]}"
-        
-        binary="hashed_perceptron-no-${L1D_PREFETCHER}-${L2_PREFETCHER}-no-no-no-no-lru-lru-lru-srrip-${repl_policies[$((j-1))]}-lru-lru-lru-1core-no"
-        exp_name="exp${j}_srrip_${repl_policies[$((j-1))]}"
+        exp_dir="$BASE_OUT/exp${j}_${base}_${pol}"
 
-        if ! run "$binary" "$3" "$4" "$exp_name" "$5"; then
-            echo "Run failed for $exp_name — skipping..."
-        fi
+        echo "[RUNNING] $REL_PATH | RP=$j"
+        run_traces "$binary" "$exp_dir"
+        echo "[DONE]    $REL_PATH | RP=$j"
+    done
+}
+
+###############################################################################
+# OUTER PARALLELISM (CORRECT SEMAPHORE)
+###############################################################################
+running_jobs=0
+
+for combo in "${PREFETCHER_COMBINATIONS[@]}"; do
+    IFS=":" read -r L1 L2 <<< "$combo"
+
+    run_one_combo "$L1" "$L2" "${RP_LIST[@]}" &
+
+    ((running_jobs++))
+
+    if (( running_jobs >= MAX_PARALLEL_COMBOS )); then
+        wait -n
+        ((running_jobs--))
     fi
 done
+
+wait
+
+echo "=============================================================="
+echo "✅ ALL GAP TRACES COMPLETED SUCCESSFULLY"
+echo "=============================================================="

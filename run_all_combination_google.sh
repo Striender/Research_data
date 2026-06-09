@@ -3,21 +3,16 @@ set -u
 set -o pipefail
 
 ###############################################################################
-# USAGE
-# ./run_spec_master.sh <TOTAL_CORES> [RP_SELECTOR]
-###############################################################################
-
-###############################################################################
 # INPUTS
 ###############################################################################
-TOTAL_CORES=${1:? "TOTAL_CORES missing"}
+TOTAL_CORES=${1:? "TOTAL_CORES not provided"}
 RP_SELECTOR=${2:-}
 
 ###############################################################################
 # PATHS & CONSTANTS
 ###############################################################################
-TRACE_DIR=./tracer/traces
-RESULT_ROOT=./rnd2/results_spec
+TRACE_DIR=/home1/sweta/traces/DPC4-Traces/Google_Traces_v2/Google_Traces_v2
+RESULT_ROOT=./results/results_google
 BIN_DIR=./bin
 
 WARMUP=50000000
@@ -25,39 +20,39 @@ SIM=200000000
 MAX_CORES_PER_COMBO=64
 
 ###############################################################################
-# PREFETCHER COMBINATIONS
+# Prefetcher combinations
 ###############################################################################
 PREFETCHER_COMBINATIONS=(
- #   "ipcp_isca2020:ppf"
- # "ipcp_isca2020:bingo_dpc3"
- # "ipcp_isca2020:spp"
- # "ipcp_isca2020:ip_stride"
-#
- # "vberti:ppf"
- # "vberti:spp"
- # "vberti:bingo_dpc3"
- # "vberti:ip_stride"
-#
- # "mlop_dpc3:ip_stride"
- # "mlop_dpc3:ppf"
- # "mlop_dpc3:spp"
- # "mlop_dpc3:bingo_dpc3"
-#
- # "ip_stride:ppf"
- # "ip_stride:bingo_dpc3"
- # "ip_stride:spp"
+ #d  "ipcp_isca2020:ppf"
+ #d "ipcp_isca2020:bingo_dpc3"
+ #d "ipcp_isca2020:spp"
+ #d "ipcp_isca2020:ip_stride"
+#d
+ #d "vberti:ppf"
+ #d "vberti:spp"
+ #d "vberti:bingo_dpc3"
+ #d "vberti:ip_stride"
+#d
+ #d "mlop_dpc3:ip_stride"
+ #d "mlop_dpc3:ppf"
+ #d "mlop_dpc3:spp"
+ #d "mlop_dpc3:bingo_dpc3"
+#d
+ #d "ip_stride:ppf"
+ #d "ip_stride:bingo_dpc3"
+ #d "ip_stride:spp"
 
-  "ipcp_isca2020:no"
-  "mlop_dpc3:no"
-  "vberti:no"
-  "ip_stride:no"
-
-  "no:spp"
-  "no:bingo_dpc3"
-  "no:ppf"
-  "no:ip_stride"
+  #"ipcp_isca2020:no"
+  #"mlop_dpc3:no"
+  #"vberti:no"
+  #"ip_stride:no"
+  #"no:spp"
+  #"no:bingo_dpc3"
+  #"no:ppf"
+  #"no:ip_stride"
   "no:no"
 )
+
 
 ###############################################################################
 # Replacement policies
@@ -84,10 +79,10 @@ else
 fi
 
 ###############################################################################
-# Core utilization logic
+# Trace / core calculation
 ###############################################################################
-TRACE_COUNT=$(ls "$TRACE_DIR"/*.champsimtrace.xz 2>/dev/null | wc -l)
-[ "$TRACE_COUNT" -eq 0 ] && { echo "❌ No SPEC traces found"; exit 1; }
+TRACE_COUNT=$(find "$TRACE_DIR" -type f -name "*.champsim.gz" | wc -l)
+[ "$TRACE_COUNT" -eq 0 ] && { echo "❌ No Google traces found"; exit 1; }
 
 CORES_PER_COMBO=$TRACE_COUNT
 [ "$CORES_PER_COMBO" -gt "$MAX_CORES_PER_COMBO" ] && CORES_PER_COMBO=$MAX_CORES_PER_COMBO
@@ -96,16 +91,16 @@ MAX_PARALLEL_COMBOS=$(( TOTAL_CORES / CORES_PER_COMBO ))
 [ "$MAX_PARALLEL_COMBOS" -lt 1 ] && MAX_PARALLEL_COMBOS=1
 
 echo "=============================================================="
-echo "SPEC TRACE COUNT       : $TRACE_COUNT"
-echo "CORES PER COMBINATION  : $CORES_PER_COMBO"
-echo "TOTAL CORES            : $TOTAL_CORES"
-echo "PARALLEL COMBINATIONS  : $MAX_PARALLEL_COMBOS"
+echo "TOTAL CORES           : $TOTAL_CORES"
+echo "GOOGLE TRACE COUNT    : $TRACE_COUNT"
+echo "CORES PER COMBO       : $CORES_PER_COMBO"
+echo "PARALLEL COMBINATIONS : $MAX_PARALLEL_COMBOS"
 echo "=============================================================="
 
 ###############################################################################
-# Directory naming (simple & consistent)
+# Directory naming (same logic)
 ###############################################################################
-get_pref_dir() {
+get_pref_group_and_dir() {
     local L1=$1
     local L2=$2
 
@@ -121,9 +116,9 @@ get_pref_dir() {
 }
 
 ###############################################################################
-# Run SPEC traces in parallel (INNER LEVEL)
+# Run Google traces in parallel (INNER LEVEL)
 ###############################################################################
-run_spec_traces() {
+run_traces() {
     local BINARY=$1
     local OUT_DIR=$2
 
@@ -131,23 +126,33 @@ run_spec_traces() {
     local TMP
     TMP=$(mktemp)
 
-    for TRACE in "$TRACE_DIR"/*.champsimtrace.xz; do
-        NAME=$(basename "$TRACE" .champsimtrace.xz)
+    # Google traces are inside subfolders
+    find "$TRACE_DIR" -type f -name "*.champsim.gz" ! -name "biogpt" | while read -r TRACE; do
+        WORKLOAD=$(basename "$(dirname "$TRACE")")
+        NAME=$(basename "$TRACE" .champsim.gz)
+
         echo "\"$BINARY\" \
           -warmup_instructions $WARMUP \
           -simulation_instructions $SIM \
           -traces \"$TRACE\" \
-          > \"$OUT_DIR/$NAME.out\"" >> "$TMP"
+          > \"$OUT_DIR/${WORKLOAD}_${NAME}.out\"" >> "$TMP"
     done
 
-    echo "🚀 Launching $(wc -l < "$TMP") SPEC traces using $CORES_PER_COMBO cores"
+    JOBS=$(wc -l < "$TMP")
+    if [ "$JOBS" -eq 0 ]; then
+        echo "⚠️  No traces queued for $OUT_DIR"
+        rm -f "$TMP"
+        return
+    fi
+
+    echo "🚀 Launching $JOBS traces using $CORES_PER_COMBO cores"
     xargs -P "$CORES_PER_COMBO" -I CMD bash -c CMD < "$TMP"
 
     rm -f "$TMP"
 }
 
 ###############################################################################
-# Run ONE prefetcher combination
+# Run one prefetcher combination
 ###############################################################################
 run_one_combo() {
     local L1=$1
@@ -155,12 +160,11 @@ run_one_combo() {
     shift 2
     local RP_LIST_LOCAL=("$@")
 
-    local REL_PATH
-    REL_PATH=$(get_pref_dir "$L1" "$L2")
-    local BASE_OUT="$RESULT_ROOT/$REL_PATH"
+    REL_PATH=$(get_pref_group_and_dir "$L1" "$L2")
+    BASE_OUT="$RESULT_ROOT/$REL_PATH"
 
     echo "--------------------------------------------------------------"
-    echo "STARTING SPEC COMBO: $REL_PATH"
+    echo "STARTING COMBINATION: $REL_PATH"
     echo "--------------------------------------------------------------"
 
     for j in "${RP_LIST_LOCAL[@]}"; do
@@ -174,15 +178,16 @@ run_one_combo() {
             exit 1
         fi
 
-        EXP_DIR="$BASE_OUT/exp${j}_${base}_${pol}"
-        run_spec_traces "$binary" "$EXP_DIR"
-    done
+        exp_dir="$BASE_OUT/exp${j}_${base}_${pol}"
 
-    echo "COMPLETED SPEC COMBO: $REL_PATH"
+        echo "[RUNNING] $REL_PATH | RP=$j"
+        run_traces "$binary" "$exp_dir"
+        echo "[DONE]    $REL_PATH | RP=$j"
+    done
 }
 
 ###############################################################################
-# OUTER PARALLELISM (ROBUST SEMAPHORE)
+# OUTER PARALLELISM (Semaphore control)
 ###############################################################################
 running_jobs=0
 
@@ -192,6 +197,7 @@ for combo in "${PREFETCHER_COMBINATIONS[@]}"; do
     run_one_combo "$L1" "$L2" "${RP_LIST[@]}" &
 
     ((running_jobs++))
+
     if (( running_jobs >= MAX_PARALLEL_COMBOS )); then
         wait -n
         ((running_jobs--))
@@ -201,5 +207,5 @@ done
 wait
 
 echo "=============================================================="
-echo "✅ ALL SPEC EXPERIMENTS COMPLETED"
+echo "✅ ALL GOOGLE TRACES COMPLETED SUCCESSFULLY"
 echo "=============================================================="

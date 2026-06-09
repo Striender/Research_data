@@ -57,22 +57,29 @@ def parse_champsim_file(filepath):
     metrics = {
         "Trace File": os.path.basename(filepath) if filepath else None,
         "IPC": None,
+        "Trip count accuracy": None,
+        "Cycles": None,
+        "New Cycles Without L2 pollution": None,
+        "New Cycles Without LLC pollution": None,
+        "Updated IPC Without L2 pollution": None,
+        "Updated IPC Without LLC pollution": None,
+
         "L1D Total Access": None, "L1D Total Hit": None, "L1D Total Miss": None, "L1D Total MPKI": None,
-        "L1D Load Miss": None, "L1D Load MPKI": None,
+        "L1D Load Miss": None, "L1D Load MPKI": None,"L1D Average MSHR Occupancy": None,
         "L1D Prefetch Access": None, "L1D Prefetch Issued": None, "L1D Prefetch Useful": None, "L1D Useful Load Prefetches": None,
         "L1D Prefetch Accuracy": None, "L1D Average Miss Latency": None, "L1D Late Prefetches": None,
         "L1D Prefetch Coverage": None, 
 
         "L2C Total Access": None, "L2C Total Hit": None, "L2C Total Miss": None, "L2C Total MPKI": None,
-        "L2C Load Miss": None, "L2C Load MPKI": None,
+        "L2C Load Miss": None, "L2C Load MPKI": None,"L2C Average MSHR Occupancy": None,
         "L2C Prefetch Access": None, "L2C Prefetch Issued": None, "L2C Prefetch Useful": None, "L2C Useful Load Prefetches": None,
-        "L2C Prefetch Accuracy": None, "L2C Average Miss Latency": None, "L2C Late Prefetches": None,
+        "L2C Prefetch Accuracy": None, "L2C Average Miss Latency": None, "L2C Average Load Miss Latency": None, "L2C Late Prefetches": None,
         "L2C Prefetch Coverage": None,"L2C Pollution":None,
 
         "LLC Total Access": None, "LLC Total Hit": None, "LLC Total Miss": None, "LLC Total MPKI": None,
-        "LLC Load Miss": None, "LLC Load MPKI": None,
+        "LLC Load Miss": None, "LLC Load MPKI": None,"LLC Average MSHR Occupancy": None,
         "LLC Prefetch Access": None, "LLC Prefetch Issued": None, "LLC Prefetch Useful": None, "LLC Useful Load Prefetches": None,
-        "LLC Prefetch Accuracy": None, "LLC Average Miss Latency": None, "LLC Late Prefetches": None,
+        "LLC Prefetch Accuracy": None, "LLC Average Miss Latency": None, "LLC Average Load Miss Latency": None, "LLC Late Prefetches": None,
         "LLC Prefetch Coverage": None,"LLC Pollution":None,
     }
     
@@ -88,6 +95,22 @@ def parse_champsim_file(filepath):
             if ipc_match:
                 metrics["IPC"] = float(ipc_match.group(1))
 
+            # --- Trip Count Accuracy ---
+            trip_count_accuracy_match = re.search(
+                r"OVERALL TRACE TRIP COUNT ACCURACY:\s+([\d.]+)%",
+                content
+            )
+            if trip_count_accuracy_match:
+                metrics["Trip count accuracy"] = float(trip_count_accuracy_match.group(1))
+
+            cycles_match = re.search(
+                r"Finished CPU 0 instructions:\s+\d+\s+cycles:\s+(\d+)\s+cumulative IPC",
+                content
+            )
+            if cycles_match:
+                metrics["Cycles"] = int(cycles_match.group(1))
+
+
             # --- L1D Stats ---
             l1d_total_match = re.search(r"L1D TOTAL\s+ACCESS:\s+(\d+)\s+HIT:\s+(\d+)\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if l1d_total_match:
@@ -95,6 +118,12 @@ def parse_champsim_file(filepath):
                 metrics["L1D Total Hit"] = int(l1d_total_match.group(2))
                 metrics["L1D Total Miss"] = int(l1d_total_match.group(3))
                 metrics["L1D Total MPKI"] = float(l1d_total_match.group(4))
+            
+                        # --- L1D Average MSHR Occupancy ---
+            l1d_mshr_match = re.search(r"L1D Average MSHR Occupancy:\s*([\d.]+)",content)
+            if l1d_mshr_match:
+                metrics["L1D Average MSHR Occupancy"] = float(l1d_mshr_match.group(1))
+
             
             l1d_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if l1d_load_match:
@@ -137,6 +166,11 @@ def parse_champsim_file(filepath):
                 metrics["L2C Total Miss"] = int(l2c_total_match.group(3))
                 metrics["L2C Total MPKI"] = float(l2c_total_match.group(4))
 
+            l2c_mshr_match = re.search(r"L2C Average MSHR Occupancy:\s*([\d.]+)",content)
+            if l2c_mshr_match:
+                metrics["L2C Average MSHR Occupancy"] = float(l2c_mshr_match.group(1))
+
+
             l2c_load_match = re.search(r"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if l2c_load_match:
                 metrics["L2C Load Miss"] = int(l2c_load_match.group(1))
@@ -154,8 +188,6 @@ def parse_champsim_file(filepath):
             l2c_useful_load_match = re.search(r"L2C USEFUL LOAD PREFETCHES:\s+(\d+)", content)
             if l2c_useful_load_match:
                  metrics["L2C Useful Load Prefetches"] = int(l2c_useful_load_match.group(1))
-
-            
             
             l2c_accuracy_match = re.search(r"L2C USEFUL LOAD PREFETCHES:.*?ACCURACY:\s+([\d.inf-]+)", content)
             if l2c_accuracy_match:
@@ -163,9 +195,11 @@ def parse_champsim_file(filepath):
                 try: metrics["L2C Prefetch Accuracy"] = float(accuracy_str)
                 except ValueError: metrics["L2C Prefetch Accuracy"] = accuracy_str
 
-            l2c_latency_match = re.search(r"L2C AVERAGE MISS LATENCY:\s+([\d.]+)", content)
+            l2c_latency_match = re.search(r"L2C AVERAGE MISS LATENCY:\s*([\d.]+)\s*cycles\s*AVERAGE LOAD MISS LATENCY:\s*([\d.]+)\s*cycles",content)
+
             if l2c_latency_match:
                 metrics["L2C Average Miss Latency"] = float(l2c_latency_match.group(1))
+                metrics["L2C Average Load Miss Latency"] = float(l2c_latency_match.group(2))
 
             l2c_late_prefetch_match = re.search(r"L2C TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
             if l2c_late_prefetch_match:
@@ -174,7 +208,7 @@ def parse_champsim_file(filepath):
             
             # *** MODIFICATION 1: Updated regex to handle space "L2 :" ***
              # --- MODIFIED: Regex for L2C Pollution ---
-            l2c_pollution_match = re.search(r"Total pollution count in L2\s*:\s+([\d.]+)", content)
+            l2c_pollution_match = re.search(r"Total pollution count in L2c\s*:\s+([\d.]+)", content)
             if l2c_pollution_match:
                 metrics["L2C Pollution"] = float(l2c_pollution_match.group(1))
 
@@ -185,6 +219,11 @@ def parse_champsim_file(filepath):
                 metrics["LLC Total Hit"] = int(llc_total_match.group(2))
                 metrics["LLC Total Miss"] = int(llc_total_match.group(3))
                 metrics["LLC Total MPKI"] = float(llc_total_match.group(4))
+
+            llc_mshr_match = re.search(r"LLC Average MSHR Occupancy:\s*([\d.]+)",content)
+            if llc_mshr_match:
+                metrics["LLC Average MSHR Occupancy"] = float(llc_mshr_match.group(1))
+
 
             llc_load_match = re.search(r"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if llc_load_match:
@@ -210,9 +249,12 @@ def parse_champsim_file(filepath):
                 try: metrics["LLC Prefetch Accuracy"] = float(accuracy_str)
                 except ValueError: metrics["LLC Prefetch Accuracy"] = accuracy_str
             
-            llc_latency_match = re.search(r"LLC AVERAGE MISS LATENCY:\s+([\d.]+)", content)
+            llc_latency_match = re.search(r"LLC AVERAGE MISS LATENCY:\s*([\d.]+)\s*cycles\s*AVERAGE LOAD MISS LATENCY:\s*([\d.]+)\s*cycles",content)
+
             if llc_latency_match:
                 metrics["LLC Average Miss Latency"] = float(llc_latency_match.group(1))
+                metrics["LLC Average Load Miss Latency"] = float(llc_latency_match.group(2))
+
 
             llc_late_prefetch_match = re.search(r"LLC TIMELY PREFETCHES:\s+\d+\s+LATE PREFETCHES:\s+(\d+)", content)
             if llc_late_prefetch_match:
@@ -242,9 +284,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results_spec/"
-    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/spec_workload"
-    EXCEL_OUTPUT_FILE = "data_dump_rnd2.xlsx"
+    RESULTS_DIR = "../loopCount_updated/results_gap"
+    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/Loop_Prediction"
+    EXCEL_OUTPUT_FILE = "tripCount.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -465,7 +507,48 @@ def main():
                     llc_denominator = f"({llc_useful_col}{r_idx}+{llc_load_miss_col}{r_idx})"
                     worksheet[f"{llc_coverage_col}{r_idx}"] = f'=IF({llc_denominator}=0, 0, {llc_useful_col}{r_idx}/{llc_denominator})'
 
+                
+
+                # --- Add New Cycles & Updated IPC ---
+                cycles_col = get_column_letter(headers.index("Cycles") + 1)
+                l2c_poll_col = get_column_letter(headers.index("L2C Pollution") + 1)
+                l2c_lat_col = get_column_letter(headers.index("L2C Average Load Miss Latency") + 1)
+                l2c_mshr_occupancy = get_column_letter(headers.index("L2C Average MSHR Occupancy") + 1)
+                llc_poll_col = get_column_letter(headers.index("LLC Pollution") + 1)
+                llc_lat_col = get_column_letter(headers.index("LLC Average Load Miss Latency") + 1)
+                llc_mshr_occupancy = get_column_letter(headers.index("LLC Average MSHR Occupancy") + 1)
+
+
+                l2c_new_cycles_col = get_column_letter(headers.index("New Cycles Without L2 pollution") + 1)
+                l2c_updated_ipc_col = get_column_letter(headers.index("Updated IPC Without L2 pollution") + 1)
+                llc_updated_ipc_col = get_column_letter(headers.index("Updated IPC Without LLC pollution") + 1)
+
+                for r_idx in range(current_row + 2, current_row + 2 + len(df_to_write)):
+                    worksheet[f"{l2c_new_cycles_col}{r_idx}"] = (
+                        f"={cycles_col}{r_idx}-("
+                        f"{l2c_poll_col}{r_idx}*("
+                        f"{l2c_lat_col}{r_idx}/"
+                        f"{l2c_mshr_occupancy}{r_idx}"
+                        f"))"
+                        
+                    )
+                    worksheet[f"{l2c_updated_ipc_col}{r_idx}"] = f"=50000000/{l2c_new_cycles_col}{r_idx}"
+
+                llc_new_cycles_col = get_column_letter(headers.index("New Cycles Without LLC pollution") + 1)
+                for r_idx in range(current_row + 2, current_row + 2 + len(df_to_write)):
+                    worksheet[f"{llc_new_cycles_col}{r_idx}"] = (
+                        f"={cycles_col}{r_idx}-("
+                        f"{llc_poll_col}{r_idx}*("
+                        f"{llc_lat_col}{r_idx}/"
+                        f"{llc_mshr_occupancy}{r_idx}"
+                        f"))"
+                    )
+                    worksheet[f"{llc_updated_ipc_col}{r_idx}"] = f"=50000000/{llc_new_cycles_col}{r_idx}"
+
                 current_row += 1 + len(df_experiment)
+
+
+
             
             bold_font_for_trace = Font(bold=True)
             for cell in worksheet['A']:

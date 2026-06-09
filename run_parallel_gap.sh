@@ -14,7 +14,7 @@ fi
 BINARY=./bin/$1
 RESULTS_DIR=./rnd2/results_spec/$2/$3/$4
 NUM_CORES=$5
-TRACE_DIR=./tracer/traces
+TRACE_DIR=/home1/sweta/traces/gaptraces/
 
 # Instructions
 WARMUP=50000000
@@ -30,9 +30,9 @@ if [ ! -x "$BINARY" ]; then
 fi
 
 # Check traces exist
-if [ ! -d "$TRACE_DIR" ] || [ -z "$(ls $TRACE_DIR/*.champsimtrace.xz 2>/dev/null)" ]; then
+if [ ! -d "$TRACE_DIR" ] || [ -z "$(ls $TRACE_DIR/*.trace.gz 2>/dev/null)" ]; then   # .champsimtrace.xz at a place of .trace.gz when running champsim traces
     echo "❌ Error: No trace files found in $TRACE_DIR"
-    exit 1
+    return 1 
 fi
 
 # Make results directory if not exists
@@ -56,15 +56,16 @@ if [ $# -eq 6 ]; then
         exit 1
     fi
 
-    START_TRACE_NAME="${MATCHING_TRACE%.champsimtrace.xz}"
+    START_TRACE_NAME="${MATCHING_TRACE%.trace.gz}"    # .champsimtrace.xz at a place of .trace.gz when running champsim traces
     echo "🔍 Starting from trace: $START_TRACE_NAME"
 fi
 
 # This loop now WRITES commands to a file instead of executing them
 STARTED=false
-for TRACE in "$TRACE_DIR"/*.champsimtrace.xz
+for TRACE in "$TRACE_DIR"/*.trace.gz             #for gap traces
 do
-    TRACE_NAME=$(basename "$TRACE" .champsimtrace.xz)
+    #TRACE_NAME=$(basename "$TRACE" .champsimtrace.xz)  #for champsim traces
+    TRACE_NAME=$(basename "$TRACE" .trace.gz)           #for gap traces
     OUTPUT_FILE="$RESULTS_DIR/$TRACE_NAME"
 
     # If start trace was given, skip until we reach it
