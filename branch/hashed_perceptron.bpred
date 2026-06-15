@@ -53,6 +53,7 @@ sources for you to plagiarize.
 #include <stdlib.h>
 #include <unordered_map>
 #include "ooo_cpu.h"
+#include "loop_predictor.h"
 
 // this many tables
 
@@ -69,6 +70,10 @@ sources for you to plagiarize.
 // speed for dynamic threshold setting
 
 #define SPEED 18
+
+
+// mask
+#define MASK_IP 0xFF
 
 // geometric global history lengths
 
@@ -108,28 +113,55 @@ int
 // to track accuracy
 uint64_t total_loop_exits = 0;
 uint64_t correct_trip_predictions = 0;
+unordered_map<uint64_t, loopBf_entry> loopBuffer;
+uint64_t total_extra_pf = 0;
+uint64_t total_prefetches = 0;
 
 // loop iteration count
-struct loopBf_entry
-{
-	int trip_count;
-	uint64_t targetAddress;
-	int non_speculatie_counter;
-	uint64_t ifelse_PC;
-	uint64_t taken_path; // PC of if - else branch (if taken_path is Target_address, then the last taken path was else, otherwise it was if && this is only used in conditional branches)
-	int confidence;
-	int instance;
-	int loop_exit;
-};
-unordered_map<uint64_t, loopBf_entry> loopBuffer;
+
+void reset_loop_predictor_stats(){
+	total_loop_exits = 0;
+	correct_trip_predictions = 0;
+	total_extra_pf = 0;
+	total_prefetches = 0;
+	loopBuffer.clear();
+}
 
 void O3_CPU::print_loopPredictor_Table()
 {
 	cout << "Loop Predictor Table: " << endl;
+	cout << "Total Extra Prefetches: " << total_extra_pf << endl;
+	cout << "Total Prefetches: " << total_prefetches << endl;
 	for (auto it = loopBuffer.begin(); it != loopBuffer.end(); it++)
 	{
 		// if (it->second.targetAddress > 0  && it->second.loop_exit > 0/* && it->second.trip_count > 0*/ )
-		cout << "PC: " << hex << it->first << dec << ", Branch Target: " << hex << it->second.targetAddress << dec << ", Trip Count: " << it->second.trip_count << ", Non-speculative Counter: " << it->second.non_speculatie_counter << ", If-Else PC: " << hex << it->second.ifelse_PC << dec << ", Taken Path PC: " << hex << it->second.taken_path << dec << ", Instance: " << it->second.instance - 1 << ", Loop Exit: " << it->second.loop_exit << endl;
+		cout << "PC: " << hex << it->first << dec << ", Branch Target: " << hex << it->second.targetAddress << dec << ", Trip Count: " << it->second.trip_count << ", Non-speculative Counter: " << it->second.non_speculatie_counter << ", Extra Prefetches: " << it->second.extra_pf /*<< ", If-Else PC: " << hex << it->second.ifelse_PC << dec << ", Taken Path PC: " << hex << it->second.taken_path << dec << ", Instance: " << it->second.instance - 1 << ", Loop Exit: " << it->second.loop_exit*/ << endl;
+/*
+		if (!it->second.path_trip_counts.empty())
+		{
+			cout << "    Path histories: ";
+			for (auto path_it = it->second.path_trip_counts.begin(); path_it != it->second.path_trip_counts.end(); ++path_it)
+			{
+				cout << "[Hash: " << hex << path_it->first << dec;
+
+				auto occ_hash_it = it->second.path_trip_count_occurrences.find(path_it->first);
+				if (occ_hash_it != it->second.path_trip_count_occurrences.end() && !occ_hash_it->second.empty())
+				{
+					cout << " => Frequencies: ";
+					for (auto occ_trip_it = occ_hash_it->second.begin(); occ_trip_it != occ_hash_it->second.end(); ++occ_trip_it)
+					{
+						cout << "(Trip Count: " << occ_trip_it->first << ", Count: " << occ_trip_it->second << ") " <<endl;
+					}
+				}
+				else
+				{
+					cout << " => Frequencies: none";
+				}
+
+				cout << ", Latest Trip Count: " << path_it->second << "]" << endl;
+			}
+		 
+		}*/
 	}
 
 	if (total_loop_exits > 0)
@@ -219,106 +251,87 @@ uint8_t O3_CPU::predict_branch(uint64_t pc)
 	return yout[cpu] >= 1;
 }
 
-void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t taken, uint8_t branch_type)
+void O3_CPU::last_branch_result(uint64_t pc, uint64_t target, uint8_t taken, uint8_t branch_type)
 {
 
-	bool is_backward_conditional = (branch_type == BRANCH_CONDITIONAL) && (branch_target < pc);
-	// bool is_forward_conditional = (branch_type == BRANCH_CONDITIONAL) && (branch_target > pc) && (branch_target != 0);
+	bool is_backward_conditional = (branch_type == BRANCH_CONDITIONAL) && (target < pc);
+	// bool is_forward_conditional = (branch_type == BRANCH_CONDITIONAL) && (target > pc) && (target != 0);
 
-	bool is_forward_conditional = (branch_type == BRANCH_CONDITIONAL || branch_type == BRANCH_DIRECT_JUMP) && (branch_target > pc);
+	bool is_forward_conditional = (branch_type == BRANCH_CONDITIONAL || branch_type == BRANCH_DIRECT_JUMP) && (target > pc);
 
 	bool correct = taken == (yout[cpu] >= 1);
 
-	// Only process if it is a loop branch
 	auto it = loopBuffer.find(pc);
-	if (is_backward_conditional && it == loopBuffer.end() && branch_target != 0)
+
+	bool not_loop = (it != loopBuffer.end() && it->second.non_speculatie_counter == 0 && target == 0);
+
+	// Only process if it is a loop branch
+
+	uint64_t ip = pc ;
+	uint64_t branch_target = target;
+
+	if (is_backward_conditional && it == loopBuffer.end() && branch_target != 0 )
 	{
 		// This is the first time we've seen this loop, so we insert it into the loop buffer
-		loopBuffer[pc] = {0, branch_target, 0, 0, 0, 0, 0, 0};
-		it = loopBuffer.find(pc);
+		loopBf_entry new_entry;
+		new_entry.non_speculatie_counter = 0;
+		new_entry.targetAddress = branch_target;
+		new_entry.ifelse_PC = 0;
+		new_entry.taken_path = 0;
+		new_entry.confidence = 0;
+		new_entry.instance = 0;
+		new_entry.loop_exit = 0;
+		new_entry.combined_hash = 0;
+		//new_entry.active_loop = true;
+		new_entry.extra_pf = 0;
+		new_entry.pf_issued = 0; 
+
+		loopBuffer[ip] = new_entry;
+		it = loopBuffer.find(ip);
 	}
-
-	if (is_backward_conditional && it != loopBuffer.end())
-	{
-		// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << ", Correct: " << correct << endl;
-		//cout << "PC " << hex << pc << " TA " << branch_target << dec << " " << "trip count: " << it->second.trip_count << " NSC " << it->second.non_speculatie_counter << ", Confidence: " << it->second.confidence << ", Loop Exits " << it->second.loop_exit << ", Loop instances: " << it->second.instance << endl;
-
-		// NOTE: If you only want to profile loops that mispredict,
-		// wrap this entire block in 'if (misprediction)'
-
-		loopBf_entry &entry = loopBuffer[pc];
-
-		if (taken)
+	// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << endl;
+	
+		// cout << "Updating target address for PC: " << hex << pc << dec << " to " << hex << branch_target << dec << endl;
+		if (is_backward_conditional && it != loopBuffer.end() && !not_loop)
 		{
-			entry.non_speculatie_counter++;
-		}
-		else
-		{
-			entry.non_speculatie_counter++;
-			//cout << "PC " << hex << pc << " TA " << branch_target << dec << " " << "trip count: " << entry.trip_count << " NSC " << entry.non_speculatie_counter << ", Confidence: " << entry.confidence << ", Loop Exits " << entry.loop_exit << ", Loop instances: " << entry.instance << endl;
+			// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << ", Correct: " << correct << endl;
 
-			entry.confidence = (entry.non_speculatie_counter == entry.trip_count);
+			// NOTE: If you only want to profile loops that mispredict,
+			// wrap this entire block in 'if (misprediction)'
 
-			// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << " ----------------------->Not Taken " << ", Non-speculative Counter: " << entry.non_speculatie_counter << endl;
+			loopBf_entry &entry = loopBuffer[ip];
 
-			// entry.instance++;
-
-			entry.instance++;
-			if (entry.trip_count != 0 ) // Skip the first observed execution because there is no prior trip count to compare against.
+			if (taken)
 			{
-				total_loop_exits++;
-				
-
-				// 2. Check if the prediction for this specific loop was right
-				if (entry.confidence == 1)
+				if (entry.non_speculatie_counter == 0)
 				{
-					entry.loop_exit++;
-					correct_trip_predictions++;
+					// New execution of this loop PC; start a fresh history signature.
+					entry.combined_hash = 0;
 				}
-			}
-			
-
-			if (entry.trip_count != entry.non_speculatie_counter)
-			{
-				//  3. Store it as the trip count
-				entry.trip_count = entry.non_speculatie_counter;
-			}
-
-			// 4. Reset for the next time the loop runs
-			entry.non_speculatie_counter = 0;
-		}
-	}
-	else if (is_forward_conditional && taken)
-	{
-		for (auto &pair : loopBuffer)
-		{
-			uint64_t loop_pc = pair.first;
-			loopBf_entry &entry = pair.second;
-
-			uint64_t loop_start = entry.targetAddress;
-
-			// 1. Ensure loop_start was actually initialized (loop_start != 0)
-			// 2. Jump originates INSIDE the loop body: (pc >= loop_start && pc < loop_pc)
-			// 3. Jump lands OUTSIDE the loop body: (branch_target > loop_pc)
-			// 4. This condition indicates a potential break statement in the loop, so we update our loop buffer entry with the break information
-			if (loop_start != 0 && pc >= loop_start && pc < loop_pc && branch_target > loop_pc)
-			{
-				//cout << " ---> BREAK DETECTED! Updating Trip Count to: "
-				//	 << " loop PC: " << hex << loop_pc
-				//	 << " loop start: " << loop_start
-				//	 << " if PC: " << pc
-				//	 << " target PC: " << branch_target
-				//	 << " | Count: " << dec << entry.non_speculatie_counter << endl;
-
+				// Keep a compact signature of the branch history for this loop PC.
+				entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)taken;
 				entry.non_speculatie_counter++;
-				entry.confidence = (entry.non_speculatie_counter == entry.trip_count);
+				//entry.active_loop = true; // Mark this loop as active when we see a taken outcome, which indicates the loop is still running.
+			}
+			else
+			{
+				// Keep a compact signature of the branch history for this loop PC.
+				entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)(taken);
+				entry.non_speculatie_counter++;
 
-				
+				uint64_t history_hash = entry.combined_hash;
+				entry.confidence = 0;
+				auto path_it = entry.path_trip_counts.find(history_hash);
+				if (path_it != entry.path_trip_counts.end() && path_it->second == entry.non_speculatie_counter)
+				{
+					entry.confidence = 1;
+				}
+
 				entry.instance++;
-				if ( entry.trip_count != 0)
+				if (entry.trip_count != 0) // Skip the first observed execution because there is no prior trip count to compare against.
 				{
 					total_loop_exits++;
-					
+
 					// 2. Check if the prediction for this specific loop was right
 					if (entry.confidence == 1)
 					{
@@ -327,29 +340,116 @@ void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t tak
 					}
 				}
 
-				entry.ifelse_PC = pc;			  // Store the PC of the if-else branch
-				entry.taken_path = branch_target; // Store the taken path (if or else) for this forward conditional branch
-				// Record the break iteration as the trip count
-				entry.trip_count = entry.non_speculatie_counter;
+				if (entry.trip_count != entry.non_speculatie_counter)
+				{
+					//  3. Store it as the trip count
+					entry.trip_count = entry.non_speculatie_counter;
+				}
 
-				// Reset the counter for the next time the loop runs
+				// Store the branch-history signature together with the trip count for this PC.
+				entry.path_trip_count_occurrences[entry.combined_hash][entry.non_speculatie_counter]++;
+				entry.path_trip_counts[entry.combined_hash] = entry.non_speculatie_counter;
+
+				// 4. Reset for the next time the loop runs
 				entry.non_speculatie_counter = 0;
-			}
-			else if (loop_start != 0 && pc >= loop_start && pc < loop_pc && branch_target <= loop_pc)
-			{
-				//cout << " ---> IF condition DETECTED within loop! Updating Trip Count to: "
-				//		 << " loop PC: " << hex << loop_pc
-				//		 << " loop start: " << loop_start
-				//		 << " if PC: " << pc
-				//		 << " target PC: " << branch_target
-				//		 << " | Count: " << dec << entry.non_speculatie_counter << endl;
-				entry.non_speculatie_counter++;
-				entry.ifelse_PC = pc;			  // Store the PC of the if-else branch
-				entry.taken_path = branch_target; // Store the taken path (if or else) for this forward conditional branch
-			}
-		}
-	}
+				entry.combined_hash = 0;
+				entry.active_loop = false;  // Mark this loop as inactive after observing a non-taken outcome, which indicates the end of the loop.
 
+				/*
+					ActiveLoop activeLoop;
+					activeLoop.pc = ip;
+					activeLoop.bitstream = entry.combined_hash;
+					activeLoop.trip_count = entry.trip_count;
+					active_loops.push(activeLoop);
+				*/
+			}
+			
+		}
+		else if (is_forward_conditional)
+		{
+			for (auto &pair : loopBuffer)
+			{
+				uint64_t loop_pc = pair.first;
+				loopBf_entry &entry = pair.second;
+
+				uint64_t loop_start = entry.targetAddress;
+
+				// 1. Ensure loop_start was actually initialized (loop_start != 0)
+				// 2. Jump originates INSIDE the loop body: (pc >= loop_start && pc < loop_pc)
+				// 3. Jump lands OUTSIDE the loop body: (branch_target > loop_pc)
+				// 4. This condition indicates a potential break statement in the loop, so we update our loop buffer entry with the break information
+				if (loop_start != 0 && ip >= loop_start && ip < loop_pc && branch_target > loop_pc)
+				{
+					
+					entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)taken;
+					entry.non_speculatie_counter++;
+					uint64_t history_hash = entry.combined_hash;
+					entry.confidence = 0;
+					auto path_it = entry.path_trip_counts.find(history_hash);
+					if (path_it != entry.path_trip_counts.end() && path_it->second == entry.non_speculatie_counter)
+					{
+						entry.confidence = 1;
+					}
+
+					entry.instance++;
+					if (entry.trip_count != 0)
+					{
+						total_loop_exits++;
+
+						// 2. Check if the prediction for this specific loop was right
+						if (entry.confidence == 1)
+						{
+							entry.loop_exit++;
+							correct_trip_predictions++;
+						}
+					}
+
+					//cout << " ---> BREAK DETECTED! Updating Trip Count to: "
+					//	 << " loop PC: " << hex << loop_pc
+					//	 << " loop start: " << loop_start
+					//	 << " if PC: " << pc
+					//	 << " target PC: " << branch_target
+					//	 << " | NSC: " << dec << entry.non_speculatie_counter 
+					//	 << " Instance "<< entry.instance << endl;
+
+
+					entry.ifelse_PC = ip;			  // Store the PC of the if-else branch
+					entry.taken_path = branch_target; // Store the taken path (if or else) for this forward conditional branch
+					// Record the break iteration as the trip count
+					entry.trip_count = entry.non_speculatie_counter;
+					entry.path_trip_count_occurrences[entry.combined_hash][entry.non_speculatie_counter]++;
+					entry.path_trip_counts[entry.combined_hash] = entry.non_speculatie_counter;
+
+					// Reset the counter for the next time the loop runs
+					entry.non_speculatie_counter = 0;
+					entry.combined_hash = 0;
+					entry.active_loop = false;
+/*
+					ActiveLoop activeLoop;
+					activeLoop.pc = ip;
+					activeLoop.bitstream = entry.combined_hash;
+					activeLoop.trip_count = entry.trip_count;
+					active_loops.push(activeLoop);
+*/
+					break; // Assuming one break per loop, we can break after finding the relevant loop entry.
+				}
+				else if (loop_start != 0 && ip >= loop_start && ip < loop_pc && branch_target <= loop_pc)
+				{
+					/*	cout << " ---> IF condition DETECTED within loop! Updating Trip Count to: "
+							 << " loop PC: " << hex << loop_pc
+							 << " loop start: " << loop_start
+							 << " if PC: " << ip
+							 << " target PC: " << branch_target
+							 << " | Count: " << dec << entry.non_speculatie_counter << endl;
+		*/
+					entry.ifelse_PC = ip;			  // Store the PC of the if-else branch
+					entry.taken_path = branch_target; // Store the taken path (if or else) for this forward conditional branch
+					entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)(taken);
+					entry.active_loop = true;
+				}
+			}
+		
+	}
 	// was this prediction correct?
 
 	// bool correct = taken == (yout[cpu] >= 1);
