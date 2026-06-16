@@ -12,7 +12,7 @@ RP_SELECTOR=${2:-}
 # PATHS & CONSTANTS
 ###############################################################################
 TRACE_DIR=/home1/sweta/traces/gaptraces
-RESULT_ROOT=./loopCount/results/results_gap
+RESULT_ROOT=./rnd2/results_gap
 BIN_DIR=./bin
 
 WARMUP=50000000
@@ -23,33 +23,27 @@ MAX_CORES_PER_COMBO=64
 # Prefetcher combinations
 ###############################################################################
 PREFETCHER_COMBINATIONS=(
- #d  "ipcp_isca2020:ppf"
- #d "ipcp_isca2020:bingo_dpc3"
- #d "ipcp_isca2020:spp"
- #d "ipcp_isca2020:ip_stride"
-#d
- #d "vberti:ppf"
- #d "vberti:spp"
- #d "vberti:bingo_dpc3"
- #d "vberti:ip_stride"
-#d
- #d "mlop_dpc3:ip_stride"
- #d "mlop_dpc3:ppf"
- #d "mlop_dpc3:spp"
- #d "mlop_dpc3:bingo_dpc3"
-#d
- #d "ip_stride:ppf"
- #d "ip_stride:bingo_dpc3"
- #d "ip_stride:spp"
+  "ipcp_isca2020:bingo_dpc3"
+  "ipcp_isca2020:spp"
+  "ipcp_isca2020:ip_stride"
+  "vberti:ppf"
+  "vberti:spp"
+  "vberti:bingo_dpc3"
+  "vberti:ip_stride"
+
+  "mlop_dpc3:ip_stride" 
+  "mlop_dpc3:spp"
+  "mlop_dpc3:bingo_dpc3"
+  
 
   "ipcp_isca2020:no"
   "mlop_dpc3:no"
-  "vberti:no"
-  "ip_stride:no"
-  "no:spp"
-  "no:bingo_dpc3"
-  "no:ppf"
-  "no:ip_stride"
+  "vberti:no" 
+
+  #"no:spp"
+  #"no:bingo_dpc3"
+  #"no:ppf"
+  #"no:ip_stride"
   "no:no"
 )
 

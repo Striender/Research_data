@@ -12,7 +12,7 @@ RP_SELECTOR=${2:-}
 # PATHS & CONSTANTS
 ###############################################################################
 TRACE_DIR=/home1/sweta/traces/DPC4-Traces/Google_Traces_v2/Google_Traces_v2
-RESULT_ROOT=./results/results_google
+RESULT_ROOT=./results/google
 BIN_DIR=./bin
 
 WARMUP=50000000

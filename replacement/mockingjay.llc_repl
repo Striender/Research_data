@@ -29,9 +29,19 @@ int etr[LLC_SET][LLC_WAY];
 int etr_clock[LLC_SET];
 
 unordered_map<uint32_t, int> rdp;
+
 unordered_set<uint64_t> llc_demand_resident;
-unordered_set<uint64_t> llc_evicted_by_prefetch;
+unordered_map<uint64_t, uint64_t> llc_evicted_by_prefetch;
 uint64_t llc_pollution_count = 0;
+uint64_t misses = 0;
+
+void reset_llc_pollution_stats()
+{
+    llc_demand_resident.clear();
+    llc_evicted_by_prefetch.clear();
+    // llc_pollution_count = 0;
+    misses = 0;
+}
 
 int current_timestamp[LLC_SET];
 
@@ -142,6 +152,8 @@ void detrain(uint32_t set, int way)
 void CACHE::llc_initialize_replacement()
 {
     cout << "Initialize Mockingjay state for LLC" << endl;
+    reset_llc_pollution_stats();
+
     for (int i = 0; i < LLC_SET; i++)
     {
         etr_clock[i] = GRANULARITY;
@@ -159,10 +171,6 @@ void CACHE::llc_initialize_replacement()
             }
         }
     }
-
-    llc_demand_resident.clear();
-    llc_evicted_by_prefetch.clear();
-    llc_pollution_count = 0;
 }
 
 /* find a cache block to evict
@@ -243,11 +251,13 @@ int time_elapsed(int global, int local)
     return global - local;
 }
 
-/* called on every cache hit and cache fill */
 void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t pc, uint64_t victim_addr, uint32_t type, uint8_t hit)
 {
     bool is_prefetched = (type == PREFETCH);
     bool is_demand = (type == LOAD);
+
+    if (is_demand && !hit)
+        misses++;
 
     if (type == WRITEBACK)
     {
@@ -258,6 +268,7 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
         return;
     }
     uint64_t line_addr = full_addr >> LOG2_BLOCK_SIZE;
+
     // 1) Handle the victim if this access caused an eviction (on a miss)
     if (!hit && victim_addr != 0)
     {
@@ -268,7 +279,7 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
         {
             if (is_prefetched)
             {
-                llc_evicted_by_prefetch.insert(victim_line);
+                llc_evicted_by_prefetch.insert({victim_line, line_addr});
             }
             llc_demand_resident.erase(it);
         }
@@ -279,8 +290,13 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
         auto it2 = llc_evicted_by_prefetch.find(line_addr);
         if (it2 != llc_evicted_by_prefetch.end())
         {
-            llc_pollution_count++;
-            llc_evicted_by_prefetch.erase(it2);
+            auto it3 = llc_demand_resident.find(it2->second);
+
+            if (it3 == llc_demand_resident.end())
+            {
+                llc_pollution_count++;
+                llc_evicted_by_prefetch.erase(it2);
+            }
         }
         // If the miss results in an installation in LLC (not bypass), mark as resident demand line
         if (way < LLC_WAY)
@@ -417,5 +433,6 @@ void CACHE::llc_replacement_final_stats()
 {
     cout << "================ Mockingjay (LLC) Pollution Stats ================" << endl;
     cout << "Total pollution count in LLC: " << llc_pollution_count << endl;
+    cout << "Total load misses: " << misses << endl;
     cout << "==================================================================" << endl;
 }

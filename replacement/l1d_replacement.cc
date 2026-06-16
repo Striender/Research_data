@@ -1,8 +1,9 @@
 #include "cache.h"
 #include <unordered_set>
+#include <unordered_map>
 
 unordered_set<uint64_t> l1d_demand_resident;
-unordered_set<uint64_t> l1d_evicted_by_prefetch;
+unordered_map<uint64_t, uint64_t> l1d_evicted_by_prefetch;
 uint64_t l1d_pollution_count = 0;
 int pf = 0;
 int evicted = 0;
@@ -45,7 +46,7 @@ void CACHE::l1d_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
         {
             if (is_prefetched)
             {
-                l1d_evicted_by_prefetch.insert(victim_line);
+                l1d_evicted_by_prefetch.insert({victim_line, line_addr});
             }
             l1d_demand_resident.erase(it);
         }
@@ -56,8 +57,13 @@ void CACHE::l1d_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
         auto it2 = l1d_evicted_by_prefetch.find(line_addr);
         if (it2 != l1d_evicted_by_prefetch.end())
         {
-            l1d_pollution_count++;
-            l1d_evicted_by_prefetch.erase(it2);
+            auto it3 = l1d_demand_resident.find(it2->second);
+
+            if (it3 == l1d_demand_resident.end())
+            {
+                l1d_pollution_count++;
+                l1d_evicted_by_prefetch.erase(it2);
+            }
         }
         // If the miss results in an installation in LLC (not bypass), mark as resident demand line
         if (way < LLC_WAY)

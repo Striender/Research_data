@@ -57,7 +57,7 @@
 #define DP(x)
 #endif
 
-#define berti_on 1 //@sweta: Berti prefetcher on/off
+#define berti_on 0 //@sweta: Berti prefetcher on/off
 // CPU
 #define NUM_CPUS 1
 #define CPU_FREQ 4000
