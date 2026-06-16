@@ -1,0 +1,498 @@
+/*
+
+This code implements a hashed perceptron branch predictor using geometric
+history lengths and dynamic threshold setting.
+
+It was written by Daniel A. Jiménez in March 2019. To the extent allowed by
+law, the author abdicates all rights to this work and places it in the public
+domain.
+
+The original perceptron branch predictor is from Jiménez and Lin, "Dynamic
+Branch Prediction with Perceptrons," HPCA 2001.
+
+The idea of using multiple independently indexed tables of perceptron weights
+is from Jiménez, "Fast Path-Based Neural Branch Prediction," MICRO 2003 and
+later expanded in "Piecewise Linear Branch Prediction" from ISCA 2005.
+
+The idea of using hashes of branch history to reduce the number of independent
+tables is documented in three contemporaneous papers:
+
+1. Seznec, "Revisiting the Perceptron Predictor," IRISA technical report, 2004.
+
+2. Tarjan and Skadron, "Revisiting the Perceptron Predictor Again," UVA
+technical report, 2004, expanded and published in ACM TACO 2005 as "Merging
+path and gshare indexing in perceptron branch prediction"; introduces the term
+"hashed perceptron."
+
+3. Loh and Jiménez, "Reducing the Power and Complexity of Path-Based Neural
+Branch Prediction," WCED 2005.
+
+The ideas of using "geometric history lengths" i.e. hashing into tables with
+histories of exponentially increasing length, as well as dynamically adjusting
+the theta parameter, are from Seznec, "The O-GEHL Branch Predictor," from CBP
+2004, expanded later as "Analysis of the O-GEometric History Length Branch
+Predictor" in ISCA 2005.
+
+This code uses these ideas, but prefers simplicity over absolute accuracy (I
+wrote it in about an hour and later spent more time on this comment block than
+I did on the code). These papers and subsequent papers by Jiménez and other
+authors significantly improve the accuracy of perceptron-based predictors but
+involve tricks and analysis beyond the needs of a tool like ChampSim that
+targets cache optimizations. If you want accuracy at any cost, see the winners
+of the latest branch prediction contest, CBP 2016 as of this writing, but
+prepare to have your face melted off by the complexity of the code you find
+there. If you are a student being asked to code a good branch predictor for
+your computer architecture class, don't copy this code; there are much better
+sources for you to plagiarize.
+
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+#include <unordered_map>
+#include "ooo_cpu.h"
+#include "loop_predictor.h"
+
+// this many tables
+
+#define NTABLES 16
+
+// maximum history length
+
+#define MAXHIST 232
+
+// minimum history length (for table 1; table 0 is biases)
+
+#define MINHIST 3
+
+// speed for dynamic threshold setting
+
+#define SPEED 18
+
+// geometric global history lengths
+
+int history_lengths[NTABLES] = {0, 3, 4, 6, 8, 10, 14, 19, 26, 36, 49, 67, 91, 125, 170, MAXHIST};
+
+// 12-bit indices for the tables
+
+#define LOG_TABLE_SIZE 12
+#define TABLE_SIZE (1 << LOG_TABLE_SIZE)
+
+// this many 12-bit words will be kept in the global history
+
+#define NGHIST_WORDS (MAXHIST / LOG_TABLE_SIZE + 1)
+
+// tables of 8-bit weights
+
+int tables[NUM_CPUS][NTABLES][TABLE_SIZE];
+
+// words that store the global history
+
+unsigned int ghist_words[NUM_CPUS][NGHIST_WORDS];
+
+// remember the indices into the tables from prediction to update
+
+unsigned int indices[NUM_CPUS][NTABLES];
+
+// initialize theta to something reasonable,
+int
+	theta[NUM_CPUS],
+
+	// initialize counter for threshold setting algorithm
+	tc[NUM_CPUS],
+
+	// perceptron sum
+	yout[NUM_CPUS];
+
+
+// loop iteration count
+
+void reset_loop_predictor_stats(){
+	total_loop_exits = 0;
+	correct_trip_predictions = 0;
+	loopBuffer.clear();
+}
+
+void O3_CPU::print_loopPredictor_Table()
+{
+	cout << "Loop Predictor Table: " << endl;
+	for (auto it = loopBuffer.begin(); it != loopBuffer.end(); it++)
+	{
+		// if (it->second.targetAddress > 0  && it->second.loop_exit > 0/* && it->second.trip_count > 0*/ )
+		cout << "PC: " << hex << it->first << dec << ", Branch Target: " << hex << it->second.targetAddress << dec << ", Trip Count: " << it->second.trip_count << ", Non-speculative Counter: " << it->second.non_speculatie_counter << ", If-Else PC: " << hex << it->second.ifelse_PC << dec << ", Taken Path PC: " << hex << it->second.taken_path << dec << ", Instance: " << it->second.instance - 1 << ", Loop Exit: " << it->second.loop_exit << endl;
+
+		if (!it->second.path_trip_counts.empty())
+		{
+			cout << "    Path histories: ";
+			for (auto path_it = it->second.path_trip_counts.begin(); path_it != it->second.path_trip_counts.end(); ++path_it)
+			{
+				cout << "[Hash: " << hex << path_it->first << dec;
+
+				auto occ_hash_it = it->second.path_trip_count_occurrences.find(path_it->first);
+				if (occ_hash_it != it->second.path_trip_count_occurrences.end() && !occ_hash_it->second.empty())
+				{
+					cout << " => Frequencies: ";
+					for (auto occ_trip_it = occ_hash_it->second.begin(); occ_trip_it != occ_hash_it->second.end(); ++occ_trip_it)
+					{
+						cout << "(Trip Count: " << occ_trip_it->first << ", Count: " << occ_trip_it->second << ") " <<endl;
+					}
+				}
+				else
+				{
+					cout << " => Frequencies: none";
+				}
+
+				cout << ", Latest Trip Count: " << path_it->second << "]" << endl;
+			}
+		 
+		}
+	}
+
+	if (total_loop_exits > 0)
+	{
+		double total_trace_accuracy = ((double)correct_trip_predictions / total_loop_exits) * 100.0;
+
+		cout << "=====================================================" << endl;
+		cout << "OVERALL TRACE TRIP COUNT ACCURACY: " << total_trace_accuracy << "%" << endl;
+		cout << "Correct Predictions: " << correct_trip_predictions << endl;
+		cout << "Total Loop Exits: " << total_loop_exits << endl;
+		cout << "=====================================================" << endl;
+	}
+}
+
+void O3_CPU::initialize_branch_predictor()
+{
+	// zero out the weights tables
+
+	memset(tables, 0, sizeof(tables));
+
+	// zero out the global history
+
+	memset(ghist_words, 0, sizeof(ghist_words));
+
+	// make a reasonable theta
+
+	for (int i = 0; i < NUM_CPUS; i++)
+		theta[i] = 10;
+}
+
+uint8_t O3_CPU::predict_branch(uint64_t pc)
+{
+	// cout << "PC: " << hex << pc << dec << endl;
+
+	// initialize perceptron sum
+
+	yout[cpu] = 0;
+
+	// for each table...
+
+	for (int i = 0; i < NTABLES; i++)
+	{
+
+		// n is the history length for this table
+
+		int n = history_lengths[i];
+
+		// hash global history bits 0..n-1 into x by XORing the words from the ghist_words array
+
+		unsigned int x = 0;
+
+		// most of the words are 12 bits long
+
+		int most_words = n / LOG_TABLE_SIZE;
+
+		// the last word is fewer than 12 bits
+
+		int last_word = n % LOG_TABLE_SIZE;
+
+		// XOR up to the next-to-the-last word
+
+		int j;
+		for (j = 0; j < most_words; j++)
+			x ^= ghist_words[cpu][j];
+
+		// XOR in the last word
+
+		x ^= ghist_words[cpu][j] & ((1 << last_word) - 1);
+
+		// XOR in the PC to spread accesses around (like gshare)
+
+		x ^= pc;
+
+		// stay within the table size
+
+		x &= TABLE_SIZE - 1;
+
+		// remember this index for update
+
+		indices[cpu][i] = x;
+
+		// add the selected weight to the perceptron sum
+
+		yout[cpu] += tables[cpu][i][x];
+	}
+	// cout << hex <<pc <<dec << " " << (yout[cpu] >= 1) << endl;
+	return yout[cpu] >= 1;
+}
+
+void O3_CPU::last_branch_result(uint64_t pc, uint64_t branch_target, uint8_t taken, uint8_t branch_type)
+{
+
+	bool is_backward_conditional = (branch_type == BRANCH_CONDITIONAL) && (branch_target < pc);
+	// bool is_forward_conditional = (branch_type == BRANCH_CONDITIONAL) && (branch_target > pc) && (branch_target != 0);
+
+	bool is_forward_conditional = (branch_type == BRANCH_CONDITIONAL || branch_type == BRANCH_DIRECT_JUMP) && (branch_target > pc);
+
+	bool correct = taken == (yout[cpu] >= 1);
+
+	auto it = loopBuffer.find(pc);
+
+	bool not_loop = (it != loopBuffer.end() && it->second.non_speculatie_counter == 0 && branch_target == 0);	
+
+	// Only process if it is a loop branch
+	
+	if (is_backward_conditional && it == loopBuffer.end() && branch_target != 0 )
+	{
+		// This is the first time we've seen this loop, so we insert it into the loop buffer
+		loopBf_entry new_entry;
+		new_entry.non_speculatie_counter = 0;
+		new_entry.targetAddress = branch_target;
+		new_entry.ifelse_PC = 0;
+		new_entry.taken_path = 0;
+		new_entry.confidence = 0;
+		new_entry.instance = 0;
+		new_entry.loop_exit = 0;
+		new_entry.combined_hash = 0;
+		new_entry.active_loop = true;
+
+		loopBuffer[pc] = new_entry;
+		it = loopBuffer.find(pc);
+	}
+	// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << endl;
+	
+		// cout << "Updating target address for PC: " << hex << pc << dec << " to " << hex << branch_target << dec << endl;
+		if (is_backward_conditional && it != loopBuffer.end() && !not_loop)
+		{
+			// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << ", Correct: " << correct << endl;
+
+			// NOTE: If you only want to profile loops that mispredict,
+			// wrap this entire block in 'if (misprediction)'
+
+			loopBf_entry &entry = loopBuffer[pc];
+
+			if (taken)
+			{
+					if (entry.non_speculatie_counter == 0)
+					{
+						// New execution of this loop PC; start a fresh history signature.
+						entry.combined_hash = 0;
+					}
+					// Keep a compact signature of the branch history for this loop PC.
+					entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)taken;
+				entry.non_speculatie_counter++;
+			}
+			else
+			{
+				// Keep a compact signature of the branch history for this loop PC.
+				entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)(taken);
+				entry.non_speculatie_counter++;
+
+				uint64_t history_hash = entry.combined_hash;
+				entry.confidence = 0;
+				auto path_it = entry.path_trip_counts.find(history_hash);
+				if (path_it != entry.path_trip_counts.end() && path_it->second == entry.non_speculatie_counter)
+				{
+					entry.confidence = 1;
+				}
+
+				//cout << "PC " << hex << pc << " TA " << branch_target << dec << " " << "trip count: " << entry.trip_count << " NSC " << entry.non_speculatie_counter << ", Confidence: " << entry.confidence << ", Loop Exits " << entry.loop_exit << ", Loop instances: " << entry.instance << endl;
+				// cout << "PC: " << hex << pc << dec << " ,Branch Target: " << hex << branch_target << dec << " ----------------------->Not Taken " << ", Non-speculative Counter: " << entry.non_speculatie_counter << endl;
+
+				// entry.instance++;
+
+				entry.instance++;
+				if (entry.trip_count != 0) // Skip the first observed execution because there is no prior trip count to compare against.
+				{
+					total_loop_exits++;
+
+					// 2. Check if the prediction for this specific loop was right
+					if (entry.confidence == 1)
+					{
+						entry.loop_exit++;
+						correct_trip_predictions++;
+					}
+				}
+
+				if (entry.trip_count != entry.non_speculatie_counter)
+				{
+					//  3. Store it as the trip count
+					entry.trip_count = entry.non_speculatie_counter;
+				}
+
+				// Store the branch-history signature together with the trip count for this PC.
+				entry.path_trip_count_occurrences[entry.combined_hash][entry.non_speculatie_counter]++;
+				entry.path_trip_counts[entry.combined_hash] = entry.non_speculatie_counter;
+
+				// 4. Reset for the next time the loop runs
+				entry.non_speculatie_counter = 0;
+				entry.combined_hash = 0;
+				entry.active_loop = false;  // Mark this loop as inactive after observing a non-taken outcome, which indicates the end of the loop.
+			}
+			
+		}
+		else if (is_forward_conditional)
+		{
+			for (auto &pair : loopBuffer)
+			{
+				uint64_t loop_pc = pair.first;
+				loopBf_entry &entry = pair.second;
+
+				uint64_t loop_start = entry.targetAddress;
+
+				// 1. Ensure loop_start was actually initialized (loop_start != 0)
+				// 2. Jump originates INSIDE the loop body: (pc >= loop_start && pc < loop_pc)
+				// 3. Jump lands OUTSIDE the loop body: (branch_target > loop_pc)
+				// 4. This condition indicates a potential break statement in the loop, so we update our loop buffer entry with the break information
+				if (loop_start != 0 && pc >= loop_start && pc < loop_pc && branch_target > loop_pc)
+				{
+					
+					entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)taken;
+					entry.non_speculatie_counter++;
+					uint64_t history_hash = entry.combined_hash;
+					entry.confidence = 0;
+					auto path_it = entry.path_trip_counts.find(history_hash);
+					if (path_it != entry.path_trip_counts.end() && path_it->second == entry.non_speculatie_counter)
+					{
+						entry.confidence = 1;
+					}
+
+					entry.instance++;
+					if (entry.trip_count != 0)
+					{
+						total_loop_exits++;
+
+						// 2. Check if the prediction for this specific loop was right
+						if (entry.confidence == 1)
+						{
+							entry.loop_exit++;
+							correct_trip_predictions++;
+						}
+					}
+
+					//cout << " ---> BREAK DETECTED! Updating Trip Count to: "
+					//	 << " loop PC: " << hex << loop_pc
+					//	 << " loop start: " << loop_start
+					//	 << " if PC: " << pc
+					//	 << " target PC: " << branch_target
+					//	 << " | NSC: " << dec << entry.non_speculatie_counter 
+					//	 << " Instance "<< entry.instance << endl;
+
+
+					entry.ifelse_PC = pc;			  // Store the PC of the if-else branch
+					entry.taken_path = branch_target; // Store the taken path (if or else) for this forward conditional branch
+					// Record the break iteration as the trip count
+					entry.trip_count = entry.non_speculatie_counter;
+					entry.path_trip_count_occurrences[entry.combined_hash][entry.non_speculatie_counter]++;
+					entry.path_trip_counts[entry.combined_hash] = entry.non_speculatie_counter;
+
+					// Reset the counter for the next time the loop runs
+					entry.non_speculatie_counter = 0;
+					entry.combined_hash = 0;
+					break; // Assuming one break per loop, we can break after finding the relevant loop entry.
+				}
+				else if (loop_start != 0 && pc >= loop_start && pc < loop_pc && branch_target <= loop_pc)
+				{
+					/*	cout << " ---> IF condition DETECTED within loop! Updating Trip Count to: "
+							 << " loop PC: " << hex << loop_pc
+							 << " loop start: " << loop_start
+							 << " if PC: " << pc
+							 << " target PC: " << branch_target
+							 << " | Count: " << dec << entry.non_speculatie_counter << endl;
+		*/
+					entry.ifelse_PC = pc;			  // Store the PC of the if-else branch
+					entry.taken_path = branch_target; // Store the taken path (if or else) for this forward conditional branch
+					entry.combined_hash = (entry.combined_hash << 1) | (uint64_t)(taken);
+					break;
+				}
+			}
+		
+	}
+	// was this prediction correct?
+
+	// bool correct = taken == (yout[cpu] >= 1);
+	//  insert this branch outcome into the global history
+
+	bool b = taken;
+	for (int i = 0; i < NGHIST_WORDS; i++)
+	{
+
+		// shift b into the lsb of the current word
+
+		ghist_words[cpu][i] <<= 1;
+		ghist_words[cpu][i] |= b;
+
+		// get b as the previous msb of the current word
+
+		b = !!(ghist_words[cpu][i] & TABLE_SIZE);
+		ghist_words[cpu][i] &= TABLE_SIZE - 1;
+	}
+
+	// get the magnitude of yout
+
+	int a = (yout[cpu] < 0) ? -yout[cpu] : yout[cpu];
+
+	// perceptron learning rule: train if misprediction or weak correct prediction
+
+	if (!correct || a < theta[cpu])
+	{
+		// update weights
+		for (int i = 0; i < NTABLES; i++)
+		{
+			// which weight did we use to compute yout?
+
+			int *c = &tables[cpu][i][indices[cpu][i]];
+
+			// increment if taken, decrement if not, saturating at 127/-128
+
+			if (taken)
+			{
+				if (*c < 127)
+					(*c)++;
+			}
+			else
+			{
+				if (*c > -128)
+					(*c)--;
+			}
+		}
+
+		// dynamic threshold setting from Seznec's O-GEHL paper
+
+		if (!correct)
+		{
+
+			// increase theta after enough mispredictions
+
+			tc[cpu]++;
+			if (tc[cpu] >= SPEED)
+			{
+				theta[cpu]++;
+				tc[cpu] = 0;
+			}
+		}
+		else if (a < theta[cpu])
+		{
+
+			// decrease theta after enough weak but correct predictions
+
+			tc[cpu]--;
+			if (tc[cpu] <= -SPEED)
+			{
+				theta[cpu]--;
+				tc[cpu] = 0;
+			}
+		}
+	}
+}
