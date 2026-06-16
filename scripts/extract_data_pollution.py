@@ -18,6 +18,8 @@ except ImportError:
     print("Please install it on your server by running: pip install openpyxl")
     exit()
 
+instructions = 200000000  # Total instructions 
+
 # ANSI escape codes for terminal colors
 class TColors:
     OKGREEN = '\033[92m'
@@ -67,9 +69,9 @@ def parse_champsim_file(filepath):
         "Updated IPC Without LLC pollution": None,
 
 
-        "L1D Average MSHR Occupancy": None,"L1D Average Load Miss Latency": None,"L1D Pollution":None,
-        "L2C Average MSHR Occupancy": None,"L2C Average Load Miss Latency": None,"L2C Pollution":None,
-        "LLC Average MSHR Occupancy": None,"LLC Average Load Miss Latency": None, "LLC Pollution":None,
+        "L1D Average MSHR Occupancy": None,"L1D Average Load Miss Latency": None,"L1D Pollution":None, "L1D PPKI": None,
+        "L2C Average MSHR Occupancy": None,"L2C Average Load Miss Latency": None,"L2C Pollution":None, "L2C PPKI": None,
+        "LLC Average MSHR Occupancy": None,"LLC Average Load Miss Latency": None, "LLC Pollution":None, "LLC PPKI": None,
     }
     
     if not filepath:
@@ -113,6 +115,7 @@ def parse_champsim_file(filepath):
             l1d_pollution_match = re.search(r"Total pollution count in L1D\s*:\s+([\d.]+)", content)
             if l1d_pollution_match:
                 metrics["L1D Pollution"] = float(l1d_pollution_match.group(1))
+                metrics["L1D PPKI"] = (metrics["L1D Pollution"] / instructions) * 1000
 
             
             # --- L2C Stats (L2) ---
@@ -129,6 +132,7 @@ def parse_champsim_file(filepath):
             l2c_pollution_match = re.search(r"Total pollution count in L2c\s*:\s+([\d.]+)", content)
             if l2c_pollution_match:
                 metrics["L2C Pollution"] = float(l2c_pollution_match.group(1))
+                metrics["L2C PPKI"] = (metrics["L2C Pollution"] / instructions) * 1000
 
 
             llc_mshr_match = re.search(r"LLC Average MSHR Occupancy:\s*([\d.]+)",content)
@@ -143,6 +147,7 @@ def parse_champsim_file(filepath):
             llc_pollution_match = re.search(r"Total pollution count in LLC:\s+([\d.]+)", content)
             if llc_pollution_match:
                 metrics["LLC Pollution"] = float(llc_pollution_match.group(1))
+                metrics["LLC PPKI"] = (metrics["LLC Pollution"] / instructions) * 1000
 
     except IOError as e:
         print(f"Error reading file {filepath}: {e}")
@@ -163,8 +168,8 @@ def main():
     """
     # --- CONFIGURATION ---
     RESULTS_DIR = "../rnd2/results_spec/"
-    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/rnd"
-    EXCEL_OUTPUT_FILE = "rnd2.xlsx"
+    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/rnd2"
+    EXCEL_OUTPUT_FILE = "Pollution_spec_lru.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -358,7 +363,8 @@ def main():
                         else:
                             cell.alignment = right_alignment
                 
-                
+                start_row = current_row + 2
+                end_row = current_row + 1 + len(df_to_write)
 
                 # --- Add New Cycles & Updated IPC ---
                 cycles_col = get_column_letter(headers.index("Cycles") + 1)
@@ -418,7 +424,25 @@ def main():
 
                 current_row += 1 + len(df_experiment)
 
-
+                l1d_ppki_col = get_column_letter(headers.index("L1D PPKI") + 1)
+                l2c_ppki_col = get_column_letter(headers.index("L2C PPKI") + 1)
+                llc_ppki_col = get_column_letter(headers.index("LLC PPKI") + 1)
+                
+                avg_row = end_row + 1
+                
+                worksheet.cell(avg_row, 1, "Average PPKI")
+                
+                worksheet[f"{l1d_ppki_col}{avg_row}"] = (
+                    f"=AVERAGE({l1d_ppki_col}{start_row}:{l1d_ppki_col}{end_row})"
+                )
+                
+                worksheet[f"{l2c_ppki_col}{avg_row}"] = (
+                    f"=AVERAGE({l2c_ppki_col}{start_row}:{l2c_ppki_col}{end_row})"
+                )
+                
+                worksheet[f"{llc_ppki_col}{avg_row}"] = (
+                    f"=AVERAGE({llc_ppki_col}{start_row}:{llc_ppki_col}{end_row})"
+                )
 
             
             bold_font_for_trace = Font(bold=True)
