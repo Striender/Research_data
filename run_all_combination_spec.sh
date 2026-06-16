@@ -27,35 +27,28 @@ MAX_CORES_PER_COMBO=64
 ###############################################################################
 # PREFETCHER COMBINATIONS
 ###############################################################################
-PREFETCHER_COMBINATIONS=(
- #   "ipcp_isca2020:ppf"
- # "ipcp_isca2020:bingo_dpc3"
- # "ipcp_isca2020:spp"
- # "ipcp_isca2020:ip_stride"
-#
- # "vberti:ppf"
- # "vberti:spp"
- # "vberti:bingo_dpc3"
- # "vberti:ip_stride"
-#
- # "mlop_dpc3:ip_stride"
- # "mlop_dpc3:ppf"
- # "mlop_dpc3:spp"
- # "mlop_dpc3:bingo_dpc3"
-#
- # "ip_stride:ppf"
- # "ip_stride:bingo_dpc3"
- # "ip_stride:spp"
+PREFETCHER_COMBINATIONS=( 
+  "ipcp_isca2020:bingo_dpc3"
+  "ipcp_isca2020:spp"
+  "ipcp_isca2020:ip_stride"
+  "vberti:ppf"
+  "vberti:spp"
+  "vberti:bingo_dpc3"
+  "vberti:ip_stride"
+
+  "mlop_dpc3:ip_stride" 
+  "mlop_dpc3:spp"
+  "mlop_dpc3:bingo_dpc3"
+  
 
   "ipcp_isca2020:no"
   "mlop_dpc3:no"
-  "vberti:no"
-  "ip_stride:no"
+  "vberti:no" 
 
-  "no:spp"
-  "no:bingo_dpc3"
-  "no:ppf"
-  "no:ip_stride"
+  #"no:spp"
+  #"no:bingo_dpc3"
+  #"no:ppf"
+  #"no:ip_stride"
   "no:no"
 )
 
