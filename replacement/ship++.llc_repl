@@ -40,6 +40,13 @@ static std::unordered_set<uint64_t> llc_evicted_by_prefetch;
 
 // Total number of pollution events
 static uint64_t llc_pollution_count = 0;
+void reset_llc_pollution_stats()
+{
+    llc_demand_resident.clear();
+    llc_evicted_by_prefetch.clear();
+    llc_pollution_count = 0;
+   
+}
 
 // initialize replacement state
 void CACHE::llc_initialize_replacement()

@@ -49,6 +49,14 @@ static unordered_set<uint64_t> llc_demand_resident;
 static unordered_set<uint64_t> llc_evicted_by_prefetch;
 static uint64_t llc_pollution_count = 0;
 
+void reset_llc_pollution_stats()
+{
+    llc_demand_resident.clear();
+    llc_evicted_by_prefetch.clear();
+    llc_pollution_count = 0;
+     
+}
+
 void InitReplacementState()
 {
     for (int i = 0; i < LLC_SETS; i++)

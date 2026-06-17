@@ -8,6 +8,12 @@ uint64_t l1d_pollution_count = 0;
 int pf = 0;
 int evicted = 0;
 
+void reset_l1d_pollution_stats(){
+    l1d_demand_resident.clear();
+    l1d_evicted_by_prefetch.clear();
+    l1d_pollution_count = 0;
+}
+
 // initialize replacement state
 void CACHE::l1d_initialize_replacement()
 {

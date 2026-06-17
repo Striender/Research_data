@@ -13,6 +13,13 @@ static unordered_set<uint64_t> l2_evicted_by_prefetch;
 // Total pollution events
 static uint64_t l2_pollution_count = 0;
 
+void reset_l2c_pollution_stats()
+{
+    l2_demand_resident.clear();
+    l2_evicted_by_prefetch.clear();
+    l2_pollution_count = 0;
+}
+
 void CACHE::l2c_initialize_replacement()
 {
     cout << NAME << " has LRU replacement policy with pollution tracking" << endl;

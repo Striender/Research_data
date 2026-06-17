@@ -7,6 +7,9 @@ using namespace std;
 /* ===============================
    POLLUTION TRACKING @ LLC
    =============================== */
+void reset_llc_pollution_stats()
+{
+}
 
 // Demand-resident lines in LLC
 static unordered_set<uint64_t> llc_demand_resident;
