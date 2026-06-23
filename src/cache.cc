@@ -1728,11 +1728,12 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                     if (cache_type == IS_L1D) {
                         reuse_distance_access(read_cpu, RQ.entry[index].full_addr, RQ.entry[index].type);
                         l1d_prefetcher_operate(RQ.entry[index].full_addr, RQ.entry[index].ip, 1, RQ.entry[index].type, RQ.entry[index].critical_ip_flag);	
-                    }
-                        // RQ.entry[index].instr_id);
-                    else if ((cache_type == IS_L2C) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].instruction == 0) && (RQ.entry[index].type != LOAD_TRANSLATION) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].type != TRANSLATION_FROM_L1D)){	//Neelu: for dense region, only invoking on loads, check other l2c_pref_operate as well. 
-                        l2c_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 1, RQ.entry[index].type, 0, RQ.entry[index].critical_ip_flag);	
-                    }
+	                    }
+	                        // RQ.entry[index].instr_id);
+	                    else if ((cache_type == IS_L2C) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].instruction == 0) && (RQ.entry[index].type != LOAD_TRANSLATION) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].type != TRANSLATION_FROM_L1D)){	//Neelu: for dense region, only invoking on loads, check other l2c_pref_operate as well. 
+	                        reuse_distance_l2c_access(read_cpu, block[set][way].address<<LOG2_BLOCK_SIZE, RQ.entry[index].type);
+	                        l2c_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 1, RQ.entry[index].type, 0, RQ.entry[index].critical_ip_flag);	
+	                    }
                     else if (cache_type == IS_LLC)
                     {
                         cpu = read_cpu;
@@ -2358,13 +2359,15 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
 
                                 if(cache_type == IS_L1I)
                                     l1i_prefetcher_cache_operate(read_cpu, RQ.entry[index].ip, 0, 0);
-                                if (cache_type == IS_L1D) {
-                                    reuse_distance_access(read_cpu, RQ.entry[index].full_addr, RQ.entry[index].type);
-                                    l1d_prefetcher_operate(RQ.entry[index].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, RQ.entry[index].critical_ip_flag);
-                                }
-                                else if ((cache_type == IS_L2C) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].instruction == 0) && (RQ.entry[index].type != LOAD_TRANSLATION) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].type != TRANSLATION_FROM_L1D))
-                                    l2c_prefetcher_operate(RQ.entry[index].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 0, RQ.entry[index].type, 0, RQ.entry[index].critical_ip_flag);	// RQ.entry[index].instr_id);
-                                else if (cache_type == IS_LLC)
+	                                if (cache_type == IS_L1D) {
+	                                    reuse_distance_access(read_cpu, RQ.entry[index].full_addr, RQ.entry[index].type);
+	                                    l1d_prefetcher_operate(RQ.entry[index].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, RQ.entry[index].critical_ip_flag);
+	                                }
+	                                else if ((cache_type == IS_L2C) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].instruction == 0) && (RQ.entry[index].type != LOAD_TRANSLATION) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].type != TRANSLATION_FROM_L1D)) {
+	                                    reuse_distance_l2c_access(read_cpu, RQ.entry[index].address<<LOG2_BLOCK_SIZE, RQ.entry[index].type);
+	                                    l2c_prefetcher_operate(RQ.entry[index].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 0, RQ.entry[index].type, 0, RQ.entry[index].critical_ip_flag);	// RQ.entry[index].instr_id);
+	                                }
+	                                else if (cache_type == IS_LLC)
                                 {
                                     cpu = read_cpu;
                                     llc_prefetcher_operate(RQ.entry[index].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 0, RQ.entry[index].type, 0);

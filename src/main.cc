@@ -157,13 +157,14 @@ void print_energy_profile()
 
 void print_roi_stats(uint32_t cpu, CACHE *cache)
 {
-    uint64_t TOTAL_ACCESS = 0, TOTAL_HIT = 0, TOTAL_MISS = 0, TOTAL_INSTR_MISS = 0;
+    uint64_t TOTAL_ACCESS = 0, TOTAL_HIT = 0, TOTAL_MISS = 0, TOTAL_INSTR_MISS = 0, TOTAL_MSHR_FULL = 0;
 
     for (uint32_t i=0; i<NUM_TYPES; i++) {
         TOTAL_ACCESS += cache->roi_access[cpu][i];
         TOTAL_HIT += cache->roi_hit[cpu][i];
         TOTAL_MISS += cache->roi_miss[cpu][i];
 	TOTAL_INSTR_MISS += cache->roi_instr_miss[cpu][i];
+        TOTAL_MSHR_FULL += cache->MSHR_FULL[i];
     }
 
     uint64_t num_instrs = ooo_cpu[cpu].finish_sim_instr;
@@ -257,6 +258,9 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 
 	//}
 			cout << cache->NAME << " PREFETCHES SAME FILL-ORIGIN LEVEL: " << cache->pf_same_fill_level << " DIFFERENT FILL-ORIGIN LEVEL: " << cache->pf_lower_fill_level << endl;
+
+    cout << cache->NAME;
+    cout << " MSHR FULL   TOTAL: " << setw(10) << TOTAL_MSHR_FULL << "  LOAD: " << setw(10) << cache->MSHR_FULL[LOAD] << "  RFO: " << setw(10) << cache->MSHR_FULL[RFO] << "  PREFETCH: " << setw(10) << cache->MSHR_FULL[PREFETCH] << "  WRITEBACK: " << setw(10) << cache->MSHR_FULL[WRITEBACK] << endl;
 
     if(cache->cache_type == IS_PSCL5 || cache->cache_type == IS_PSCL4 || cache->cache_type == IS_PSCL3 || cache->cache_type == IS_PSCL2)
 	{
