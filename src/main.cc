@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include "ooo_cpu.h"
 #include "uncore.h"
+#include "reuse_distance.h"
 #include <fstream>
 #include <string.h>
 #include <sstream>
@@ -342,12 +343,13 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 
 void print_sim_stats(uint32_t cpu, CACHE *cache)
 {
-    uint64_t TOTAL_ACCESS = 0, TOTAL_HIT = 0, TOTAL_MISS = 0;
+    uint64_t TOTAL_ACCESS = 0, TOTAL_HIT = 0, TOTAL_MISS = 0, TOTAL_MSHR_FULL = 0;
 
     for (uint32_t i=0; i<NUM_TYPES; i++) {
         TOTAL_ACCESS += cache->sim_access[cpu][i];
         TOTAL_HIT += cache->sim_hit[cpu][i];
         TOTAL_MISS += cache->sim_miss[cpu][i];
+        TOTAL_MSHR_FULL += cache->MSHR_FULL[i];
     }
 
     uint64_t num_instrs = ooo_cpu[cpu].num_retired - ooo_cpu[cpu].begin_sim_instr;
@@ -366,6 +368,9 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
 
     cout << cache->NAME;
     cout << " WRITEBACK ACCESS: " << setw(10) << cache->sim_access[cpu][3] << "  HIT: " << setw(10) << cache->sim_hit[cpu][3] << "  MISS: " << setw(10) << cache->sim_miss[cpu][3] << "  HIT %: " << setw(10) << ((double)cache->sim_hit[cpu][3]*100/cache->sim_access[cpu][3]) << "  MISS %: " << setw(10) << ((double)cache->sim_miss[cpu][3]*100/cache->sim_access[cpu][3]) << "   MPKI: " <<  ((double)cache->sim_miss[cpu][3]*1000/num_instrs) << endl;
+
+    cout << cache->NAME;
+    cout << " MSHR FULL   TOTAL: " << setw(10) << TOTAL_MSHR_FULL << "  LOAD: " << setw(10) << cache->MSHR_FULL[LOAD] << "  RFO: " << setw(10) << cache->MSHR_FULL[RFO] << "  PREFETCH: " << setw(10) << cache->MSHR_FULL[PREFETCH] << "  WRITEBACK: " << setw(10) << cache->MSHR_FULL[WRITEBACK] << endl;
 }
 
 void print_branch_stats()
@@ -421,6 +426,7 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
         cache->MISS[i] = 0;
         cache->MSHR_MERGED[i] = 0;
         cache->STALL[i] = 0;
+        cache->MSHR_FULL[i] = 0;
 
         cache->sim_access[cpu][i] = 0;
         cache->sim_hit[cpu][i] = 0;
@@ -492,6 +498,7 @@ void finish_warmup()
 
     reset_l2c_pollution_stats();
     reset_llc_pollution_stats();
+    reuse_distance_clear();
 
     // reset core latency
     SCHEDULING_LATENCY = 6;
@@ -1828,6 +1835,7 @@ int main(int argc, char** argv)
    
 
     uncore.LLC.llc_prefetcher_final_stats();
+    reuse_distance_final_stats();
 
 #ifdef SANITY_CHECK
 	for(uint32_t i = 0; i < NUM_CPUS; i++)

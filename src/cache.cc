@@ -2,6 +2,7 @@
 #include "set.h"
 #include "ooo_cpu.h"
 #include "uncore.h"
+#include "reuse_distance.h"
 
 #include<vector>
 
@@ -909,7 +910,8 @@ if (writeback_cpu == NUM_CPUS)
                 }
                 else {
                     if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
-
+                        if(MSHR.occupancy == MSHR_SIZE)
+                            MSHR_FULL[WQ.entry[index].type]++;
                         // cannot handle miss request until one of MSHRs is available
                         miss_handled = 0;
                         STALL[WQ.entry[index].type]++;
@@ -1723,8 +1725,11 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                     assert(cache_type != IS_ITLB || cache_type != IS_DTLB || cache_type != IS_STLB);
                     if(cache_type == IS_L1I)
                         l1i_prefetcher_cache_operate(read_cpu, RQ.entry[index].ip, 1, block[set][way].prefetch);
-                    if (cache_type == IS_L1D) 
-                        l1d_prefetcher_operate(RQ.entry[index].full_addr, RQ.entry[index].ip, 1, RQ.entry[index].type, RQ.entry[index].critical_ip_flag);	// RQ.entry[index].instr_id);
+                    if (cache_type == IS_L1D) {
+                        reuse_distance_access(read_cpu, RQ.entry[index].full_addr, RQ.entry[index].type);
+                        l1d_prefetcher_operate(RQ.entry[index].full_addr, RQ.entry[index].ip, 1, RQ.entry[index].type, RQ.entry[index].critical_ip_flag);	
+                    }
+                        // RQ.entry[index].instr_id);
                     else if ((cache_type == IS_L2C) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].instruction == 0) && (RQ.entry[index].type != LOAD_TRANSLATION) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].type != TRANSLATION_FROM_L1D)){	//Neelu: for dense region, only invoking on loads, check other l2c_pref_operate as well. 
                         l2c_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 1, RQ.entry[index].type, 0, RQ.entry[index].critical_ip_flag);	
                     }
@@ -1989,6 +1994,9 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                         if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
 
                             // cannot handle miss request until one of MSHRs is available
+                            if(MSHR.occupancy == MSHR_SIZE)
+                                MSHR_FULL[RQ.entry[index].type]++;
+
                             miss_handled = 0;
                             STALL[RQ.entry[index].type]++;
                         }
@@ -2350,8 +2358,10 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
 
                                 if(cache_type == IS_L1I)
                                     l1i_prefetcher_cache_operate(read_cpu, RQ.entry[index].ip, 0, 0);
-                                if (cache_type == IS_L1D) 
-                                    l1d_prefetcher_operate(RQ.entry[index].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, RQ.entry[index].critical_ip_flag);	//RQ.entry[index].instr_id);
+                                if (cache_type == IS_L1D) {
+                                    reuse_distance_access(read_cpu, RQ.entry[index].full_addr, RQ.entry[index].type);
+                                    l1d_prefetcher_operate(RQ.entry[index].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, RQ.entry[index].critical_ip_flag);
+                                }
                                 else if ((cache_type == IS_L2C) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].instruction == 0) && (RQ.entry[index].type != LOAD_TRANSLATION) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].type != TRANSLATION_FROM_L1D))
                                     l2c_prefetcher_operate(RQ.entry[index].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 0, RQ.entry[index].type, 0, RQ.entry[index].critical_ip_flag);	// RQ.entry[index].instr_id);
                                 else if (cache_type == IS_LLC)
@@ -2753,7 +2763,8 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                         }
                         else {
                             if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
-
+                                if(MSHR.occupancy == MSHR_SIZE)
+                                    MSHR_FULL[PQ.entry[index].type]++;
                                 // TODO: should we allow prefetching with lower fill level at this case?
 
                                 // cannot handle miss request until one of MSHRs is available
