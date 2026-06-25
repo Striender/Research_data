@@ -884,6 +884,7 @@ if (writeback_cpu == NUM_CPUS)
 
                 // check mshr
                 uint8_t miss_handled = 1;
+                mshr_accessed++;
                 int mshr_index = check_nonfifo_queue(&MSHR, &WQ.entry[index],false); //@Vishal: Updated from check_mshr
 
                 if(mshr_index == -2)
@@ -910,6 +911,7 @@ if (writeback_cpu == NUM_CPUS)
                 }
                 else {
                     if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
+                        mshr_full_accesses++;
                         if(MSHR.occupancy == MSHR_SIZE)
                             MSHR_FULL[WQ.entry[index].type]++;
                         // cannot handle miss request until one of MSHRs is available
@@ -1435,6 +1437,7 @@ void CACHE::handle_processed()
 void CACHE::handle_read()
 {
     average_mshr_occupancy += MSHR.occupancy;
+
     if(cache_type == IS_L1D) {
         //	cout << "Handle read cycle: " << current_core_cycle[cpu] << "PQ Occupancy: " << PQ.occupancy << endl;
         sum_pq_occupancy += PQ.occupancy;
@@ -1731,7 +1734,7 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
 	                    }
 	                        // RQ.entry[index].instr_id);
 	                    else if ((cache_type == IS_L2C) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].instruction == 0) && (RQ.entry[index].type != LOAD_TRANSLATION) && (RQ.entry[index].type != PREFETCH_TRANSLATION) && (RQ.entry[index].type != TRANSLATION_FROM_L1D)){	//Neelu: for dense region, only invoking on loads, check other l2c_pref_operate as well. 
-	                        reuse_distance_l2c_access(read_cpu, block[set][way].address<<LOG2_BLOCK_SIZE, RQ.entry[index].type);
+	                        reuse_distance_l2c_access(read_cpu, RQ.entry[index].address<<LOG2_BLOCK_SIZE, RQ.entry[index].type);
 	                        l2c_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, RQ.entry[index].ip, 1, RQ.entry[index].type, 0, RQ.entry[index].critical_ip_flag);	
 	                    }
                     else if (cache_type == IS_LLC)
@@ -1890,6 +1893,7 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
 
                     // check mshr
                     uint8_t miss_handled = 1;
+                    mshr_accessed++;
                     int mshr_index = check_nonfifo_queue(&MSHR, &RQ.entry[index],false); //@Vishal: Updated from check_mshr
 
                     if(mshr_index == -2)
@@ -1995,6 +1999,7 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                         if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
 
                             // cannot handle miss request until one of MSHRs is available
+                            mshr_full_accesses++;
                             if(MSHR.occupancy == MSHR_SIZE)
                                 MSHR_FULL[RQ.entry[index].type]++;
 
@@ -2611,6 +2616,7 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
 
                         // check mshr
                         uint8_t miss_handled = 1;
+                        mshr_accessed++;
                         int mshr_index = check_nonfifo_queue(&MSHR, &PQ.entry[index],false); //@Vishal: Updated from check_mshr
 
                         if ((mshr_index == -1) && (MSHR.occupancy < MSHR_SIZE)) { // this is a new miss
@@ -2766,6 +2772,7 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                         }
                         else {
                             if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
+                                mshr_full_accesses++;
                                 if(MSHR.occupancy == MSHR_SIZE)
                                     MSHR_FULL[PQ.entry[index].type]++;
                                 // TODO: should we allow prefetching with lower fill level at this case?
@@ -2868,7 +2875,6 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                 assert(0);
             }
         }
-
         uint32_t CACHE::get_set(uint64_t address)
         {
 #ifdef PUSH_DTLB_PB

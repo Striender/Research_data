@@ -259,8 +259,10 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 	//}
 			cout << cache->NAME << " PREFETCHES SAME FILL-ORIGIN LEVEL: " << cache->pf_same_fill_level << " DIFFERENT FILL-ORIGIN LEVEL: " << cache->pf_lower_fill_level << endl;
 
-    cout << cache->NAME;
-    cout << " MSHR FULL   TOTAL: " << setw(10) << TOTAL_MSHR_FULL << "  LOAD: " << setw(10) << cache->MSHR_FULL[LOAD] << "  RFO: " << setw(10) << cache->MSHR_FULL[RFO] << "  PREFETCH: " << setw(10) << cache->MSHR_FULL[PREFETCH] << "  WRITEBACK: " << setw(10) << cache->MSHR_FULL[WRITEBACK] << endl;
+	    cout << cache->NAME;
+	    cout << " MSHR FULL   TOTAL: " << setw(10) << TOTAL_MSHR_FULL << "  LOAD: " << setw(10) << cache->MSHR_FULL[LOAD] << "  RFO: " << setw(10) << cache->MSHR_FULL[RFO] << "  PREFETCH: " << setw(10) << cache->MSHR_FULL[PREFETCH] << "  WRITEBACK: " << setw(10) << cache->MSHR_FULL[WRITEBACK] << endl;
+	    double mshr_full_percent = cache->mshr_accessed ? (100.0 * cache->mshr_full_accesses / cache->mshr_accessed) : 0.0;
+	    cout << cache->NAME << " MSHR ACCESSED: " << setw(10) << cache->mshr_accessed << " MSHR FULL ACCESSES: " << setw(10) << cache->mshr_full_accesses << " MSHR FULL ACCESS %: " << setw(10) << mshr_full_percent << endl;
 
     if(cache->cache_type == IS_PSCL5 || cache->cache_type == IS_PSCL4 || cache->cache_type == IS_PSCL3 || cache->cache_type == IS_PSCL2)
 	{
@@ -373,8 +375,10 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
     cout << cache->NAME;
     cout << " WRITEBACK ACCESS: " << setw(10) << cache->sim_access[cpu][3] << "  HIT: " << setw(10) << cache->sim_hit[cpu][3] << "  MISS: " << setw(10) << cache->sim_miss[cpu][3] << "  HIT %: " << setw(10) << ((double)cache->sim_hit[cpu][3]*100/cache->sim_access[cpu][3]) << "  MISS %: " << setw(10) << ((double)cache->sim_miss[cpu][3]*100/cache->sim_access[cpu][3]) << "   MPKI: " <<  ((double)cache->sim_miss[cpu][3]*1000/num_instrs) << endl;
 
-    cout << cache->NAME;
-    cout << " MSHR FULL   TOTAL: " << setw(10) << TOTAL_MSHR_FULL << "  LOAD: " << setw(10) << cache->MSHR_FULL[LOAD] << "  RFO: " << setw(10) << cache->MSHR_FULL[RFO] << "  PREFETCH: " << setw(10) << cache->MSHR_FULL[PREFETCH] << "  WRITEBACK: " << setw(10) << cache->MSHR_FULL[WRITEBACK] << endl;
+	    cout << cache->NAME;
+	    cout << " MSHR FULL   TOTAL: " << setw(10) << TOTAL_MSHR_FULL << "  LOAD: " << setw(10) << cache->MSHR_FULL[LOAD] << "  RFO: " << setw(10) << cache->MSHR_FULL[RFO] << "  PREFETCH: " << setw(10) << cache->MSHR_FULL[PREFETCH] << "  WRITEBACK: " << setw(10) << cache->MSHR_FULL[WRITEBACK] << endl;
+	    double mshr_full_percent = cache->mshr_accessed ? (100.0 * cache->mshr_full_accesses / cache->mshr_accessed) : 0.0;
+	    cout << cache->NAME << " MSHR ACCESSED: " << setw(10) << cache->mshr_accessed << " MSHR FULL ACCESSES: " << setw(10) << cache->mshr_full_accesses << " MSHR FULL ACCESS %: " << setw(10) << mshr_full_percent << endl;
 }
 
 void print_branch_stats()
@@ -438,10 +442,12 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
 	cache->sim_instr_miss[cpu][i] = 0;
     }
 
-    cache->total_miss_latency = 0;
-    cache->average_mshr_occupancy=0;
+	cache->total_miss_latency = 0;
+	cache->average_mshr_occupancy=0;
+	cache->mshr_accessed=0;
+	cache->mshr_full_accesses=0;
 
-    cache->RQ.ACCESS = 0;
+		cache->RQ.ACCESS = 0;
     cache->RQ.MERGED = 0;
     cache->RQ.TO_CACHE = 0;
     cache->RQ.FORWARD = 0;

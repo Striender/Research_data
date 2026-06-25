@@ -86,7 +86,8 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 #define L1I_LATENCY 4
 
 // L1 DATA CACHE
-#define L1D_SET 64
+//checking cache sensitivity for AI/ML workloads by reducing L1D size from 48KB to 32KB and 16KB.
+#define L1D_SET 48
 #define L1D_WAY 12
 #define L1D_RQ_SIZE 64
 #define L1D_WQ_SIZE 64 
@@ -163,8 +164,10 @@ class CACHE : public MEMORY {
 	     data_evicting_data,
 	     instr_evicting_instr,
 	     transl_evicting_transl,
-         average_mshr_occupancy,
-         mshr_counter; 
+	         average_mshr_occupancy,
+             mshr_accessed, //
+             mshr_full_accesses,
+	         mshr_counter; 
 
     	     uint64_t pref_useful[NUM_CPUS][6],
              pref_filled[NUM_CPUS][6],
@@ -274,8 +277,10 @@ class CACHE : public MEMORY {
 	data_evicting_data = 0;
 	instr_evicting_instr = 0;
 	transl_evicting_transl = 0,
-    average_mshr_occupancy = 0;
-    mshr_counter = 0; 
+	    average_mshr_occupancy = 0;
+        mshr_accessed = 0;
+        mshr_full_accesses = 0;
+	    mshr_counter = 0; 
 
 	for(int i = 0; i < NUM_CPUS; i++)
 	{
