@@ -2,7 +2,7 @@
 #define CACHE_H
 
 #include "memory_class.h"
-
+#include <vector>
 // reset pollution count variables
 extern void reset_llc_pollution_stats();
 extern void reset_l2c_pollution_stats();
@@ -167,11 +167,15 @@ class CACHE : public MEMORY {
 	         average_mshr_occupancy,
              mshr_accessed, //
              mshr_full_accesses,
-	         mshr_counter; 
+	         mshr_counter;
 
-    	     uint64_t pref_useful[NUM_CPUS][6],
-             pref_filled[NUM_CPUS][6],
-             pref_late[NUM_CPUS][6];
+    std::vector<uint64_t> mshr_full_streak_lengths;    // count n store lengths of consecutive cycles when MSHR is full
+    uint64_t current_mshr_full_streak;
+
+    uint64_t *mshr_occupancy_cycles;
+    uint64_t pref_useful[NUM_CPUS][6],
+    pref_filled[NUM_CPUS][6],
+    pref_late[NUM_CPUS][6];
 	     //Addition by Neelu end
 
 
@@ -281,8 +285,10 @@ class CACHE : public MEMORY {
         mshr_accessed = 0;
         mshr_full_accesses = 0;
 	    mshr_counter = 0; 
+        mshr_occupancy_cycles = new uint64_t[MSHR_SIZE+1]();
+        current_mshr_full_streak = 0;
 
-	for(int i = 0; i < NUM_CPUS; i++)
+		for(int i = 0; i < NUM_CPUS; i++)
 	{
 		for(int j = 0; j < 6; j++)
 		{

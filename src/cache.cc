@@ -2856,6 +2856,7 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
 
         void CACHE::operate()
         {
+            
             handle_fill();
             handle_writeback();
             reads_available_this_cycle = MAX_READ;
@@ -2874,6 +2875,16 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                 cout << PQ.entry[PQ.head];	
                 assert(0);
             }
+            mshr_occupancy_cycles[MSHR.occupancy]++;
+        
+            if(MSHR.occupancy == MSHR_SIZE)
+                current_mshr_full_streak++;
+            else if (current_mshr_full_streak > 0) {
+                mshr_full_streak_lengths.push_back(current_mshr_full_streak);
+                current_mshr_full_streak = 0;
+            }
+
+            
         }
         uint32_t CACHE::get_set(uint64_t address)
         {
