@@ -1786,6 +1786,12 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
                 // update replacement policy
                 (this->*update_replacement_state)(read_cpu, set, way, block[set][way].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, 1);
 
+                // Count demand-load reuse for data cache lines.
+                if ((cache_type == IS_L1D || cache_type == IS_L2C || cache_type == IS_LLC) /*&& RQ.entry[index].type == LOAD*/ && RQ.entry[index].instruction == 0) {
+                    block[set][way].reuse_counter++;
+                }
+
+
                 // COLLECT STATS
                 sim_hit[read_cpu][RQ.entry[index].type]++;
                 sim_access[read_cpu][RQ.entry[index].type]++;
@@ -2963,12 +2969,21 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
             if (block[set][way].prefetch && (block[set][way].used == 0))
                 pf_useless++;
 
+            //Neeraj: on cache fill , reset the reuse counter to 0
+            if (cache_type == IS_L1D || cache_type == IS_L2C || cache_type == IS_LLC){
+                if (block[set][way].valid) {
+                      line_reuse_count[block[set][way].reuse_counter]++;
+                  }
+            }
+
+
             if (block[set][way].valid == 0)
                 block[set][way].valid = 1;
             block[set][way].dirty = 0;
             block[set][way].prefetch = (packet->type == PREFETCH || packet->type == PREFETCH_TRANSLATION || packet->type == TRANSLATION_FROM_L1D) ? 1 : 0;
             block[set][way].used = 0;
 
+            
             //Neelu: Setting instruction and translation fields in L2C
             if(cache_type == IS_L2C)
             {	
@@ -3010,6 +3025,9 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
             block[set][way].data = packet->data;
             block[set][way].cpu = packet->cpu;
             block[set][way].instr_id = packet->instr_id;
+
+            //reset the reuse counter to 0 on cache fill for new block
+            block[set][way].reuse_counter = 0;
 
             DP ( if (warmup_complete[packet->cpu] ) {
                     cout << "[" << NAME << "] " << __func__ << " set: " << set << " way: " << way;

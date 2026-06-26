@@ -279,6 +279,12 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
                  cout << cache->current_mshr_full_streak << " ";
             cout << endl;
 
+            cout << cache->NAME << " LINE REUSE COUNT : ";
+            for (auto const &entry : cache->line_reuse_count) {
+                cout << entry.first << ":" << entry.second << " ";
+            }
+            cout << endl;
+
     if(cache->cache_type == IS_PSCL5 || cache->cache_type == IS_PSCL4 || cache->cache_type == IS_PSCL3 || cache->cache_type == IS_PSCL2)
 	{
 	}
@@ -402,7 +408,7 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
     }
     cout << endl;
 
-     cout << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
+    cout << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
 
     for (uint64_t length : cache->mshr_full_streak_lengths)
         cout << length << " ";
@@ -412,6 +418,11 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
   
     cout << endl;
   
+    cout << cache->NAME << " LINE REUSE COUNT : ";
+    for (auto const &entry : cache->line_reuse_count) {
+        cout << entry.first << ":" << entry.second << " ";
+    }
+    cout << endl;
 
 
 }
@@ -484,6 +495,13 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
 
     cache->mshr_full_streak_lengths.clear();
     cache->current_mshr_full_streak = 0;
+    cache->line_reuse_count.clear();
+
+    for (uint32_t set = 0; set < cache->NUM_SET; set++) {
+        for (uint32_t way = 0; way < cache->NUM_WAY; way++) {
+            cache->block[set][way].reuse_counter = 0;
+        }
+    }
 
     for (uint32_t occ = 0; occ <= cache->MSHR_SIZE; occ++) {
       cache->mshr_occupancy_cycles[occ] = 0;

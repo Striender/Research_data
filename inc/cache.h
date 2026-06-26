@@ -3,6 +3,7 @@
 
 #include "memory_class.h"
 #include <vector>
+#include <map>
 // reset pollution count variables
 extern void reset_llc_pollution_stats();
 extern void reset_l2c_pollution_stats();
@@ -171,6 +172,7 @@ class CACHE : public MEMORY {
 
     std::vector<uint64_t> mshr_full_streak_lengths;    // count n store lengths of consecutive cycles when MSHR is full
     uint64_t current_mshr_full_streak;
+    std::map<uint64_t, uint64_t> line_reuse_count;
 
     uint64_t *mshr_occupancy_cycles;
     uint64_t pref_useful[NUM_CPUS][6],

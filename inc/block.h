@@ -32,6 +32,9 @@ class BLOCK {
     // replacement state
     uint32_t lru;
 
+    // Neeraj:: reuse counter
+    uint64_t reuse_counter;
+
     BLOCK() {
         valid = 0;
         prefetch = 0;
@@ -55,6 +58,7 @@ class BLOCK {
         instr_id = 0;
 
         lru = 0;
+        reuse_counter = 0;
     };
 };
 
