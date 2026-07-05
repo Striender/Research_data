@@ -20,7 +20,7 @@
 // Mask
 # define MAX_HISTORY_IP               (8)
 # define MAX_PF                       (16)
-# define MAX_PF_LAUNCH                (12)
+# define MAX_PF_LAUNCH                (24)
 # define STRIDE_MASK                  (12)
 
 // Mask
