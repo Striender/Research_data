@@ -241,9 +241,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/results_gap/"
-    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/gap_workload"
-    EXCEL_OUTPUT_FILE = "gap_data_dump.xlsx"
+    RESULTS_DIR = "../rnd2/ai_ml/"
+    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/AI_ml"
+    EXCEL_OUTPUT_FILE = "data_dump.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
