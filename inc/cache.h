@@ -93,7 +93,7 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 #define L1D_RQ_SIZE 64
 #define L1D_WQ_SIZE 64 
 #define L1D_PQ_SIZE 8     //	Neelu: Changed from 8 to 16. 
-#define L1D_MSHR_SIZE 32  //    Neeraj: Original size was 16 
+#define L1D_MSHR_SIZE 16  //    Originally 16, 
 #define L1D_LATENCY 5
 
 // L2 CACHE
@@ -102,7 +102,7 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 #define L2C_RQ_SIZE 32
 #define L2C_WQ_SIZE 32
 #define L2C_PQ_SIZE 16	//Neelu: changing from 16 to 32
-#define L2C_MSHR_SIZE 32
+#define L2C_MSHR_SIZE 32 //  Original 32
 #define L2C_LATENCY 10  // 5 (L1I or L1D) + 10 = 15 cycles
 
 // LAST LEVEL CACHE
