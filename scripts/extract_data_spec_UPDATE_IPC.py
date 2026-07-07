@@ -283,9 +283,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../rnd2/results_spec/"
-    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/rnd2"
-    EXCEL_OUTPUT_FILE = "rnd2.xlsx"
+    RESULTS_DIR = "../results/ai_ml/"
+    OUTPUT_DIR = "/home2/neeraj/OneDrive/Research_Data/AI_ml"
+    EXCEL_OUTPUT_FILE = "ai.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -316,6 +316,9 @@ def main():
         path_parts = relative_path.split(os.sep)
 
         group_key, experiment = None, None
+        if len(path_parts) == 4: # Edge case for nested directories: results/pref_l1/berti/exp1/subdir
+            cache, size , prefetcher, experiment = path_parts
+            group_key = f"{cache}_{size}_{prefetcher}"
 
         if len(path_parts) == 3: # Standard case: results/pref_l1/berti/exp1
             cache_level, prefetcher, experiment = path_parts

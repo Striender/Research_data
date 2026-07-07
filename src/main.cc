@@ -264,14 +264,14 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 	        double mshr_full_percent = cache->mshr_accessed ? (100.0 * cache->mshr_full_accesses / cache->mshr_accessed) : 0.0;
 	        cout << cache->NAME << " MSHR ACCESSED: " << setw(10) << cache->mshr_accessed << " MSHR FULL ACCESSES: " << setw(10) << cache->mshr_full_accesses << " MSHR FULL ACCESS %: " << setw(10) << mshr_full_percent << endl;
 
-            cout << cache->NAME;
+            cout << endl << cache->NAME;
             cout << " MSHR OCCUPANCY DISTRIBUTION: ";
             for (uint32_t occ = 0; occ <= cache->MSHR_SIZE; occ++) {
                 cout << occ << ":" << cache->mshr_occupancy_cycles[occ] << "   ";
             }
             cout << endl;
-
-            cout << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
+        
+            cout << endl << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
             for (uint64_t length : cache->mshr_full_streak_lengths)
                 cout << length << " ";
 
@@ -279,7 +279,7 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
                  cout << cache->current_mshr_full_streak << " ";
             cout << endl;
 
-            cout << cache->NAME << " LINE REUSE COUNT : ";
+            cout << endl << cache->NAME << " LINE REUSE COUNT : ";
             for (auto const &entry : cache->line_reuse_count) {
                 cout << entry.first << ":" << entry.second << " ";
             }
@@ -401,14 +401,14 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
 	double mshr_full_percent = cache->mshr_accessed ? (100.0 * cache->mshr_full_accesses / cache->mshr_accessed) : 0.0;
 	cout << cache->NAME << " MSHR ACCESSED: " << setw(10) << cache->mshr_accessed << " MSHR FULL ACCESSES: " << setw(10) << cache->mshr_full_accesses << " MSHR FULL ACCESS %: " << setw(10) << mshr_full_percent << endl;
 
-    cout << cache->NAME;
+    cout << endl <<cache->NAME;
     cout << "MSHR OCCUPANCY DISTRIBUTION: ";
     for (uint32_t occ = 0; occ <= cache->MSHR_SIZE; occ++) {
         cout << occ << ":" << cache->mshr_occupancy_cycles[occ] << "   ";
     }
     cout << endl;
 
-    cout << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
+    cout << endl << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
 
     for (uint64_t length : cache->mshr_full_streak_lengths)
         cout << length << " ";
@@ -418,7 +418,7 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
   
     cout << endl;
   
-    cout << cache->NAME << " LINE REUSE COUNT : ";
+    cout << endl << cache->NAME << " LINE REUSE COUNT : ";
     for (auto const &entry : cache->line_reuse_count) {
         cout << entry.first << ":" << entry.second << " ";
     }
