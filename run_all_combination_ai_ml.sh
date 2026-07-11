@@ -6,18 +6,36 @@ set -o pipefail
 # INPUTS
 ###############################################################################
 TOTAL_CORES=${1:? "TOTAL_CORES required"}
-RP_SELECTOR=${2:-}
+RP_SELECTOR=""
+RP_MODE="sequential"
+
+if [[ $# -ge 2 ]]; then
+    if [[ "$2" == "p" ]]; then
+        RP_MODE="p"
+    else
+        RP_SELECTOR="$2"
+    fi
+fi
+
+if [[ $# -ge 3 ]]; then
+    RP_MODE="$3"
+fi
 
 ###############################################################################
 # PATHS & CONSTANTS
 ###############################################################################
 TRACE_DIR=/home1/sweta/traces/DPC4-Traces/AI_ML
-RESULT_ROOT=./results/results_ai_ml
+RESULT_ROOT=./results/ai_ml/bingo_accuracy
 BIN_DIR=./bin
+
+SKIP_TRACE_PREFIXES=(
+    rwkv
+    biogpt.cpp-ggml-model-tocilizumab
+)
 
 WARMUP=50000000
 SIM=200000000
-MAX_CORES_PER_COMBO=32
+MAX_CORES_PER_COMBO=26
 
 ###############################################################################
 # PREFETCHER COMBINATIONS
@@ -30,8 +48,8 @@ PREFETCHER_COMBINATIONS=(
 #d
  #d "vberti:ppf"
  #d "vberti:spp"
- #d "vberti:bingo_dpc3"
- #d "vberti:ip_stride"
+ #"vberti:bingo_dpc3"
+ # "vberti:ip_stride"
 #d
  #d "mlop_dpc3:ip_stride"
  #d "mlop_dpc3:ppf"
@@ -47,10 +65,11 @@ PREFETCHER_COMBINATIONS=(
   #"vberti:no"
   #"ip_stride:no"
   #"no:spp"
-  #"no:bingo_dpc3"
+  "no:bingo_dpc3"
   #"no:ppf"
   #"no:ip_stride"
-  "no:no"
+  #"no:sms"
+ #"no:no"
 )
 
 
@@ -77,11 +96,27 @@ else
     echo "❌ Invalid RP selector"
     exit 1
 fi
-
+echo "RP_SELECTOR = $RP_SELECTOR"
+echo "RP_LIST     = ${RP_LIST[*]}"
 ###############################################################################
 # TRACE / CORE CALCULATION
 ###############################################################################
-TRACE_COUNT=$(ls "$TRACE_DIR"/*.champsimtrace.gz | wc -l)
+TRACE_COUNT=0
+for TRACE in "$TRACE_DIR"/*.champsimtrace.gz; do
+    TRACE_FILE=$(basename "$TRACE")
+
+    skip_trace=false
+    for prefix in "${SKIP_TRACE_PREFIXES[@]}"; do
+        if [[ "$TRACE_FILE" == "$prefix"* ]]; then
+            skip_trace=true
+            break
+        fi
+    done
+
+    [[ "$skip_trace" == true ]] && continue
+    ((TRACE_COUNT++))
+done
+
 CORES_PER_COMBO=$TRACE_COUNT
 [ "$CORES_PER_COMBO" -gt "$MAX_CORES_PER_COMBO" ] && CORES_PER_COMBO=$MAX_CORES_PER_COMBO
 
@@ -109,7 +144,7 @@ binary_name() {
 }
 
 ###############################################################################
-# RUN TRACES (SKIPS rwkv)
+# RUN TRACES (SKIPS excluded traces)
 ###############################################################################
 run_traces() {
     local BINARY=$1
@@ -122,8 +157,16 @@ run_traces() {
     for TRACE in "$TRACE_DIR"/*.champsimtrace.gz; do
         TRACE_FILE=$(basename "$TRACE")
 
-        # 🚫 Skip rwkv traces
-        [[ "$TRACE_FILE" == rwkv* ]] && continue
+        # 🚫 Skip excluded traces
+        skip_trace=false
+        for prefix in "${SKIP_TRACE_PREFIXES[@]}"; do
+            if [[ "$TRACE_FILE" == "$prefix"* ]]; then
+                skip_trace=true
+                break
+            fi
+        done
+
+        [[ "$skip_trace" == true ]] && continue
 
         NAME="${TRACE_FILE%.champsimtrace.gz}"
 
@@ -131,16 +174,58 @@ run_traces() {
           -warmup_instructions $WARMUP \
           -simulation_instructions $SIM \
           -traces \"$TRACE\" \
-          > \"$OUT_DIR/$NAME.out\"" >> "$TMP"
+          > \"$OUT_DIR/$NAME\"" >> "$TMP"
     done
 
     JOBS=$(wc -l < "$TMP")
-    echo "🚀 Launching $JOBS traces using $CORES_PER_COMBO cores"
 
-    xargs -P "$CORES_PER_COMBO" -I CMD bash -c CMD < "$TMP"
+    TRACE_PARALLEL=$CORES_PER_COMBO
+
+    if [[ "$RP_MODE" == "p" ]]; then
+
+        RP_COUNT=${#RP_LIST[@]}
+
+        # divide available cores across RPs
+        TRACE_PARALLEL=$(( TOTAL_CORES / MAX_PARALLEL_COMBOS ))
+
+        [ "$TRACE_PARALLEL" -lt 1 ] && TRACE_PARALLEL=1
+
+        [ "$TRACE_PARALLEL" -gt "$CORES_PER_COMBO" ] && \
+            TRACE_PARALLEL=$CORES_PER_COMBO
+    fi
+
+    echo "🚀 Launching $JOBS traces using $TRACE_PARALLEL cores"
+
+    xargs -P "$TRACE_PARALLEL" -I CMD bash -c CMD < "$TMP"
     rm -f "$TMP"
 }
 
+###############################################################################
+# RUN SINGLE RP
+###############################################################################
+run_single_rp() {
+    local L1_BIN=$1
+    local L2_BIN=$2
+    local PREF_DIR=$3
+    local j=$4
+
+    [ "$j" -le 7 ] && base="lru" || base="srrip"
+    pol=${repl_policies[$((j-1))]}
+
+    binary="$BIN_DIR/hashed_perceptron-no-${L1_BIN}-${L2_BIN}-no-no-no-no-lru-lru-lru-${base}-${pol}-lru-lru-lru-1core-no"
+
+    if [ ! -x "$binary" ]; then
+        echo "❌ Binary not found: $binary"
+        return 1
+    fi
+
+    exp_dir="$RESULT_ROOT/$PREF_DIR/exp${j}_${base}_${pol}"
+
+    echo "[RUNNING] $PREF_DIR | RP=$j | ${base}/${pol}"
+    run_traces "$binary" "$exp_dir"
+    echo "[DONE]    $PREF_DIR | RP=$j"
+}
+ 
 ###############################################################################
 # RUN ONE COMBINATION
 ###############################################################################
@@ -163,44 +248,74 @@ run_one_combo() {
     L1_BIN=$(binary_name "$L1")
     L2_BIN=$(binary_name "$L2")
 
-    for j in "${RP_LIST_LOCAL[@]}"; do
-        [ "$j" -le 7 ] && base="lru" || base="srrip"
-        pol=${repl_policies[$((j-1))]}
+    if [[ "$RP_MODE" == "p" ]]; then
 
-        binary="$BIN_DIR/hashed_perceptron-no-${L1_BIN}-${L2_BIN}-no-no-no-no-lru-lru-lru-${base}-${pol}-lru-lru-lru-1core-no"
+        echo "🚀 Running replacement policies in parallel for $PREF_DIR"
 
-        if [ ! -x "$binary" ]; then
-            echo "❌ Binary not found: $binary"
-            exit 1
-        fi
+        RP_PARALLEL=$MAX_PARALLEL_COMBOS
 
-        exp_dir="$RESULT_ROOT/$PREF_DIR/exp${j}_${base}_${pol}"
+        rp_jobs=0
 
-        echo "[RUNNING] $PREF_DIR | RP=$j | ${base}/${pol}"
-        run_traces "$binary" "$exp_dir"
-        echo "[DONE]    $PREF_DIR | RP=$j"
-    done
+        for j in "${RP_LIST_LOCAL[@]}"; do
+
+            run_single_rp "$L1_BIN" "$L2_BIN" "$PREF_DIR" "$j" &
+
+            ((rp_jobs++))
+
+            if (( rp_jobs >= RP_PARALLEL )); then
+                wait -n
+                ((rp_jobs--))
+            fi
+
+        done
+
+        wait
+
+    else
+
+        for j in "${RP_LIST_LOCAL[@]}"; do
+            run_single_rp "$L1_BIN" "$L2_BIN" "$PREF_DIR" "$j"
+        done
+
+    fi
 }
 
 ###############################################################################
 # OUTER PARALLELISM
 ###############################################################################
-running_jobs=0
+if [[ "$RP_MODE" == "p" ]]; then
 
-for combo in "${PREFETCHER_COMBINATIONS[@]}"; do
-    IFS=":" read -r L1 L2 <<< "$combo"
+    for combo in "${PREFETCHER_COMBINATIONS[@]}"; do
+        IFS=":" read -r L1 L2 <<< "$combo"
 
-    run_one_combo "$L1" "$L2" "${RP_LIST[@]}" &
-    ((running_jobs++))
+        run_one_combo "$L1" "$L2" "${RP_LIST[@]}"
+    done
 
-    if (( running_jobs >= MAX_PARALLEL_COMBOS )); then
-        wait -n
-        ((running_jobs--))
-    fi
-done
+else
 
-wait
+    running_jobs=0
+
+    for combo in "${PREFETCHER_COMBINATIONS[@]}"; do
+        IFS=":" read -r L1 L2 <<< "$combo"
+
+        run_one_combo "$L1" "$L2" "${RP_LIST[@]}" &
+
+        ((running_jobs++))
+
+        if (( running_jobs >= MAX_PARALLEL_COMBOS )); then
+            wait -n
+            ((running_jobs--))
+        fi
+    done
+
+    wait
+
+fi
+
 
 echo "=============================================================="
 echo "✅ ALL AI/ML TRACES COMPLETED SUCCESSFULLY"
 echo "=============================================================="
+
+
+

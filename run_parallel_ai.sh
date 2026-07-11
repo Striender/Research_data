@@ -12,9 +12,9 @@ if [ $# -lt 5 ] || [ $# -gt 6 ]; then
 fi
 
 BINARY=./bin/$1
-RESULTS_DIR=./results/spec/L2C_512KB/$2/$3/$4
+RESULTS_DIR=./results/ai_ml/Testing/$2/$3/$4
 NUM_CORES=$5
-TRACE_DIR=./tracer/traces
+TRACE_DIR=/home1/sweta/traces/DPC4-Traces/AI_ML
 
 # Instructions
 WARMUP=50000000
@@ -30,7 +30,7 @@ if [ ! -x "$BINARY" ]; then
 fi
 
 # Check traces exist
-if [ ! -d "$TRACE_DIR" ] || [ -z "$(ls $TRACE_DIR/*.champsimtrace.xz 2>/dev/null)" ]; then
+if [ ! -d "$TRACE_DIR" ] || [ -z "$(ls $TRACE_DIR/*.champsimtrace.gz 2>/dev/null)" ]; then
     echo "❌ Error: No trace files found in $TRACE_DIR"
     exit 1
 fi
@@ -48,7 +48,7 @@ echo "📝 Preparing command list for parallel execution..."
 if [ $# -eq 6 ]; then
     START_TRACE_NAME=$6
 
-    # Try to match prefix (e.g., user gives "602.gcc" → matches "602.gcc_s-1850B.champsimtrace.xz")
+    # Try to match prefix (e.g., user gives "602.gcc" → matches "602.gcc_s-1850B.champsimtrace.gz")
     MATCHING_TRACE=$(ls "$TRACE_DIR" | grep "^$START_TRACE_NAME" | head -n 1)
 
     if [ -z "$MATCHING_TRACE" ]; then
@@ -56,15 +56,15 @@ if [ $# -eq 6 ]; then
         exit 1
     fi
 
-    START_TRACE_NAME="${MATCHING_TRACE%.champsimtrace.xz}"
+    START_TRACE_NAME="${MATCHING_TRACE%.champsimtrace.gz}"
     echo "🔍 Starting from trace: $START_TRACE_NAME"
 fi
 
 # This loop now WRITES commands to a file instead of executing them
 STARTED=false
-for TRACE in "$TRACE_DIR"/*.champsimtrace.xz
+for TRACE in "$TRACE_DIR"/*.champsimtrace.gz
 do
-    TRACE_NAME=$(basename "$TRACE" .champsimtrace.xz)
+    TRACE_NAME=$(basename "$TRACE" .champsimtrace.gz)
     OUTPUT_FILE="$RESULTS_DIR/$TRACE_NAME"
 
     # If start trace was given, skip until we reach it
@@ -97,6 +97,6 @@ echo "==========================================================================
 echo "✅ All traces completed. Results are in $RESULTS_DIR"
 echo "===================================================================================================================="
 
-
+ 
 echo ""
 echo "✅ Completed"

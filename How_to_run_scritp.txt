@@ -1,0 +1,99 @@
+###############################################################################
+# BASIC USAGE
+###############################################################################
+
+# Run ALL replacement policies (1-14) sequentially
+# Default behavior
+./run_all_combination_ai_ml.sh 450
+
+# Same as above but with fewer available cores
+./run_all_combination_ai_ml.sh 128
+
+
+###############################################################################
+# SINGLE REPLACEMENT POLICY
+###############################################################################
+
+# Run only RP 1 (lru/lru)
+./run_all_combination_ai_ml.sh 450 1
+
+# Run only RP 5 (lru/ship)
+./run_all_combination_ai_ml.sh 450 5
+
+# Run only RP 14 (srrip/mockingjay)
+./run_all_combination_ai_ml.sh 450 14
+
+
+###############################################################################
+# SELECTED REPLACEMENT POLICIES (SEQUENTIAL)
+###############################################################################
+
+# Run RP 1, 3, and 5 sequentially
+./run_all_combination_ai_ml.sh 450 rp:1,3,5
+
+# Run all LRU-based policies sequentially
+./run_all_combination_ai_ml.sh 450 rp:1,2,3,4,5,6,7
+
+# Run all SRRIP-based policies sequentially
+./run_all_combination_ai_ml.sh 450 rp:8,9,10,11,12,13,14
+
+
+###############################################################################
+# PARALLEL RP MODE
+###############################################################################
+
+# Run ALL replacement policies (1-14) simultaneously
+./run_all_combination_ai_ml.sh 450 parallel
+
+# Run RP 1, 3, and 5 simultaneously
+./run_all_combination_ai_ml.sh 450 rp:1,3,5 parallel
+
+# Run all LRU-based policies simultaneously
+./run_all_combination_ai_ml.sh 450 rp:1,2,3,4,5,6,7 parallel
+
+# Run all SRRIP-based policies simultaneously
+./run_all_combination_ai_ml.sh 450 rp:8,9,10,11,12,13,14 parallel
+
+
+###############################################################################
+# REPLACEMENT POLICY INDEX REFERENCE
+###############################################################################
+
+# 1  -> lru / lru
+# 2  -> lru / srrip
+# 3  -> lru / drrip
+# 4  -> lru / hawkeye
+# 5  -> lru / ship
+# 6  -> lru / ship++
+# 7  -> lru / mockingjay
+
+# 8  -> srrip / lru
+# 9  -> srrip / srrip
+# 10 -> srrip / drrip
+# 11 -> srrip / hawkeye
+# 12 -> srrip / ship
+# 13 -> srrip / ship++
+# 14 -> srrip / mockingjay
+
+
+###############################################################################
+# EXAMPLES FOR TRUSTLAB (450 CORES)
+###############################################################################
+
+# Baseline experiment: all RPs sequential
+./run_all_combination_ai_ml.sh 450
+
+# Fast sweep: all RPs parallel
+./run_all_combination_ai_ml.sh 450 parallel
+
+# Compare only SHIP and SHIP++
+./run_all_combination_ai_ml.sh 450 rp:5,6
+
+# Compare only SHIP and SHIP++ in parallel
+./run_all_combination_ai_ml.sh 450 rp:5,6 parallel
+
+# Compare all LRU-based policies in parallel
+./run_all_combination_ai_ml.sh 450 rp:1,2,3,4,5,6,7 parallel
+
+# Compare all SRRIP-based policies in parallel
+./run_all_combination_ai_ml.sh 450 rp:8,9,10,11,12,13,14 parallel

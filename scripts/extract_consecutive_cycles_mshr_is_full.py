@@ -13,19 +13,21 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "MSHR", "L1d")
+    os.path.join(SCRIPT_DIR, "..", "results", "MSHR", "L1d","l1d_mshr_16")
 )
-DEFAULT_OUTPUT_FILE = "../Excel_Output/L1d_mshr_occupancy_distribution_5_bins_MSHR_sensitivity.xlsx"
+DEFAULT_OUTPUT_FILE = "../Excel_Output/L1d_mshr_occupancy_distribution_greater_120.xlsx"
 CACHE_LEVELS = ("L1D", "L2C", "LLC")
 SHEET_NAMES = {"L1D": "L1D", "L2C": "L2", "LLC": "LLC"}
 STREAK_SHEET_NAMES = {"L1D": "L1D_streaks", "L2C": "L2_streaks", "LLC": "LLC_streaks"}
 CYCLES_PER_KILO_INSTRUCTION_DIVISOR = 200_000
 STREAK_BINS = (
-    ("1-35", 1, 35),
-    ("36-70", 36, 70),
-    ("71-105", 71, 105),
-    ("106-140", 106, 140),
-    (">140", 141, None),
+    ("120-160", 120, 160),
+    ("161-200", 161, 200),
+    ("201-240", 201, 240),
+    ("241-280", 241, 280),
+    ("281-320", 281, 320),
+    ("321-360", 321, 360),
+    (">360", 361, None),
 )
 
 

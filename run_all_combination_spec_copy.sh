@@ -31,7 +31,7 @@ fi
 # PATHS & CONSTANTS
 ###############################################################################
 TRACE_DIR=./tracer/traces
-RESULT_ROOT=./results/spec/MSHR1
+RESULT_ROOT=./results/spec/L1d_KB
 BIN_DIR=./bin
 
 WARMUP=50000000
@@ -47,8 +47,8 @@ PREFETCHER_COMBINATIONS=(
   #"ipcp_isca2020:ip_stride"
   #"vberti:ppf"
   #"vberti:spp"
-   "vberti:bingo_dpc3"
-  #"vberti:ip_stride"
+  "vberti:bingo_dpc3"
+  "vberti:ip_stride"
 #
   #"mlop_dpc3:ip_stride" 
   #"mlop_dpc3:spp"
