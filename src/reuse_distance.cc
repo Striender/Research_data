@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <iostream>
-#include <list>
+#include <map>
 #include <unordered_map>
 
 static const int64_t COLD_MISS_RD = -1;
@@ -15,100 +15,111 @@ class ReuseDistanceTracker {
     uint64_t access_count = 0;
     uint64_t cold_count = 0;
 
-    int64_t access(uint64_t line_addr, uint32_t num_set, uint32_t num_way)
+    int64_t access(uint64_t line_addr, uint32_t num_set)
     {
         uint32_t set = line_addr % num_set;
         SetState &set_state = set_states[set];
 
         access_count++;
+        set_state.access_count++;
 
-        auto it = set_state.line_position.find(line_addr);
+        auto it = set_state.last_access_time.find(line_addr);
 
         // First time this line is accessed: cold miss
-        if (it == set_state.line_position.end()) {
+        if (it == set_state.last_access_time.end()) {
             cold_count++;
 
-            set_state.lru_stack.push_front(line_addr);
-            set_state.line_position[line_addr] = set_state.lru_stack.begin();
+            set_state.last_access_time[line_addr] = set_state.access_count;
+            set_state.access_order[set_state.access_count] = line_addr;
+
+            reuse_distance_frequency[line_addr][COLD_MISS_RD]++;
             return COLD_MISS_RD;
         }
 
-        int64_t rd = get_reuse_distance(set_state, line_addr);
-        add_bin(rd, num_way);
+        uint64_t old_time = it->second;
 
-        set_state.lru_stack.splice(set_state.lru_stack.begin(),
-                                   set_state.lru_stack,
-                                   it->second);
-        it->second = set_state.lru_stack.begin();
+        // Reuse distance:
+        // count unique lines accessed after the previous access of this line
+        int64_t rd = 0;
+
+        for (auto order_it = set_state.access_order.upper_bound(old_time);
+             order_it != set_state.access_order.end();
+             order_it++) {
+            rd++;
+        }
+
+        reuse_distance_frequency[line_addr][rd]++;
+
+        // Remove old timestamp
+        set_state.access_order.erase(old_time);
+
+        // Update this line to latest timestamp
+        it->second = set_state.access_count;
+        set_state.access_order[set_state.access_count] = line_addr;
 
         return rd;
     }
 
-    void add_bin_counts(uint64_t bins[3]) const
+    void add_bin_counts(uint64_t bins[3], uint32_t num_way) const
     {
-        bins[0] += bin_counts[0];
-        bins[1] += bin_counts[1];
-        bins[2] += bin_counts[2];
+        for (const auto &addr_entry : reuse_distance_frequency) {
+            for (const auto &rd_entry : addr_entry.second) {
+                int64_t rd = rd_entry.first;
+                uint64_t freq = rd_entry.second;
+
+                if (rd < 0)
+                    continue;
+
+                if (rd < num_way)
+                    bins[0] += freq;
+                else if (rd < MID_REUSE_LIMIT)
+                    bins[1] += freq;
+                else
+                    bins[2] += freq;
+            }
+        }
     }
 
     void clear()
     {
         access_count = 0;
         cold_count = 0;
-        bin_counts[0] = 0;
-        bin_counts[1] = 0;
-        bin_counts[2] = 0;
         set_states.clear();
+        reuse_distance_frequency.clear();
     }
 
   private:
     struct SetState {
-        std::list<uint64_t> lru_stack;
-        std::unordered_map<uint64_t, std::list<uint64_t>::iterator> line_position;
+        uint64_t access_count = 0;
+
+        // line address -> last access time
+        std::unordered_map<uint64_t, uint64_t> last_access_time;
+
+        // access time -> line address
+        std::map<uint64_t, uint64_t> access_order;
     };
-
-    int64_t get_reuse_distance(const SetState &set_state, uint64_t line_addr) const
-    {
-        int64_t rd = 0;
-
-        for (auto it = set_state.lru_stack.begin();
-             it != set_state.lru_stack.end() && rd < MID_REUSE_LIMIT;
-             ++it, ++rd) {
-            if (*it == line_addr)
-                return rd;
-        }
-
-        return MID_REUSE_LIMIT;
-    }
-
-    void add_bin(int64_t rd, uint32_t num_way)
-    {
-        if (rd < 0)
-            return;
-
-        if (rd < num_way)
-            bin_counts[0]++;
-        else if (rd < MID_REUSE_LIMIT)
-            bin_counts[1]++;
-        else
-            bin_counts[2]++;
-    }
 
     // set index -> state of that set
     std::unordered_map<uint32_t, SetState> set_states;
-    uint64_t bin_counts[3] = {0, 0, 0};
+
+    // line address -> reuse distance -> frequency
+    std::map<uint64_t, std::map<int64_t, uint64_t>> reuse_distance_frequency;
 };
 
 static ReuseDistanceTracker l1d_tracker[NUM_CPUS];
 static ReuseDistanceTracker l2c_tracker[NUM_CPUS];
 
-static void record_access(ReuseDistanceTracker tracker[], uint32_t cpu, uint64_t addr, uint8_t type, uint32_t num_set, uint32_t num_way)
+static void record_access(ReuseDistanceTracker tracker[],
+                          uint32_t cpu,
+                          uint64_t addr,
+                          uint8_t type,
+                          uint32_t num_set)
 {
     if (type == PREFETCH)
         return;
 
     uint64_t line_addr = addr >> LOG2_BLOCK_SIZE;
-    tracker[cpu].access(line_addr, num_set, num_way);
+    tracker[cpu].access(line_addr, num_set);
 }
 
 static void print_bins(const char *name,
@@ -125,12 +136,12 @@ static void print_bins(const char *name,
 
 void reuse_distance_access(uint32_t cpu, uint64_t addr, uint8_t type)
 {
-    record_access(l1d_tracker, cpu, addr, type, L1D_SET, L1D_WAY);
+    record_access(l1d_tracker, cpu, addr, type, L1D_SET);
 }
 
 void reuse_distance_l2c_access(uint32_t cpu, uint64_t addr, uint8_t type)
 {
-    record_access(l2c_tracker, cpu, addr, type, L2C_SET, L2C_WAY);
+    record_access(l2c_tracker, cpu, addr, type, L2C_SET);
 }
 
 void reuse_distance_clear()
@@ -147,8 +158,8 @@ void reuse_distance_final_stats()
     uint64_t l2c_bins[3] = {0, 0, 0};
 
     for (uint32_t cpu = 0; cpu < NUM_CPUS; cpu++) {
-        l1d_tracker[cpu].add_bin_counts(l1d_bins);
-        l2c_tracker[cpu].add_bin_counts(l2c_bins);
+        l1d_tracker[cpu].add_bin_counts(l1d_bins, L1D_WAY);
+        l2c_tracker[cpu].add_bin_counts(l2c_bins, L2C_WAY);
     }
 
     print_bins("L1D", "L1D_WAY", l1d_bins);
