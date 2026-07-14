@@ -419,6 +419,11 @@ class CACHE : public MEMORY {
          itlb_prefetcher_final_stats(),
          dtlb_prefetcher_final_stats(),
          stlb_prefetcher_final_stats();
+
+         //SMS prefetcher functions
+         void l2c_sms_prefetcher_inform_warmup_complete(),
+        l2c_sms_prefetcher_roi_stats(),
+        l2c_sms_prefetcher_inform_roi_complete();
 	
     //Neelu: adding for l1i prefetcher
     	void (*l1i_prefetcher_cache_operate)(uint32_t, uint64_t, uint8_t, uint8_t);
