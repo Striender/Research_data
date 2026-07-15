@@ -155,6 +155,12 @@ else
     sed -i.bak -E "s/^#define[[:space:]]+berti_on[[:space:]]+[0-9]+/#define berti_on 0/" "inc/champsim.h"
 fi
 
+if [ "$L2C_PREFETCHER" == "sms" ]; then
+    sed -i.bak -E "s/^#define[[:space:]]+sms_on[[:space:]]+[0-9]+/#define sms_on 1/" "inc/champsim.h"
+else
+    sed -i.bak -E "s/^#define[[:space:]]+sms_on[[:space:]]+[0-9]+/#define sms_on 0/" "inc/champsim.h"
+fi
+
 
 # Check num_core
 re='^[0-9]+$'

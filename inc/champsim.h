@@ -58,6 +58,7 @@
 #endif
 
 #define berti_on 0 //@sweta: Berti prefetcher on/off
+#define sms_on 0 //@neeraj: SMS prefetcher on/off
 // CPU
 #define NUM_CPUS 1
 #define CPU_FREQ 4000
