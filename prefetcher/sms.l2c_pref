@@ -1,665 +1,364 @@
-/* SMS [https://parsa.epfl.ch/stems/papers/isca06.pdf] */
-/* PC+Offset */
+// Standalone L2 SMS adapter for the Berti ChampSim interface.
+// Behavior is based on Dragon/prefetcher/sms.cc (PC + trigger offset).
 
 #include "cache.h"
-#include <bits/stdc++.h>
 
-using namespace std;
+#include <algorithm>
+#include <bitset>
+#include <cassert>
+#include <cstdint>
+#include <deque>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <unordered_set>
 
-class Table {
-  public:
-    Table(int width, int height) : width(width), height(height), cells(height, vector<string>(width)) {}
+namespace dragon_sms {
 
-    void set_row(int row, const vector<string> &data, int start_col = 0) {
-        assert(data.size() + start_col == this->width);
-        for (unsigned col = start_col; col < this->width; col += 1)
-            this->set_cell(row, col, data[col]);
-    }
+constexpr uint32_t AT_SIZE = 32;
+constexpr uint32_t FT_SIZE = 64;
+constexpr uint32_t PHT_SIZE = 16*1024;
+constexpr uint32_t PHT_ASSOC = 16;
+constexpr uint32_t PREF_DEGREE = 4;
+constexpr uint32_t REGION_SIZE = 4*1024;
+constexpr uint32_t REGION_SIZE_LOG = 13;
+constexpr bool ENABLE_PREF_BUFFER = true;
+constexpr uint32_t PREF_BUFFER_SIZE = 256;
+constexpr uint32_t REGION_LINES = REGION_SIZE >> LOG2_BLOCK_SIZE;
 
-    void set_col(int col, const vector<string> &data, int start_row = 0) {
-        assert(data.size() + start_row == this->height);
-        for (unsigned row = start_row; row < this->height; row += 1)
-            this->set_cell(row, col, data[row]);
-    }
+static_assert((REGION_SIZE & (REGION_SIZE - 1)) == 0,
+              "SMS region size must be a power of two");
+static_assert(REGION_LINES > 0 && REGION_LINES <= 128,
+              "SMS supports between 1 and 128 cache lines per region");
+static_assert(PHT_ASSOC > 0 && PHT_SIZE % PHT_ASSOC == 0,
+              "SMS PHT size must be divisible by its associativity");
 
-    void set_cell(int row, int col, string data) {
-        assert(0 <= row && row < (int)this->height);
-        assert(0 <= col && col < (int)this->width);
-        this->cells[row][col] = data;
-    }
+using Pattern = std::bitset<128>;
 
-    void set_cell(int row, int col, double data) {
-        this->oss.str("");
-        this->oss << setw(11) << fixed << setprecision(8) << data;
-        this->set_cell(row, col, this->oss.str());
-    }
-
-    void set_cell(int row, int col, int64_t data) {
-        this->oss.str("");
-        this->oss << setw(11) << std::left << data;
-        this->set_cell(row, col, this->oss.str());
-    }
-
-    void set_cell(int row, int col, int data) { this->set_cell(row, col, (int64_t)data); }
-
-    void set_cell(int row, int col, uint64_t data) { this->set_cell(row, col, (int64_t)data); }
-
-    string to_string() {
-        vector<int> widths;
-        for (unsigned i = 0; i < this->width; i += 1) {
-            int max_width = 0;
-            for (unsigned j = 0; j < this->height; j += 1)
-                max_width = max(max_width, (int)this->cells[j][i].size());
-            widths.push_back(max_width + 2);
-        }
-        string out;
-        out += Table::top_line(widths);
-        out += this->data_row(0, widths);
-        for (unsigned i = 1; i < this->height; i += 1) {
-            out += Table::mid_line(widths);
-            out += this->data_row(i, widths);
-        }
-        out += Table::bot_line(widths);
-        return out;
-    }
-
-    string data_row(int row, const vector<int> &widths) {
-        string out;
-        for (unsigned i = 0; i < this->width; i += 1) {
-            string data = this->cells[row][i];
-            data.resize(widths[i] - 2, ' ');
-            out += " | " + data;
-        }
-        out += " |\n";
-        return out;
-    }
-
-    static string top_line(const vector<int> &widths) { return Table::line(widths, "┌", "┬", "┐"); }
-
-    static string mid_line(const vector<int> &widths) { return Table::line(widths, "├", "┼", "┤"); }
-
-    static string bot_line(const vector<int> &widths) { return Table::line(widths, "└", "┴", "┘"); }
-
-    static string line(const vector<int> &widths, string left, string mid, string right) {
-        string out = " " + left;
-        for (unsigned i = 0; i < widths.size(); i += 1) {
-            int w = widths[i];
-            for (int j = 0; j < w; j += 1)
-                out += "─";
-            if (i != widths.size() - 1)
-                out += mid;
-            else
-                out += right;
-        }
-        return out + "\n";
-    }
-
-  private:
-    unsigned width;
-    unsigned height;
-    vector<vector<string>> cells;
-    ostringstream oss;
-};
-
-template <class T> class InfiniteCache {
-  public:
-    class Entry {
-      public:
-        uint64_t key;
-        uint64_t index;
-        uint64_t tag;
-        bool valid;
-        T data;
-    };
-
-    Entry *erase(uint64_t key) {
-        Entry *entry = this->find(key);
-        if (!entry)
-            return nullptr;
-        entry->valid = false;
-        this->last_erased_entry = *entry;
-        int num_erased = this->entries.erase(key);
-        assert(num_erased == 1);
-        return &this->last_erased_entry;
-    }
-
-    /**
-     * @return The old state of the entry that was written to.
-     */
-    Entry insert(uint64_t key, const T &data) {
-        Entry *entry = this->find(key);
-        if (entry != nullptr) {
-            Entry old_entry = *entry;
-            entry->data = data;
-            return old_entry;
-        }
-        entries[key] = {key, 0, key, true, data};
-        return {};
-    }
-
-    Entry *find(uint64_t key) {
-        auto it = this->entries.find(key);
-        if (it == this->entries.end())
-            return nullptr;
-        Entry &entry = (*it).second;
-        assert(entry.tag == key && entry.valid);
-        return &entry;
-    }
-
-    /**
-     * For debugging purposes.
-     */
-    string log(vector<string> headers, function<void(Entry &, Table &, int)> write_data) {
-        Table table(headers.size(), entries.size() + 1);
-        table.set_row(0, headers);
-        unsigned i = 0;
-        for (auto &x : this->entries)
-            write_data(x.second, table, ++i);
-        return table.to_string();
-    }
-
-    void set_debug_level(int debug_level) { this->debug_level = debug_level; }
-
-  protected:
-    Entry last_erased_entry;
-    unordered_map<uint64_t, Entry> entries;
-    int debug_level = 0;
-};
-
-template <class T> class SetAssociativeCache {
-  public:
-    class Entry {
-      public:
-        uint64_t key;
-        uint64_t index;
-        uint64_t tag;
-        bool valid;
-        T data;
-    };
-
-    SetAssociativeCache(int size, int num_ways)
-        : size(size), num_ways(num_ways), num_sets(size / num_ways), entries(num_sets, vector<Entry>(num_ways)),
-          cams(num_sets) {
-        assert(size % num_ways == 0);
-        for (int i = 0; i < num_sets; i += 1)
-            for (int j = 0; j < num_ways; j += 1)
-                entries[i][j].valid = false;
-    }
-
-    Entry *erase(uint64_t key) {
-        Entry *entry = this->find(key);
-        uint64_t index = key % this->num_sets;
-        uint64_t tag = key / this->num_sets;
-        auto &cam = cams[index];
-        int num_erased = cam.erase(tag);
-        if (entry)
-            entry->valid = false;
-        assert(entry ? num_erased == 1 : num_erased == 0);
-        return entry;
-    }
-
-    /**
-     * @return The old state of the entry that was written to.
-     */
-    Entry insert(uint64_t key, const T &data) {
-        Entry *entry = this->find(key);
-        if (entry != nullptr) {
-            Entry old_entry = *entry;
-            entry->data = data;
-            return old_entry;
-        }
-        uint64_t index = key % this->num_sets;
-        uint64_t tag = key / this->num_sets;
-        vector<Entry> &set = this->entries[index];
-        int victim_way = -1;
-        for (int i = 0; i < this->num_ways; i += 1)
-            if (!set[i].valid) {
-                victim_way = i;
-                break;
-            }
-        if (victim_way == -1) {
-            victim_way = this->select_victim(index);
-        }
-        Entry &victim = set[victim_way];
-        Entry old_entry = victim;
-        victim = {key, index, tag, true, data};
-        auto &cam = cams[index];
-        if (old_entry.valid) {
-            int num_erased = cam.erase(old_entry.tag);
-            assert(num_erased == 1);
-        }
-        cam[tag] = victim_way;
-        return old_entry;
-    }
-
-    Entry *find(uint64_t key) {
-        uint64_t index = key % this->num_sets;
-        uint64_t tag = key / this->num_sets;
-        auto &cam = cams[index];
-        if (cam.find(tag) == cam.end())
-            return nullptr;
-        int way = cam[tag];
-        Entry &entry = this->entries[index][way];
-        assert(entry.tag == tag && entry.valid);
-        return &entry;
-    }
-
-    /**
-     * For debugging purposes.
-     */
-    string log(vector<string> headers, function<void(Entry &, Table &, int)> write_data) {
-        vector<Entry> valid_entries = this->get_valid_entries();
-        Table table(headers.size(), valid_entries.size() + 1);
-        table.set_row(0, headers);
-        for (unsigned i = 0; i < valid_entries.size(); i += 1)
-            write_data(valid_entries[i], table, i + 1);
-        return table.to_string();
-    }
-
-    void set_debug_level(int debug_level) { this->debug_level = debug_level; }
-
-  protected:
-    /**
-     * @return The way of the selected victim.
-     */
-    virtual int select_victim(uint64_t index) {
-        /* random eviction policy if not overriden */
-        return rand() % this->num_ways;
-    }
-
-    vector<Entry> get_valid_entries() {
-        vector<Entry> valid_entries;
-        for (int i = 0; i < num_sets; i += 1)
-            for (int j = 0; j < num_ways; j += 1)
-                if (entries[i][j].valid)
-                    valid_entries.push_back(entries[i][j]);
-        return valid_entries;
-    }
-
-    int size;
-    int num_ways;
-    int num_sets;
-    vector<vector<Entry>> entries;
-    vector<unordered_map<uint64_t, int>> cams;
-    int debug_level = 0;
-};
-
-template <class T> class LRUSetAssociativeCache : public SetAssociativeCache<T> {
-    typedef SetAssociativeCache<T> Super;
-
-  public:
-    LRUSetAssociativeCache(int size, int num_ways)
-        : Super(size, num_ways), lru(this->num_sets, vector<uint64_t>(num_ways)) {}
-
-    void set_mru(uint64_t key) { *this->get_lru(key) = this->t++; }
-
-    void set_lru(uint64_t key) { *this->get_lru(key) = 0; }
-
-  protected:
-    /* @override */
-    int select_victim(uint64_t index) {
-        vector<uint64_t> &lru_set = this->lru[index];
-        return min_element(lru_set.begin(), lru_set.end()) - lru_set.begin();
-    }
-
-    uint64_t *get_lru(uint64_t key) {
-        uint64_t index = key % this->num_sets;
-        uint64_t tag = key / this->num_sets;
-        int way = this->cams[index][tag];
-        return &this->lru[index][way];
-    }
-
-    vector<vector<uint64_t>> lru;
-    uint64_t t = 1;
-};
-
-template <class T> class NMRUSetAssociativeCache : public SetAssociativeCache<T> {
-    typedef SetAssociativeCache<T> Super;
-
-  public:
-    NMRUSetAssociativeCache(int size, int num_ways) : Super(size, num_ways), mru(this->num_sets) {}
-
-    void set_mru(uint64_t key) {
-        uint64_t index = key % this->num_sets;
-        uint64_t tag = key / this->num_sets;
-        int way = this->cams[index][tag];
-        this->mru[index] = way;
-    }
-
-  protected:
-    /* @override */
-    int select_victim(uint64_t index) {
-        int way = rand() % (this->num_ways - 1);
-        if (way >= mru[index])
-            way += 1;
-        return way;
-    }
-
-    vector<int> mru;
-};
-
-template <class T> class LRUFullyAssociativeCache : public LRUSetAssociativeCache<T> {
-    typedef LRUSetAssociativeCache<T> Super;
-
-  public:
-    LRUFullyAssociativeCache(int size) : Super(size, size) {}
-};
-
-template <class T> class NMRUFullyAssociativeCache : public NMRUSetAssociativeCache<T> {
-    typedef NMRUSetAssociativeCache<T> Super;
-
-  public:
-    NMRUFullyAssociativeCache(int size) : Super(size, size) {}
-};
-
-template <class T> class DirectMappedCache : public SetAssociativeCache<T> {
-    typedef SetAssociativeCache<T> Super;
-
-  public:
-    DirectMappedCache(int size) : Super(size, 1) {}
-};
-
-/** End Of Cache Framework **/
-
-class FilterTableData {
-  public:
+struct FTEntry {
+    uint64_t page;
     uint64_t pc;
-    int offset;
+    uint32_t trigger_offset;
 };
 
-class FilterTable : public LRUFullyAssociativeCache<FilterTableData> {
-    typedef LRUFullyAssociativeCache<FilterTableData> Super;
-
-  public:
-    FilterTable(int size) : Super(size) { assert(__builtin_popcount(size) == 1); }
-
-    Entry *find(uint64_t region_number) {
-        Entry *entry = Super::find(region_number);
-        if (!entry)
-            return nullptr;
-        this->set_mru(region_number);
-        return entry;
-    }
-
-    void insert(uint64_t region_number, uint64_t pc, int offset) {
-        assert(!this->find(region_number));
-        Super::insert(region_number, {pc, offset});
-        this->set_mru(region_number);
-    }
-};
-
-class AccumulationTableData {
-  public:
+struct ATEntry {
+    uint64_t page;
     uint64_t pc;
-    int offset;
-    vector<bool> pattern;
+    uint32_t trigger_offset;
+    Pattern pattern;
+    uint32_t age;
 };
 
-class AccumulationTable : public LRUFullyAssociativeCache<AccumulationTableData> {
-    typedef LRUFullyAssociativeCache<AccumulationTableData> Super;
-
-  public:
-    AccumulationTable(int size, int pattern_len) : Super(size), pattern_len(pattern_len) {
-        assert(__builtin_popcount(size) == 1);
-        assert(__builtin_popcount(pattern_len) == 1);
-    }
-
-    /**
-     * @return A return value of false means that the tag wasn't found in the table and true means success.
-     */
-    bool set_pattern(uint64_t region_number, int offset) {
-        Entry *entry = Super::find(region_number);
-        if (!entry)
-            return false;
-        entry->data.pattern[offset] = true;
-        this->set_mru(region_number);
-        return true;
-    }
-
-    Entry insert(FilterTable::Entry &entry) {
-        assert(!this->find(entry.key));
-        vector<bool> pattern(this->pattern_len, false);
-        pattern[entry.data.offset] = true;
-        Entry old_entry = Super::insert(entry.key, {entry.data.pc, entry.data.offset, pattern});
-        this->set_mru(entry.key);
-        return old_entry;
-    }
-
-  private:
-    int pattern_len;
+struct PHTEntry {
+    uint64_t signature;
+    Pattern pattern;
+    uint32_t age;
 };
 
-template<class T>
-vector<T> my_rotate(const vector<T> &x, int n) {
-    vector<T> y;
-    int len = x.size();
-    n = n % len;
-    for (int i = 0; i < len; i += 1)
-        y.push_back(x[(i - n + len) % len]);
-    return y;
-}
-
-class PatternHistoryTableData {
-  public:
-    vector<bool> pattern;
-};
-
-class PatternHistoryTable : LRUSetAssociativeCache<PatternHistoryTableData> {
-    typedef LRUSetAssociativeCache<PatternHistoryTableData> Super;
-
-  public:
-    PatternHistoryTable(
-        int size, int pattern_len, int addr_width, int pc_width, int num_ways = 16)
-        : Super(size, num_ways), pattern_len(pattern_len), addr_width(addr_width),
-          pc_width(pc_width) {
-        assert(this->pc_width >= 0);
-        assert(this->addr_width >= 0);
-        assert(this->pc_width + this->addr_width > 0);
-        assert(__builtin_popcount(pattern_len) == 1);
-        this->index_len = __builtin_ctz(this->num_sets);
-    }
-
-    /* address is actually block number */
-    void insert(uint64_t pc, uint64_t address, vector<bool> pattern) {
-        assert((int)pattern.size() == this->pattern_len);
-        int offset = address % this->pattern_len;
-        pattern = my_rotate(pattern, -offset);
-        uint64_t key = this->build_key(pc, address);
-        Super::insert(key, {pattern});
-        this->set_mru(key);
-    }
-
-    /**
-     * @return An un-rotated pattern if match was found, otherwise an empty vector.
-     */
-    vector<bool> find(uint64_t pc, uint64_t address) {
-        uint64_t key = this->build_key(pc, address);
-        Entry *entry = Super::find(key);
-        if (!entry)
-            return vector<bool>();
-        this->set_mru(key);
-        vector<bool> pattern = entry->data.pattern;
-        int offset = address % this->pattern_len;
-        pattern = my_rotate(pattern, +offset);
-        return pattern;
-    }
-
-  private:
-    uint64_t build_key(uint64_t pc, uint64_t address) {
-        pc &= (1 << this->pc_width) - 1;           /* use [pc_width] bits from pc */
-        address &= (1 << this->addr_width) - 1;    /* use [addr_width] bits from address */
-        uint64_t key = (pc << this->addr_width) | address;
-        /* hash index */
-        uint64_t tag = key;
-        tag >>= this->index_len;
-        while (tag > 0) {
-            key ^= tag & ((1 << this->index_len) - 1);
-            tag >>= this->index_len;
-        }
-        return key;
-    }
-
-    int pattern_len, index_len;
-    int addr_width, pc_width;
+struct Stats {
+    uint64_t ft_lookup = 0;
+    uint64_t ft_hit = 0;
+    uint64_t ft_insert = 0;
+    uint64_t ft_evict = 0;
+    uint64_t at_lookup = 0;
+    uint64_t at_hit = 0;
+    uint64_t at_insert = 0;
+    uint64_t at_evict = 0;
+    uint64_t pht_lookup = 0;
+    uint64_t pht_hit = 0;
+    uint64_t pht_insert = 0;
+    uint64_t pht_evict = 0;
+    uint64_t generate_called = 0;
+    uint64_t generate_miss = 0;
+    uint64_t generated = 0;
+    uint64_t buffered = 0;
+    uint64_t spilled = 0;
+    uint64_t issued = 0;
 };
 
 class SMS {
   public:
-    SMS(int pattern_len, int addr_width, int pc_width, int pattern_history_table_size,
-        int filter_table_size, int accumulation_table_size)
-        : pattern_len(pattern_len), filter_table(filter_table_size),
-          accumulation_table(accumulation_table_size, pattern_len),
-          pht(pattern_history_table_size, pattern_len, addr_width, pc_width) {}
+    explicit SMS(uint32_t cpu) : cpu(cpu), pht(PHT_SIZE / PHT_ASSOC) {}
 
-    /**
-     * @return A vector of block numbers that should be prefetched.
-     */
-    vector<uint64_t> access(uint64_t block_number, uint64_t pc) {
-        if (this->debug_level >= 1) {
-            cerr << "[SMS] access(block_number=" << block_number << ", pc=" << pc << ")" << endl;
-        }
-        uint64_t region_number = block_number / this->pattern_len;
-        int region_offset = block_number % this->pattern_len;
-        bool success = this->accumulation_table.set_pattern(region_number, region_offset);
-        if (success)
-            return vector<uint64_t>();
-        FilterTable::Entry *entry = this->filter_table.find(region_number);
-        if (!entry) {
-            /* trigger access */
-            this->filter_table.insert(region_number, pc, region_offset);
-            vector<bool> pattern = this->find_in_pht(pc, block_number);
-            if (pattern.empty())
-                return vector<uint64_t>();
-            vector<uint64_t> to_prefetch;
-            for (int i = 0; i < this->pattern_len; i += 1)
-                if (pattern[i])
-                    to_prefetch.push_back(region_number * this->pattern_len + i);
-            return to_prefetch;
-        }
-        if (entry->data.offset != region_offset) {
-            /* move from filter table to accumulation table */
-            AccumulationTable::Entry victim = this->accumulation_table.insert(*entry);
-            this->accumulation_table.set_pattern(region_number, region_offset);
-            this->filter_table.erase(region_number);
-            if (victim.valid) {
-                /* move from accumulation table to pattern history table */
-                this->insert_in_pht(victim);
+    std::vector<uint64_t> access(uint64_t pc, uint64_t address) {
+        std::vector<uint64_t> result;
+        const uint64_t page = address >> REGION_SIZE_LOG;
+        const uint32_t offset = static_cast<uint32_t>(
+            (address >> LOG2_BLOCK_SIZE) & (REGION_LINES - 1));
+
+        auto at = find_at(page);
+        stats.at_lookup++;
+        if (at != accumulation_table.end()) {
+            stats.at_hit++;
+            at->pattern[offset] = true;
+            touch_at(at);
+        } else {
+            auto ft = find_ft(page);
+            stats.ft_lookup++;
+            if (ft != filter_table.end()) {
+                stats.ft_hit++;
+                insert_at(*ft, offset);
+                filter_table.erase(ft);
+                stats.ft_evict++;
+            } else {
+                insert_ft(pc, page, offset);
+                generate(pc, page, offset, result);
+                if (ENABLE_PREF_BUFFER) {
+                    buffer(result);
+                    result.clear();
+                }
             }
         }
-        return vector<uint64_t>();
+
+        if (ENABLE_PREF_BUFFER)
+            issue(result);
+        return result;
     }
 
-    void eviction(uint64_t block_number) {
-        if (this->debug_level >= 1) {
-            cerr << "[SMS] eviction(block_number=" << block_number << ")" << endl;
-        }
-        /* end of generation */
-        uint64_t region_number = block_number / this->pattern_len;
-        this->filter_table.erase(region_number);
-        AccumulationTable::Entry *entry = this->accumulation_table.erase(region_number);
-        if (entry) {
-            /* move from accumulation table to pattern history table */
-            this->insert_in_pht(*entry);
-        }
+    void print_config(uint32_t cpu) const {
+        std::cout << "CPU " << cpu << " Dragon SMS configuration\n"
+                  << "sms_at_size " << AT_SIZE << '\n'
+                  << "sms_ft_size " << FT_SIZE << '\n'
+                  << "sms_pht_size " << PHT_SIZE << '\n'
+                  << "sms_pht_assoc " << PHT_ASSOC << '\n'
+                  << "sms_pref_degree " << PREF_DEGREE << '\n'
+                  << "sms_region_size " << REGION_SIZE << '\n'
+                  << "sms_region_size_log " << REGION_SIZE_LOG << '\n'
+                  << "sms_enable_pref_buffer " << ENABLE_PREF_BUFFER << '\n'
+                  << "sms_pref_buffer_size " << PREF_BUFFER_SIZE << '\n';
     }
 
-    void set_debug_level(int debug_level) { this->debug_level = debug_level; }
-
-    double get_match_prob() {
-        return 1.0 * this->pht_match_cnt / this->pht_lookup_cnt;
-    }
-
-    void reset_match_prob() {
-        this->pht_lookup_cnt = 0;
-        this->pht_match_cnt = 0;
+    void print_stats(uint32_t cpu) const {
+        std::cout << "CPU " << cpu << " L2C SMS prefetcher final stats" << std::endl
+                  << "sms.ft.lookup " << stats.ft_lookup << '\n'
+                  << "sms.ft.hit " << stats.ft_hit << '\n'
+                  << "sms.ft.insert " << stats.ft_insert << '\n'
+                  << "sms.ft.evict " << stats.ft_evict << '\n'
+                  << "sms.at.lookup " << stats.at_lookup << '\n'
+                  << "sms.at.hit " << stats.at_hit << '\n'
+                  << "sms.at.insert " << stats.at_insert << '\n'
+                  << "sms.at.evict " << stats.at_evict << '\n'
+                  << "sms.pht.lookup " << stats.pht_lookup << '\n'
+                  << "sms.pht.hit " << stats.pht_hit << '\n'
+                  << "sms.pht.insert " << stats.pht_insert << '\n'
+                  << "sms.pht.unique_insert " << unique_pht_signatures.size() << '\n'
+                  << "sms.pht.evict " << stats.pht_evict << '\n'
+                  << "sms.generate_prefetch.called " << stats.generate_called << '\n'
+                  << "sms.generate_prefetch.pht_miss " << stats.generate_miss << '\n'
+                  << "sms.generate_prefetch.pref_generated " << stats.generated << '\n'
+                  << "sms.pref_buffer.buffered " << stats.buffered << '\n'
+                  << "sms.pref_buffer.spilled " << stats.spilled << '\n'
+                  << "sms.pref_buffer.issued " << stats.issued << '\n';
     }
 
   private:
-    vector<bool> find_in_pht(uint64_t pc, uint64_t address) {
-        if (this->debug_level >= 1) {
-            cerr << "[SMS] find_in_pht(pc=" << pc << ", address=" << address << ")" << endl;
-        }
-        
-        this->pht_lookup_cnt += 1;
-        vector<bool> pattern = this->pht.find(pc, address);
-        if (!pattern.empty())
-            this->pht_match_cnt += 1;
-        return pattern;
+    using FTIterator = std::deque<FTEntry>::iterator;
+    using ATIterator = std::deque<ATEntry>::iterator;
+    using PHTIterator = std::deque<PHTEntry>::iterator;
+
+    FTIterator find_ft(uint64_t page) {
+        return std::find_if(filter_table.begin(), filter_table.end(),
+                            [page](const FTEntry& entry) { return entry.page == page; });
     }
 
-    void insert_in_pht(const AccumulationTable::Entry &entry) {
-        if (this->debug_level >= 1) {
-            cerr << "[SMS] insert_in_pht(...)" << endl;
-        }
-        uint64_t pc = entry.data.pc;
-        uint64_t address = entry.key * this->pattern_len + entry.data.offset;
-        const vector<bool> &pattern = entry.data.pattern;
-        this->pht.insert(pc, address, pattern);
+    ATIterator find_at(uint64_t page) {
+        return std::find_if(accumulation_table.begin(), accumulation_table.end(),
+                            [page](const ATEntry& entry) { return entry.page == page; });
     }
 
-    int pattern_len;
-    FilterTable filter_table;
-    AccumulationTable accumulation_table;
-    PatternHistoryTable pht;
-    int debug_level = 0;
+    void insert_ft(uint64_t pc, uint64_t page, uint32_t offset) {
+        stats.ft_insert++;
+        if (filter_table.size() >= FT_SIZE) {
+            filter_table.pop_front(); // Dragon SMS uses FIFO replacement for FT.
+            stats.ft_evict++;
+        }
+        filter_table.push_back({page, pc, offset});
+    }
 
-    /* stats */
-    uint64_t pht_lookup_cnt = 0;
-    uint64_t pht_match_cnt = 0;
+    ATIterator oldest_at() {
+        return std::max_element(
+            accumulation_table.begin(), accumulation_table.end(),
+            [](const ATEntry& lhs, const ATEntry& rhs) { return lhs.age < rhs.age; });
+    }
+
+    void insert_at(const FTEntry& ft, uint32_t second_offset) {
+        stats.at_insert++;
+        if (accumulation_table.size() >= AT_SIZE) {
+            auto victim = oldest_at();
+            insert_pht(*victim);
+            accumulation_table.erase(victim);
+            stats.at_evict++;
+        }
+
+        for (auto& entry : accumulation_table)
+            entry.age++;
+
+        ATEntry entry{};
+        entry.page = ft.page;
+        entry.pc = ft.pc;
+        entry.trigger_offset = ft.trigger_offset;
+        entry.pattern[ft.trigger_offset] = true;
+        entry.pattern[second_offset] = true;
+        entry.age = 0;
+        accumulation_table.push_back(entry);
+    }
+
+    void touch_at(ATIterator current) {
+        for (auto& entry : accumulation_table)
+            entry.age++;
+        current->age = 0;
+    }
+
+    uint64_t signature(uint64_t pc, uint32_t offset) const {
+        return (pc << 5) + offset;
+    }
+
+    PHTIterator find_pht(uint32_t set, uint64_t key) {
+        return std::find_if(pht[set].begin(), pht[set].end(),
+                            [key](const PHTEntry& entry) { return entry.signature == key; });
+    }
+
+    PHTIterator oldest_pht(uint32_t set) {
+        return std::max_element(
+            pht[set].begin(), pht[set].end(),
+            [](const PHTEntry& lhs, const PHTEntry& rhs) { return lhs.age < rhs.age; });
+    }
+
+    void touch_pht(uint32_t set, PHTIterator current) {
+        for (auto& entry : pht[set])
+            entry.age++;
+        current->age = 0;
+    }
+
+    void insert_pht(const ATEntry& source) {
+        stats.pht_lookup++;
+        const uint64_t key = signature(source.pc, source.trigger_offset);
+        const uint32_t set = static_cast<uint32_t>(key % pht.size());
+        auto current = find_pht(set, key);
+
+        if (current != pht[set].end()) {
+            stats.pht_hit++;
+            current->pattern = source.pattern;
+            touch_pht(set, current);
+            return;
+        }
+
+        if (pht[set].size() >= PHT_ASSOC) {
+            auto victim = oldest_pht(set);
+            std::cout << "CPU " << cpu
+                      << " SMS PHT eviction: set " << set
+                      << " region 0x" << std::hex << source.page
+                      << " victim_signature 0x" << victim->signature
+                      << " incoming_signature 0x" << key
+                      << std::dec << std::endl;
+            pht[set].erase(victim);
+            stats.pht_evict++;
+        }
+
+        stats.pht_insert++;
+        unique_pht_signatures.insert(key);
+        // Preserve Dragon/sms.cc behavior: insertion resets existing PHT ages.
+        for (auto& entry : pht[set])
+            entry.age = 0;
+        pht[set].push_back({key, source.pattern, 0});
+    }
+
+    void generate(uint64_t pc, uint64_t page, uint32_t offset,
+                  std::vector<uint64_t>& result) {
+        stats.generate_called++;
+        const uint64_t key = signature(pc, offset);
+        const uint32_t set = static_cast<uint32_t>(key % pht.size());
+        auto current = find_pht(set, key);
+        if (current == pht[set].end()) {
+            stats.generate_miss++;
+            return;
+        }
+
+        for (uint32_t index = 0; index < REGION_LINES; ++index) {
+            if (current->pattern[index] && index != offset) {
+                result.push_back((page << REGION_SIZE_LOG) +
+                                 (static_cast<uint64_t>(index) << LOG2_BLOCK_SIZE));
+            }
+        }
+        touch_pht(set, current);
+        stats.generated += result.size();
+    }
+
+    void buffer(const std::vector<uint64_t>& addresses) {
+        uint64_t accepted = 0;
+        for (uint64_t address : addresses) {
+            if (prefetch_buffer.size() >= PREF_BUFFER_SIZE)
+                break;
+            prefetch_buffer.push_back(address);
+            accepted++;
+        }
+        stats.buffered += accepted;
+        stats.spilled += addresses.size() - accepted;
+    }
+
+    void issue(std::vector<uint64_t>& result) {
+        uint32_t count = 0;
+        while (!prefetch_buffer.empty() && count < PREF_DEGREE) {
+            result.push_back(prefetch_buffer.front());
+            prefetch_buffer.pop_front();
+            count++;
+        }
+        stats.issued += count;
+    }
+
+    std::deque<FTEntry> filter_table;
+    std::deque<ATEntry> accumulation_table;
+    uint32_t cpu;
+    std::vector<std::deque<PHTEntry>> pht;
+    std::unordered_set<uint64_t> unique_pht_signatures;
+    std::deque<uint64_t> prefetch_buffer;
+    Stats stats;
 };
 
-/* SMS settings */
-const int REGION_SIZE = 2 * 1024;
-const int PC_WIDTH = 16;
-const int ADDR_WIDTH = 5;
-const int PHT_SIZE = 16 * 1024;
-const int FT_SIZE = 64;
-const int AT_SIZE = 128;
+} // namespace dragon_sms
 
-vector<SMS> prefetchers;
-double roi_match_probs[NUM_CPUS];
+static std::vector<dragon_sms::SMS*> sms_prefetchers;
 
-void CACHE::l2c_prefetcher_initialize() {
-    if (cpu != 0)
-        return;
-
-    /* create prefetcher for all cores */
-    assert(PAGE_SIZE % REGION_SIZE == 0);
-    prefetchers = vector<SMS>(NUM_CPUS, SMS(REGION_SIZE >> LOG2_BLOCK_SIZE, ADDR_WIDTH, PC_WIDTH, PHT_SIZE, FT_SIZE, AT_SIZE));
-}
-
-uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type,  uint32_t metadata_in, uint8_t critical_ip_flag) {
-    /* call prefetcher and send prefetches */
-    uint64_t block_number = addr >> LOG2_BLOCK_SIZE;
-    vector<uint64_t> to_prefetch = prefetchers[cpu].access(block_number, ip);
-    for (auto &pf_block_number : to_prefetch) {
-        uint64_t pf_address = pf_block_number << LOG2_BLOCK_SIZE;
-        prefetch_line(ip, addr, pf_address, FILL_L2,0);
+void CACHE::l2c_prefetcher_initialize()
+{
+    if (sms_prefetchers.empty()) {
+        sms_prefetchers.resize(NUM_CPUS, nullptr);
+        for (uint32_t i = 0; i < NUM_CPUS; ++i)
+            sms_prefetchers[i] = new dragon_sms::SMS(i);
     }
+    sms_prefetchers[cpu]->print_config(cpu);
+}
+
+uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip,
+                                       uint8_t cache_hit, uint8_t type,
+                                       uint32_t metadata_in,
+                                       uint8_t critical_ip_flag)
+{
+    (void)cache_hit;
+    (void)type;
+    (void)critical_ip_flag;
+
+    const std::vector<uint64_t> addresses = sms_prefetchers[cpu]->access(ip, addr);
+    for (uint64_t pf_address : addresses)
+        prefetch_line(ip, addr, pf_address, FILL_L2, 0);
     return metadata_in;
 }
 
-uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in) {
-    /* inform all sms modules of the eviction */
-    for (int i = 0; i < NUM_CPUS; i += 1)
-        prefetchers[i].eviction(evicted_addr >> LOG2_BLOCK_SIZE);
-
+uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set,
+                                          uint32_t way, uint8_t prefetch,
+                                          uint64_t evicted_addr,
+                                          uint32_t metadata_in)
+{
+    // Dragon's sms.cc does not terminate generations on cache eviction.
+    (void)addr;
+    (void)set;
+    (void)way;
+    (void)prefetch;
+    (void)evicted_addr;
     return metadata_in;
 }
 
-void CACHE::l2c_sms_prefetcher_inform_warmup_complete() {
-    for (int i = 0; i < NUM_CPUS; i += 1)
-        prefetchers[i].reset_match_prob();
-}
-
-void CACHE::l2c_sms_prefetcher_inform_roi_complete() {
-    roi_match_probs[cpu] = prefetchers[cpu].get_match_prob();
-}
-
-void CACHE::l2c_sms_prefetcher_roi_stats() {
-    cout << "* CPU " << cpu << " ROI PHT Match Probability: " << roi_match_probs[cpu] << endl;
-}
-
-void CACHE::l2c_prefetcher_final_stats() {
-    cout << "* CPU " << cpu << " Total PHT Match Probability: " << prefetchers[cpu].get_match_prob() << endl;
+void CACHE::l2c_prefetcher_final_stats()
+{
+    sms_prefetchers[cpu]->print_stats(cpu);
 }
