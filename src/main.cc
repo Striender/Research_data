@@ -575,7 +575,7 @@ void finish_warmup()
     if(sms_on){
         for (uint32_t i=0; i<NUM_CPUS; i++)
         {
-            ooo_cpu[i].L2C.l2c_sms_prefetcher_inform_warmup_complete();
+            //ooo_cpu[i].L2C.l2c_sms_prefetcher_inform_warmup_complete();
         }
     }
 
