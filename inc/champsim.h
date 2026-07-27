@@ -58,7 +58,7 @@
 #endif
 
 #define berti_on 0 //@sweta: Berti prefetcher on/off
-#define sms_on 1 //@neeraj: SMS prefetcher on/off
+#define sms_on 0 //@neeraj: SMS prefetcher on/off
 // CPU
 #define NUM_CPUS 1
 #define CPU_FREQ 4000
@@ -133,6 +133,9 @@ extern uint64_t previous_ppage, num_adjacent_page, num_cl[NUM_CPUS], allocated_p
 
 //@Vasudha: Dumped page table
 extern map <uint64_t, uint64_t> temp_page_table;
+
+
+
 
 void print_stats();
 uint64_t rotl64 (uint64_t n, unsigned int c),
