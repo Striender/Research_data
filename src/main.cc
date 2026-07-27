@@ -267,21 +267,21 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
             cout << endl << cache->NAME;
             cout << " MSHR OCCUPANCY DISTRIBUTION: ";
             for (uint32_t occ = 0; occ <= cache->MSHR_SIZE; occ++) {
-                cout << occ << ":" << cache->mshr_occupancy_cycles[occ] << "   ";
+                //cout << occ << ":" << cache->mshr_occupancy_cycles[occ] << "   ";
             }
             cout << endl;
         
             cout << endl << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
             for (uint64_t length : cache->mshr_full_streak_lengths)
-                cout << length << " ";
+                //cout << length << " ";
 
             if (cache->current_mshr_full_streak > 0)
-                 cout << cache->current_mshr_full_streak << " ";
+                // cout << cache->current_mshr_full_streak << " ";
             cout << endl;
 
             cout << endl << cache->NAME << " LINE REUSE COUNT : ";
             for (auto const &entry : cache->line_reuse_count) {
-                cout << entry.first << ":" << entry.second << " ";
+                //cout << entry.first << ":" << entry.second << " ";
             }
             cout << endl;
 
@@ -411,16 +411,16 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
     cout << endl << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
 
     for (uint64_t length : cache->mshr_full_streak_lengths)
-        cout << length << " ";
+        //cout << length << " ";
   
     if (cache->current_mshr_full_streak > 0)
-        cout << cache->current_mshr_full_streak << " ";
+        //cout << cache->current_mshr_full_streak << " ";
   
     cout << endl;
   
     cout << endl << cache->NAME << " LINE REUSE COUNT : ";
     for (auto const &entry : cache->line_reuse_count) {
-        cout << entry.first << ":" << entry.second << " ";
+        //cout << entry.first << ":" << entry.second << " ";
     }
     cout << endl;
 
