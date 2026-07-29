@@ -463,6 +463,11 @@ bool pattern_all_set(std::vector<int> pattern) {
 
 void CACHE::l1d_prefetcher_initialize() {
     std::cout << NAME << " Gaze NEW NEW prefetcher" << std::endl;
+    std::cout << "Filter table size: " << gaze::FT_SIZE << ", ways: " << gaze::FT_WAY << std::endl;
+    std::cout << "Accumulate table size: " << gaze::AT_SIZE << ", ways: " << gaze::AT_WAY << std::endl;
+    std::cout << "Pattern table size: " << gaze::PT_SIZE << ", ways: " << gaze::PT_WAY << std::endl;
+    std::cout << "Prefetch buffer size: " << gaze::PB_SIZE << ", ways: " << gaze::PB_WAY << std::endl;      
+    std::cout << "Region size: " << gaze::REGION_SIZE << ", Log2_Region : " << gaze::LOG2_REGION_SIZE << std::endl << std::endl;
 
     prefetchers = std::vector<gaze::Gaze>(NUM_CPUS, gaze::Gaze(gaze::FT_SIZE, gaze::FT_WAY, gaze::AT_SIZE, gaze::AT_WAY, gaze::PT_SIZE, gaze::PT_WAY, gaze::PB_SIZE, gaze::PB_WAY, cpu));
 }
