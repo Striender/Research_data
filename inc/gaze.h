@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <random>
 #include <deque>
+#include <cmath>
 
 namespace gaze {
 
@@ -29,10 +30,10 @@ namespace gaze {
 #define PT_TYPE custom_util::LRUSetAssociativeCache
 #define PB_TYPE custom_util::LRUSetAssociativeCache
 
-constexpr uint64_t REGION_SIZE = 4 * 1024; // '4KB', '8KB', '16KB, '32KB', '64KB, '128KB', '512KB', '1024KB', '2048KB'
+constexpr uint64_t REGION_SIZE =  512; // '4KB', '8KB', '16KB, '32KB', '64KB, '128KB', '512KB', '1024KB', '2048KB'    
 // Gaze uses 4 KiB regions, so log2(REGION_SIZE) is fixed at 12. The old
 // ChampSim tree does not provide champsim::lg2.
-constexpr uint64_t LOG2_REGION_SIZE = 12;
+constexpr uint64_t LOG2_REGION_SIZE = 9;  /// -----------------------------> need to update this value if REGION_SIZE is changed
 constexpr uint64_t REGION_OFFSET_MASK = (1ULL << (LOG2_REGION_SIZE - LOG2_BLOCK_SIZE)) - 1;
 
 constexpr int NUM_BLOCKS = REGION_SIZE / BLOCK_SIZE;

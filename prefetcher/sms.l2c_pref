@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <unordered_set>
+#include <map>
 
 namespace dragon_sms {
 
@@ -20,16 +20,16 @@ constexpr uint32_t FT_SIZE = 64;
 constexpr uint32_t PHT_SIZE = 16*1024;
 constexpr uint32_t PHT_ASSOC = 16;
 constexpr uint32_t PREF_DEGREE = 4;
-constexpr uint32_t REGION_SIZE = 4*1024;
-constexpr uint32_t REGION_SIZE_LOG = 13;
+constexpr uint32_t REGION_SIZE = 4*1024;  //-->
+constexpr uint32_t REGION_SIZE_LOG = 12;  //-->
 constexpr bool ENABLE_PREF_BUFFER = true;
 constexpr uint32_t PREF_BUFFER_SIZE = 256;
 constexpr uint32_t REGION_LINES = REGION_SIZE >> LOG2_BLOCK_SIZE;
 
 static_assert((REGION_SIZE & (REGION_SIZE - 1)) == 0,
               "SMS region size must be a power of two");
-static_assert(REGION_LINES > 0 && REGION_LINES <= 128,
-              "SMS supports between 1 and 128 cache lines per region");
+static_assert(REGION_LINES > 0 && REGION_LINES <= 64,
+              "SMS supports between 1 and 64 cache lines per region");
 static_assert(PHT_ASSOC > 0 && PHT_SIZE % PHT_ASSOC == 0,
               "SMS PHT size must be divisible by its associativity");
 
@@ -74,6 +74,7 @@ struct Stats {
     uint64_t buffered = 0;
     uint64_t spilled = 0;
     uint64_t issued = 0;
+    uint64_t pht_reinsert = 0;
 };
 
 class SMS {
@@ -141,7 +142,8 @@ class SMS {
                   << "sms.pht.lookup " << stats.pht_lookup << '\n'
                   << "sms.pht.hit " << stats.pht_hit << '\n'
                   << "sms.pht.insert " << stats.pht_insert << '\n'
-                  << "sms.pht.unique_insert " << unique_pht_signatures.size() << '\n'
+                  << "sms.pht.unique_insert " << pht_key_insert_frequency.size() << '\n'
+                  << "sms.pht.reinsert " << stats.pht_reinsert << '\n'
                   << "sms.pht.evict " << stats.pht_evict << '\n'
                   << "sms.generate_prefetch.called " << stats.generate_called << '\n'
                   << "sms.generate_prefetch.pht_miss " << stats.generate_miss << '\n'
@@ -149,6 +151,17 @@ class SMS {
                   << "sms.pref_buffer.buffered " << stats.buffered << '\n'
                   << "sms.pref_buffer.spilled " << stats.spilled << '\n'
                   << "sms.pref_buffer.issued " << stats.issued << '\n';
+
+        for (const auto &key_frequency : pht_key_insert_frequency)
+        {
+            if(stats.pht_insert < 50)
+            {
+                std::cout << "sms.pht.key 0x" << std::hex << key_frequency.first << std::dec << " insert_frequency " << key_frequency.second  << '\n';
+            }else
+            {
+                std::cout <<" insert_frequency " << key_frequency.second << " ";
+            }
+        }
     }
 
   private:
@@ -256,10 +269,14 @@ class SMS {
         }
 
         stats.pht_insert++;
-        unique_pht_signatures.insert(key);
-        // Preserve Dragon/sms.cc behavior: insertion resets existing PHT ages.
-        for (auto& entry : pht[set])
-            entry.age = 0;
+        uint64_t &insert_frequency = pht_key_insert_frequency[key];
+        insert_frequency++;
+        if (insert_frequency > 1)
+            stats.pht_reinsert++;
+
+              // Preserve Dragon/sms.cc behavior: insertion resets existing PHT ages.
+              for (auto &entry : pht[set])
+                  entry.age = 0;
         pht[set].push_back({key, source.pattern, 0});
     }
 
@@ -310,7 +327,7 @@ class SMS {
     std::deque<ATEntry> accumulation_table;
     uint32_t cpu;
     std::vector<std::deque<PHTEntry>> pht;
-    std::unordered_set<uint64_t> unique_pht_signatures;
+    std::map<uint64_t, uint64_t> pht_key_insert_frequency;
     std::deque<uint64_t> prefetch_buffer;
     Stats stats;
 };

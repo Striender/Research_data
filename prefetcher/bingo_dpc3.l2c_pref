@@ -24,8 +24,9 @@ uint8_t warmup_flag_l2 = 0;
 //#define WAYS_IN_PHT 16
 
 //These are for 256KB Bingo (32*1024 and 16)
-#define SIZE_OF_PHT 32 * 1024
+#define SIZE_OF_PHT 8 * 1024
 #define WAYS_IN_PHT 16
+#define REGION_SIZE_ 32 * 1024
 
 // These are for 512KB Bingo (64*1024 and 16)
 //#define SIZE_OF_PHT 64 * 1024
@@ -1182,7 +1183,7 @@ vector<Bingo> prefetchers;
 
 void CACHE::l2c_prefetcher_initialize() {
     /*=== Bingo Settings ===*/
-    const int REGION_SIZE = 2 * 1024;  /* size of spatial region = 2KB */
+    const int REGION_SIZE =REGION_SIZE_; /* size of spatial region = 2KB */
     const int PC_WIDTH = 16;           /* number of PC bits used in PHT */
     const int MIN_ADDR_WIDTH = 5;      /* number of Address bits used for PC+Offset matching */
     const int MAX_ADDR_WIDTH = 16;     /* number of Address bits used for PC+Address matching */
@@ -1202,7 +1203,9 @@ void CACHE::l2c_prefetcher_initialize() {
         NUM_CPUS, L1D_PREF::Bingo(REGION_SIZE >> LOG2_BLOCK_SIZE, MIN_ADDR_WIDTH, MAX_ADDR_WIDTH, PC_WIDTH, FT_SIZE,
                       AT_SIZE, PHT_SIZE, PHT_WAYS, PF_STREAMER_SIZE, L1D_PREF::DEBUG_LEVEL));
 
-	cout <<"Bingo PHT WAYS: " << PHT_WAYS << " and PHT_SIZE: " << PHT_SIZE << endl; 
+	cout <<"Bingo PHT WAYS: " << PHT_WAYS << endl
+         << "PHT_SIZE: " << PHT_SIZE << endl
+         << "REGION_SIZE: " << REGION_SIZE_ << endl;   
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in, uint8_t critical_ip_flag) {
