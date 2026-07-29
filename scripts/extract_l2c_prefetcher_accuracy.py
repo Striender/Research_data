@@ -13,9 +13,9 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "ai_ml", "SMS")
+    os.path.join(SCRIPT_DIR, "..", "results", "bingo_region","baseline")
 )
-DEFAULT_OUTPUT_FILE = "../Excel_Output/l2c_prefetcher_accuracy.xlsx"
+DEFAULT_OUTPUT_FILE = os.path.join(SCRIPT_DIR, "..", "Excel_Output", "Baseline", "Baseline.xlsx")
 
 
 def natural_sort_key(value):

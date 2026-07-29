@@ -13,9 +13,9 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "sms_ai_ml", "with-sms")
+    os.path.join(SCRIPT_DIR, "..", "results", "IP_STRIDE")
 )
-DEFAULT_OUTPUT_FILE = "l1d_prefetcher_accuracy.xlsx"
+DEFAULT_OUTPUT_FILE = "../Excel_Output/Next_line_l1d_prefetcher_accuracy.xlsx"
 
 
 def natural_sort_key(value):

@@ -97,9 +97,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/SMS_region//"
+    RESULTS_DIR = "../results/SMS_region/4k/"
     OUTPUT_DIR = "../Excel_Output"
-    EXCEL_OUTPUT_FILE = "SMS_New_IPC.xlsx"
+    EXCEL_OUTPUT_FILE = "SMS_IPC.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------

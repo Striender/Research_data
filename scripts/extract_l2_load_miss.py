@@ -50,7 +50,7 @@ def save_json_data(file_path, data):
     except IOError as e:
         print(f"Warning: Could not save the cache/log file at {file_path}: {e}")
 
-PARSER_CACHE_VERSION = 2
+PARSER_CACHE_VERSION = 3
 FULL_NUMBER_PATTERN = r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)"
 
 def parse_champsim_file(filepath):
@@ -60,7 +60,9 @@ def parse_champsim_file(filepath):
     """
     metrics = {
         "Trace File": os.path.basename(filepath) if filepath else None,
+        "L1D Load Miss": None,
         "L1D Load MPKI": None,
+        "L2C Load Miss": None,
         "L2C Load MPKI": None,
         "LLC Load MPKI": None,
     }
@@ -71,15 +73,19 @@ def parse_champsim_file(filepath):
     try:
         with open(filepath, 'r', errors='ignore') as f:
             content = f.read()
-            l1d_load_match = re.search(rf"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+\d+.*?MPKI:\s+{FULL_NUMBER_PATTERN}", content)
+            l1d_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if l1d_load_match:
-                # Keep the original text. Converting through float can round
-                # significant digits before the value reaches Excel.
-                metrics["L1D Load MPKI"] = l1d_load_match.group(1)
+                metrics["L1D Load Miss"] = l1d_load_match.group(1)
+                metrics["L1D Load MPKI"] = l1d_load_match.group(2)
+                
 
-            l2c_load_match = re.search(rf"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+\d+.*?MPKI:\s+{FULL_NUMBER_PATTERN}", content)
+            l2c_load_match = re.search(
+                rf"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+{FULL_NUMBER_PATTERN}",
+                content,
+            )
             if l2c_load_match:
-                metrics["L2C Load MPKI"] = l2c_load_match.group(1)
+                metrics["L2C Load Miss"] = l2c_load_match.group(1)
+                metrics["L2C Load MPKI"] = l2c_load_match.group(2)
 
             llc_load_match = re.search(rf"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+\d+.*?MPKI:\s+{FULL_NUMBER_PATTERN}", content)
             if llc_load_match:
@@ -106,9 +112,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/SMS_region/testing/16k_16w_4r"
+    RESULTS_DIR = "../results/IP_STRIDE/"
     OUTPUT_DIR = "../Excel_Output/"
-    EXCEL_OUTPUT_FILE = "SMS_MPKI_testing.xlsx"
+    EXCEL_OUTPUT_FILE = "IP_STRIDE_Next_line_Load_Miss_baseline.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
