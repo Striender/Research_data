@@ -1443,6 +1443,7 @@ void CACHE::handle_read()
         sum_pq_occupancy += PQ.occupancy;
        
     }
+    
 
     if(RQ.occupancy == 0)
         return;
@@ -1481,6 +1482,11 @@ if((cache_type == IS_L1I || cache_type == IS_L1D) && reads_ready.size() == 0)
         // handle the oldest entry
         if ((RQ.entry[RQ.head].event_cycle <= current_core_cycle[read_cpu]) && (RQ.occupancy > 0)) {
             int index = RQ.head;
+
+           // if (cache_type == IS_L1D && RQ.entry[index].type == LOAD)
+           // {
+           //     std::cout << "PC : " << std::hex << RQ.entry[index].ip << " Full Address: " << RQ.entry[index].full_physical_address << std::dec << std::endl;
+           // }
 
             // access cache
             uint32_t set = get_set(RQ.entry[index].address);
