@@ -24,9 +24,9 @@ uint8_t warmup_flag_l2 = 0;
 //#define WAYS_IN_PHT 16
 
 //These are for 256KB Bingo (32*1024 and 16)
-#define SIZE_OF_PHT 8 * 1024
+#define SIZE_OF_PHT 1 * 1024
 #define WAYS_IN_PHT 16
-#define REGION_SIZE_ 32 * 1024
+#define REGION_SIZE_ 16 * 1024
 
 // These are for 512KB Bingo (64*1024 and 16)
 //#define SIZE_OF_PHT 64 * 1024
@@ -41,7 +41,7 @@ uint8_t warmup_flag_l2 = 0;
 // #define SIZE_OF_PHT 256 * 1024
 // #define WAYS_IN_PHT 16
 
-namespace L1D_PREF {
+namespace L2C_PREF {
 
 /**
  * A class for printing beautiful data tables.
@@ -1199,9 +1199,9 @@ void CACHE::l2c_prefetcher_initialize() {
 
     /* construct prefetcher for all cores */
     // assert(PAGE_SIZE % REGION_SIZE == 0);
-    L1D_PREF::prefetchers = vector<L1D_PREF::Bingo>(
-        NUM_CPUS, L1D_PREF::Bingo(REGION_SIZE >> LOG2_BLOCK_SIZE, MIN_ADDR_WIDTH, MAX_ADDR_WIDTH, PC_WIDTH, FT_SIZE,
-                      AT_SIZE, PHT_SIZE, PHT_WAYS, PF_STREAMER_SIZE, L1D_PREF::DEBUG_LEVEL));
+    L2C_PREF::prefetchers = vector<L2C_PREF::Bingo>(
+        NUM_CPUS, L2C_PREF::Bingo(REGION_SIZE >> LOG2_BLOCK_SIZE, MIN_ADDR_WIDTH, MAX_ADDR_WIDTH, PC_WIDTH, FT_SIZE,
+                      AT_SIZE, PHT_SIZE, PHT_WAYS, PF_STREAMER_SIZE, L2C_PREF::DEBUG_LEVEL));
 
 	cout <<"Bingo PHT WAYS: " << PHT_WAYS << endl
          << "PHT_SIZE: " << PHT_SIZE << endl
@@ -1212,15 +1212,15 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
 	if(warmup_complete[cpu] && warmup_flag_l2 == 0)
 	{
-		L1D_PREF::prefetchers[cpu].reset_stats();
+		L2C_PREF::prefetchers[cpu].reset_stats();
 		warmup_flag_l2 = 1;
 	}
 	
 
-    if (L1D_PREF::DEBUG_LEVEL >= 2) {
-        cerr << "CACHE::l1d_prefetcher_operate(addr=0x" << hex << addr << ", ip=0x" << ip << ", cache_hit=" << dec
+    if (L2C_PREF::DEBUG_LEVEL >= 2) {
+        cerr << "CACHE::L2C_PREFetcher_operate(addr=0x" << hex << addr << ", ip=0x" << ip << ", cache_hit=" << dec
              << (int)cache_hit << ", type=" << (int)type << ")" << dec << endl;
-        cerr << "[CACHE::l1d_prefetcher_operate] CACHE{core=" << this->cpu << ", NAME=" << this->NAME << "}" << dec
+        cerr << "[CACHE::L2C_PREFetcher_operate] CACHE{core=" << this->cpu << ", NAME=" << this->NAME << "}" << dec
              << endl;
     }
 
@@ -1230,13 +1230,13 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
     uint64_t block_number = addr >> LOG2_BLOCK_SIZE;
 
     /* update BINGO with most recent LOAD access */
-    L1D_PREF::prefetchers[cpu].access(block_number, ip);
+    L2C_PREF::prefetchers[cpu].access(block_number, ip);
 
     /* issue prefetches */
-    L1D_PREF::prefetchers[cpu].prefetch(this, block_number);
+    L2C_PREF::prefetchers[cpu].prefetch(this, block_number);
 
-    if (L1D_PREF::DEBUG_LEVEL >= 3) {
-        L1D_PREF::prefetchers[cpu].log();
+    if (L2C_PREF::DEBUG_LEVEL >= 3) {
+        L2C_PREF::prefetchers[cpu].log();
         cerr << "=======================================" << dec << endl;
     }
 
@@ -1251,14 +1251,14 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 
     /* inform all sms modules of the eviction */
     for (int i = 0; i < NUM_CPUS; i += 1)
-        L1D_PREF::prefetchers[i].eviction(evicted_block_number);
+        L2C_PREF::prefetchers[i].eviction(evicted_block_number);
 
     return metadata_in;
 }
 
 void CACHE::l2c_prefetcher_final_stats() {
 
-	 L1D_PREF::prefetchers[cpu].print_stats();
+	 L2C_PREF::prefetchers[cpu].print_stats();
 
 	/*cout << "PHT read accesses: " << pht.read_accesses << endl;
 	cout << "PHT write accesses: " << pht.write_accesses << endl;

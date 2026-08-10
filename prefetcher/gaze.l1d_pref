@@ -267,13 +267,10 @@ void PrefetchBuffer::prefetch(CACHE* cache, uint64_t block_num) {
             uint64_t pf_addr = (region_num << LOG2_REGION_SIZE) + (pf_offset << LOG2_BLOCK_SIZE);
             if (cache->get_occupancy(3, 0) + cache->get_occupancy(0, 0) < cache->get_size(0, 0) - 1 && cache->get_occupancy(3, 0) < cache->get_size(3, 0)) {
                 pf_metadata = pf_metadatas[pf_offset];
-                // The old ChampSim metadata format has no source/destination
-                // helpers. Preserve Gaze's low two classification bits.
                 pf_metadata &= 3;
                 int fill_level = pattern[pf_offset] == PF_FILL_L1 ? FILL_L1 : FILL_L2;
                 int ok = cache->prefetch_line(0, block_num << LOG2_BLOCK_SIZE,
                                               pf_addr, fill_level, pf_metadata);
-
                 if (ok) {
                     pattern[pf_offset] = 0;
                 }
@@ -462,7 +459,7 @@ bool pattern_all_set(std::vector<int> pattern) {
 } // namespace gaze
 
 void CACHE::l1d_prefetcher_initialize() {
-    std::cout << NAME << " Gaze NEW NEW prefetcher" << std::endl;
+    std::cout << NAME << " Gaze prefetcher" << std::endl;
     std::cout << "Filter table size: " << gaze::FT_SIZE << ", ways: " << gaze::FT_WAY << std::endl;
     std::cout << "Accumulate table size: " << gaze::AT_SIZE << ", ways: " << gaze::AT_WAY << std::endl;
     std::cout << "Pattern table size: " << gaze::PT_SIZE << ", ways: " << gaze::PT_WAY << std::endl;

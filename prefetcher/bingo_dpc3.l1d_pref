@@ -19,8 +19,9 @@ uint8_t warmup_flag_l1 = 0;
 //#define WAYS_IN_PHT 12
 
 //Neelu: These are for 124KB Bingo
-#define SIZE_OF_PHT 16*1024
+#define SIZE_OF_PHT 1024
 #define WAYS_IN_PHT 16
+#define REGION_SIZE_ 4 * 1024
 
 
 namespace L1D_PREF {
@@ -1164,7 +1165,7 @@ vector<Bingo> prefetchers;
 
 void CACHE::l1d_prefetcher_initialize() {
     /*=== Bingo Settings ===*/
-    const int REGION_SIZE = 2 * 1024;  /* size of spatial region = 2KB */
+    const int REGION_SIZE = REGION_SIZE_;  /* size of spatial region = 2KB */
     const int PC_WIDTH = 16;           /* number of PC bits used in PHT */
     const int MIN_ADDR_WIDTH = 5;      /* number of Address bits used for PC+Offset matching */
     const int MAX_ADDR_WIDTH = 16;     /* number of Address bits used for PC+Address matching */
