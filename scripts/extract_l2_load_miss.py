@@ -64,6 +64,7 @@ def parse_champsim_file(filepath):
         "L1D Load MPKI": None,
         "L2C Load Miss": None,
         "L2C Load MPKI": None,
+        "LLC Load Miss": None,
         "LLC Load MPKI": None,
     }
     
@@ -87,9 +88,10 @@ def parse_champsim_file(filepath):
                 metrics["L2C Load Miss"] = l2c_load_match.group(1)
                 metrics["L2C Load MPKI"] = l2c_load_match.group(2)
 
-            llc_load_match = re.search(rf"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+\d+.*?MPKI:\s+{FULL_NUMBER_PATTERN}", content)
+            llc_load_match = re.search(rf"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if llc_load_match:
-                metrics["LLC Load MPKI"] = llc_load_match.group(1)
+                metrics["LLC Load Miss"] = llc_load_match.group(1)
+                metrics["LLC Load MPKI"] = llc_load_match.group(2)
 
     except IOError as e:
         print(f"Error reading file {filepath}: {e}")
@@ -112,9 +114,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/IP_STRIDE/"
-    OUTPUT_DIR = "../Excel_Output/"
-    EXCEL_OUTPUT_FILE = "IP_STRIDE_Next_line_Load_Miss_baseline.xlsx"
+    RESULTS_DIR = "../results/bingo/bingo_region_l2/16K_region/"
+    OUTPUT_DIR = "../Excel_Output/bingo/Bingo_l2/"
+    EXCEL_OUTPUT_FILE = "Bingo_region_load_miss.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -155,7 +157,7 @@ def main():
             group_key = f"{cache_level}_{prefetcher}"
         elif len(path_parts) == 2: # Edge case for no_pref: results/no_pref/exp1
             cache_level, experiment = path_parts
-            if cache_level == 'no_pref': group_key = cache_level
+            if cache_level == 'baseline': group_key = cache_level
         
         if group_key and experiment:
             for filename in sorted(files):

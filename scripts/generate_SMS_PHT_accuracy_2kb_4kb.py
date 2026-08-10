@@ -11,15 +11,15 @@ workloads = [
     "bark.cpp-bark.5",
     "clip_trace_1",
     "clip_trace_3",
-    "llama2.c-stories110M.1",
-    "llama2.c-stories110M.2",
-    "llama2.c-stories110M.3",
     "llama2.c-stories15M.1",
     "llama2.c-stories15M.2",
     "llama2.c-stories15M.3",
     "llama2.c-stories42M.1",
     "llama2.c-stories42M.2",
     "llama2.c-stories42M.3",
+    "llama2.c-stories110M.1",
+    "llama2.c-stories110M.2",
+    "llama2.c-stories110M.3",
     "stable-diffusion.1",
     "stable-diffusion.2",
     "stable-diffusion.v1-5",
@@ -33,48 +33,117 @@ workloads = [
     "whisper_trace_3"
 ]
 
+# 1KB data
+data_1kb = [
+    7.8961,
+18.7641,
+16.8521,
+6.0145,
+21.5152,
+18.9274,
+3.9285,
+6.9288,
+2.7791,
+6.9237,
+4.7444,
+6.5261,
+4.1577,
+4.8528,
+6.9202,
+6.7537,
+5.7140,
+31.2444,
+64.8096,
+30.2283,
+5.6862,
+4.7244,
+4.4498,
+13.2897,
+15.2618,
+16.1582
+
+
+]
+
 # 2KB data
 data_2kb = [
-    57.5486, 58.8388, 55.8527, 35.6399, 88.8092, 86.3128,
-    89.8013, 95.5729, 87.6834, 96.5304, 92.8836, 95.7786,
-    91.2094, 92.3151, 96.4123, 72.9491, 74.3756, 59.9038,
-    37.8518, 29.5367, 74.2828, 90.2873, 70.2625, 42.8398,
-    72.1014, 42.3478
+    13.5839,
+43.3167,
+39.4093,
+5.9174,
+22.6923,
+17.1253,
+0.2323,
+0.3170,
+0.6751,
+0.0075,
+0.0169,
+0.1580,
+0.0131,
+0.0101,
+0.0027,
+10.0993,
+4.4984,
+25.8127,
+66.3175,
+21.2764,
+4.4493,
+60.7518,
+22.1424,
+17.4371,
+16.8316,
+18.7614
+
+
 ]
 
 # 4KB data
 data_4kb = [
-    78.1877, 76.5355, 75.0270, 60.9915, 94.1442, 93.0593,
-    95.3235, 97.1270, 94.5826, 97.9733, 96.1794, 97.5976,
-    95.6455, 96.1712, 97.9297, 83.5555, 86.2412, 76.8884,
-    60.5262, 57.9966, 86.3274, 95.0808, 85.1543, 71.8772,
-    82.8287, 71.4214
-]
+   21.2786,
+48.0674,
+43.0959,
+5.2702,
+21.5439,
+18.1724,
+0.1582,
+0.3468,
+0.5504,
+0.0049,
+0.0178,
+0.1410,
+0.0118,
+0.0108,
+0.0049,
+8.5852,
+96.1166,
+28.3833,
+68.0211,
+19.1362,
+96.6325,
+61.6305,
+43.3164,
+31.5081,
+20.6580,
+28.9173
 
-# 8KB data
-data_8kb = [
-    87.4426, 85.8005, 84.9966, 70.7368, 96.1804, 95.4195,
-    96.7468, 97.6426, 96.4705, 98.2100, 97.2738, 98.0139,
-    97.0917, 97.3775, 98.2431, 86.8970, 91.8277, 85.5652,
-    72.1211, 69.3515, 92.2241, 95.9948, 90.6427, 83.2655,
-    90.4075, 78.0746
+
 ]
 
 # Validate that every dataset matches the workload count
+assert len(data_1kb) == len(workloads)
 assert len(data_2kb) == len(workloads)
 assert len(data_4kb) == len(workloads)
-assert len(data_8kb) == len(workloads)
 
 # Calculate averages
+avg_1kb = np.mean(data_1kb)
 avg_2kb = np.mean(data_2kb)
 avg_4kb = np.mean(data_4kb)
-avg_8kb = np.mean(data_8kb)
 
 # Append average
 plot_workloads = workloads + ["Average"]
+plot_1kb = data_1kb + [avg_1kb]
 plot_2kb = data_2kb + [avg_2kb]
 plot_4kb = data_4kb + [avg_4kb]
-plot_8kb = data_8kb + [avg_8kb]
 
 # Figure parameters
 scale = 1.5
@@ -93,7 +162,7 @@ params = {
     'ytick.labelsize': 4.0 * scale,
     'text.usetex': False,
     'font.family': 'serif',
-    'font.serif': ['Times', 'Times New Roman', 'Liberation Serif'],
+    #'font.serif': ['Times', 'Times New Roman', 'Liberation Serif'],
     'patch.linewidth': 0.5,
     'patch.edgecolor': 'black',
     'figure.figsize': [fig_width, fig_width * golden_mean * 0.95],
@@ -120,13 +189,23 @@ bar_width = 0.27
 fig, ax = plt.subplots()
 
 # Colors
-color_2kb = '#8C9EBC'
-color_4kb = '#394761'
-color_8kb = '#B5BFCF'
+color_1kb = '#8C9EBC'
+color_2kb = '#394761'
+color_4kb = '#B5BFCF'
 
 # Three bars centered around each workload position
 bars1 = ax.bar(
     x - bar_width,
+    plot_1kb,
+    bar_width,
+    label='1KB',
+    color=color_1kb,
+    edgecolor='black',
+    linewidth=0.5
+)
+
+bars2 = ax.bar(
+    x,
     plot_2kb,
     bar_width,
     label='2KB',
@@ -135,8 +214,8 @@ bars1 = ax.bar(
     linewidth=0.5
 )
 
-bars2 = ax.bar(
-    x,
+bars3 = ax.bar(
+    x + bar_width,
     plot_4kb,
     bar_width,
     label='4KB',
@@ -145,18 +224,8 @@ bars2 = ax.bar(
     linewidth=0.5
 )
 
-bars3 = ax.bar(
-    x + bar_width,
-    plot_8kb,
-    bar_width,
-    label='8KB',
-    color=color_8kb,
-    edgecolor='black',
-    linewidth=0.5
-)
-
 # Axis labels
-ax.set_ylabel('Accuracy (%)')
+ax.set_ylabel('L2C Accuracy (%)')
 
 ax.set_xticks(x)
 ax.set_xticklabels(plot_workloads, rotation=45, ha='right')
@@ -185,8 +254,8 @@ ax.legend(
 root_dir = "../plots/"
 os.makedirs(root_dir, exist_ok=True)
 
-out_png = os.path.join(root_dir, 'SMS_PHT_accuracy_2kb_4kb_8kb.png')
-out_pdf = os.path.join(root_dir, 'SMS_PHT_accuracy_2kb_4kb_8kb.pdf')
+out_png = os.path.join(root_dir, 'Gaze_l2_prefetcher_accuracy.png')
+out_pdf = os.path.join(root_dir, 'Gaze_l2_prefetcher_accuracy.pdf')
 
 plt.savefig(out_png, bbox_inches='tight')
 plt.savefig(out_pdf, bbox_inches='tight')
@@ -194,6 +263,6 @@ plt.close()
 
 print(f"Saved: {out_png}")
 print(f"Saved: {out_pdf}")
+print(f"Average 1KB: {avg_1kb:.4f}%")
 print(f"Average 2KB: {avg_2kb:.4f}%")
 print(f"Average 4KB: {avg_4kb:.4f}%")
-print(f"Average 8KB: {avg_8kb:.4f}%")

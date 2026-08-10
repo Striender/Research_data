@@ -97,9 +97,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/SMS_region/4k/"
-    OUTPUT_DIR = "../Excel_Output"
-    EXCEL_OUTPUT_FILE = "SMS_IPC.xlsx"
+    RESULTS_DIR = "../results/baseline/"
+    OUTPUT_DIR = "../Excel_Output/Baseline/"
+    EXCEL_OUTPUT_FILE = "IPC.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -136,12 +136,12 @@ def main():
             cache, size , prefetcher, experiment = path_parts
             group_key = f"{cache}_{size}_{prefetcher}"
 
-        if len(path_parts) == 3: # Standard case: results/pref_l1/berti/exp1
+        elif len(path_parts) == 3: # Standard case: results/pref_l1/berti/exp1
             cache_level, prefetcher, experiment = path_parts
             group_key = f"{cache_level}_{prefetcher}"
         elif len(path_parts) == 2: # Edge case for no_pref: results/no_pref/exp1
             cache_level, experiment = path_parts
-            if cache_level == 'no_pref': group_key = cache_level
+            if cache_level == 'baseline': group_key = cache_level
         
         if group_key and experiment:
             for filename in sorted(files):

@@ -13,9 +13,9 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "bingo_region","baseline")
+    os.path.join(SCRIPT_DIR, "..", "results", "gaze_region")
 )
-DEFAULT_OUTPUT_FILE = os.path.join(SCRIPT_DIR, "..", "Excel_Output", "Baseline", "Baseline.xlsx")
+DEFAULT_OUTPUT_FILE = os.path.join(SCRIPT_DIR, "..", "Excel_Output", "Gaze", "gaze_l2c_prefetcher_accuracy.xlsx")
 
 
 def natural_sort_key(value):
