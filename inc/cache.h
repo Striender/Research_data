@@ -88,7 +88,7 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 
 // L1 DATA CACHE
 //checking cache sensitivity for AI/ML workloads by reducing L1D size from 48KB to 32KB and 16KB.
-#define L1D_SET 48
+#define L1D_SET 64
 #define L1D_WAY 12
 #define L1D_RQ_SIZE 64
 #define L1D_WQ_SIZE 64 
@@ -97,16 +97,16 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 #define L1D_LATENCY 5
 
 // L2 CACHE 
-#define L2C_SET 2048    //Neeraj: original 2048, 
+#define L2C_SET 2 * 1024    //Neeraj: original 2048, 
 #define L2C_WAY 16
 #define L2C_RQ_SIZE 32
 #define L2C_WQ_SIZE 32
-#define L2C_PQ_SIZE 16	//Neelu: changing from 16 to 32
-#define L2C_MSHR_SIZE 32 //  Original 32
+#define L2C_PQ_SIZE 16	
+#define L2C_MSHR_SIZE 32  //  Original 32
 #define L2C_LATENCY 10  // 5 (L1I or L1D) + 10 = 15 cycles
 
 // LAST LEVEL CACHE
-#define LLC_SET NUM_CPUS*4096
+#define LLC_SET NUM_CPUS*4096   //Original 4096
 #define LLC_WAY 12
 #define LLC_RQ_SIZE NUM_CPUS*L2C_MSHR_SIZE //48
 #define LLC_WQ_SIZE NUM_CPUS*L2C_MSHR_SIZE //48
