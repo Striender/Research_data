@@ -13,6 +13,9 @@ inc = inc
 debug = 1
 
 CFlags = -Wall -g -std=c++11 -O3
+# Optional experiment flags, e.g. EXTRA_CFLAGS=-DPREFETCH_CRITICALITY_MODE=1
+EXTRA_CFLAGS ?=
+CFlags += $(EXTRA_CFLAGS)
 LDFlags = -static
 libs =
 libDir =
@@ -35,7 +38,7 @@ objects := $(patsubst %.$(srcExt),$(objDir)/%.o,$(sources))
 
 ifeq ($(srcExt),cc)
 	
-	CC = g++-7
+	CC = g++
 else
 	CFlags += -std=gnu99
 endif
