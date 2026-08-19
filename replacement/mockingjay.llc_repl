@@ -65,7 +65,7 @@ uint64_t CRC_HASH(uint64_t _blockAddress)
 {
     static const unsigned long long crcPolynomial = 3988292384ULL;
     unsigned long long _returnVal = _blockAddress;
-    for (unsigned int i = 0; i < 3; i++)
+    for (unsigned int i = 0; i < 32; i++)
         _returnVal = ((_returnVal & 1) == 1) ? ((_returnVal >> 1) ^ crcPolynomial) : (_returnVal >> 1);
     return _returnVal;
 }
