@@ -129,51 +129,51 @@ void reset_loop_predictor_stats(){
 
 void O3_CPU::print_loopPredictor_Table()
 {
-	cout << "Loop Predictor Table: " << endl;
-	cout << "Total Extra Prefetches: " << total_extra_pf << endl;
-	cout << "Total Prefetches: " << total_prefetches << endl;
-	for (auto it = loopBuffer.begin(); it != loopBuffer.end(); it++)
-	{
-		// if (it->second.targetAddress > 0  && it->second.loop_exit > 0/* && it->second.trip_count > 0*/ )
-		cout << "PC: " << hex << it->first << dec << ", Branch Target: " << hex << it->second.targetAddress << dec << ", Trip Count: " << it->second.trip_count << ", Non-speculative Counter: " << it->second.non_speculatie_counter << ", Extra Prefetches: " << it->second.extra_pf /*<< ", If-Else PC: " << hex << it->second.ifelse_PC << dec << ", Taken Path PC: " << hex << it->second.taken_path << dec << ", Instance: " << it->second.instance - 1 << ", Loop Exit: " << it->second.loop_exit*/ << endl;
-/*
-		if (!it->second.path_trip_counts.empty())
-		{
-			cout << "    Path histories: ";
-			for (auto path_it = it->second.path_trip_counts.begin(); path_it != it->second.path_trip_counts.end(); ++path_it)
-			{
-				cout << "[Hash: " << hex << path_it->first << dec;
-
-				auto occ_hash_it = it->second.path_trip_count_occurrences.find(path_it->first);
-				if (occ_hash_it != it->second.path_trip_count_occurrences.end() && !occ_hash_it->second.empty())
-				{
-					cout << " => Frequencies: ";
-					for (auto occ_trip_it = occ_hash_it->second.begin(); occ_trip_it != occ_hash_it->second.end(); ++occ_trip_it)
-					{
-						cout << "(Trip Count: " << occ_trip_it->first << ", Count: " << occ_trip_it->second << ") " <<endl;
-					}
-				}
-				else
-				{
-					cout << " => Frequencies: none";
-				}
-
-				cout << ", Latest Trip Count: " << path_it->second << "]" << endl;
-			}
-		 
-		}*/
-	}
-
-	if (total_loop_exits > 0)
-	{
-		double total_trace_accuracy = ((double)correct_trip_predictions / total_loop_exits) * 100.0;
-
-		cout << "=====================================================" << endl;
-		cout << "OVERALL TRACE TRIP COUNT ACCURACY: " << total_trace_accuracy << "%" << endl;
-		cout << "Correct Predictions: " << correct_trip_predictions << endl;
-		cout << "Total Loop Exits: " << total_loop_exits << endl;
-		cout << "=====================================================" << endl;
-	}
+//	cout << "Loop Predictor Table: " << endl;
+//	cout << "Total Extra Prefetches: " << total_extra_pf << endl;
+//	cout << "Total Prefetches: " << total_prefetches << endl;
+//	for (auto it = loopBuffer.begin(); it != loopBuffer.end(); it++)
+//	{
+//		// if (it->second.targetAddress > 0  && it->second.loop_exit > 0/* && it->second.trip_count > 0*/ )
+//		cout << "PC: " << hex << it->first << dec << ", Branch Target: " << hex << it->second.targetAddress << dec << ", Trip Count: " << it->second.trip_count << ", Non-speculative Counter: " << it->second.non_speculatie_counter << ", Extra Prefetches: " << it->second.extra_pf /*<< ", If-Else PC: " << hex << it->second.ifelse_PC << dec << ", Taken Path PC: " << hex << it->second.taken_path << dec << ", Instance: " << it->second.instance - 1 << ", Loop Exit: " << it->second.loop_exit*/ << endl;
+//
+//		if (!it->second.path_trip_counts.empty())
+//		{
+//			cout << "    Path histories: ";
+//			for (auto path_it = it->second.path_trip_counts.begin(); path_it != it->second.path_trip_counts.end(); ++path_it)
+//			{
+//				cout << "[Hash: " << hex << path_it->first << dec;
+//
+//				auto occ_hash_it = it->second.path_trip_count_occurrences.find(path_it->first);
+//				if (occ_hash_it != it->second.path_trip_count_occurrences.end() && !occ_hash_it->second.empty())
+//				{
+//					cout << " => Frequencies: ";
+//					for (auto occ_trip_it = occ_hash_it->second.begin(); occ_trip_it != occ_hash_it->second.end(); ++occ_trip_it)
+//					{
+//						cout << "(Trip Count: " << occ_trip_it->first << ", Count: " << occ_trip_it->second << ") " <<endl;
+//					}
+//				}
+//				else
+//				{
+//					cout << " => Frequencies: none";
+//				}
+//
+//				cout << ", Latest Trip Count: " << path_it->second << "]" << endl;
+//			}
+//		 
+//		}
+//	}
+//
+//	if (total_loop_exits > 0)
+//	{
+//		double total_trace_accuracy = ((double)correct_trip_predictions / total_loop_exits) * 100.0;
+//
+//		cout << "=====================================================" << endl;
+//		cout << "OVERALL TRACE TRIP COUNT ACCURACY: " << total_trace_accuracy << "%" << endl;
+//		cout << "Correct Predictions: " << correct_trip_predictions << endl;
+//		cout << "Total Loop Exits: " << total_loop_exits << endl;
+//		cout << "=====================================================" << endl;
+//	}*/
 }
 
 void O3_CPU::initialize_branch_predictor()
