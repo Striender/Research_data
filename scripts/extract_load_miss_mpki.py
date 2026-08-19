@@ -3,13 +3,10 @@ import os
 import re
 import pandas as pd
 from collections import defaultdict
+from numbers import Number
 import json
 import shutil
-import copy
-
-# Increment this when parsing behavior changes so previously cached files are
-# parsed again. Version 2 preserves IPC exactly as printed by ChampSim.
-PARSER_VERSION = 2
+import copy 
 
 # Try to import openpyxl and guide the user if it's not installed.
 try:
@@ -53,14 +50,22 @@ def save_json_data(file_path, data):
     except IOError as e:
         print(f"Warning: Could not save the cache/log file at {file_path}: {e}")
 
+PARSER_CACHE_VERSION = 3
+FULL_NUMBER_PATTERN = r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)"
+
 def parse_champsim_file(filepath):
     """
-    Parses a single ChampSim output file to extract request-level MSHR metrics
+    Parses a single ChampSim output file to extract only load MPKI metrics
     for L1D, L2C, and LLC.
     """
     metrics = {
         "Trace File": os.path.basename(filepath) if filepath else None,
-        "IPC": None,
+        "L1D Load Miss": None,
+        "L1D Load MPKI": None,
+        "L2C Load Miss": None,
+        "L2C Load MPKI": None,
+        "LLC Load Miss": None,
+        "LLC Load MPKI": None,
     }
     
     if not filepath:
@@ -69,15 +74,24 @@ def parse_champsim_file(filepath):
     try:
         with open(filepath, 'r', errors='ignore') as f:
             content = f.read()
+            l1d_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if l1d_load_match:
+                metrics["L1D Load Miss"] = l1d_load_match.group(1)
+                metrics["L1D Load MPKI"] = l1d_load_match.group(2)
+                
 
-            # --- IPC ---
-            ipc_match = re.search(r"CPU 0 cumulative IPC:\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)", content)
-            if ipc_match:
-                # Keep the original text. Converting through float can round
-                # significant digits before the value reaches Excel.
-                metrics["IPC"] = ipc_match.group(1)
+            l2c_load_match = re.search(
+                rf"L2C LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+{FULL_NUMBER_PATTERN}",
+                content,
+            )
+            if l2c_load_match:
+                metrics["L2C Load Miss"] = l2c_load_match.group(1)
+                metrics["L2C Load MPKI"] = l2c_load_match.group(2)
 
-            
+            llc_load_match = re.search(rf"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if llc_load_match:
+                metrics["LLC Load Miss"] = llc_load_match.group(1)
+                metrics["LLC Load MPKI"] = llc_load_match.group(2)
 
     except IOError as e:
         print(f"Error reading file {filepath}: {e}")
@@ -91,15 +105,18 @@ def apply_border_to_range(worksheet, row_range, col_range, border_style):
         for cell in row:
             cell.border = border_style
 
+
+FULL_PRECISION_FORMAT = '0.################'
+
 def main():
     """
     Main function to find ChampSim files, parse them, and save them to a single
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/speedup/test"
-    OUTPUT_DIR = "../Excel_Output/IPC/"
-    EXCEL_OUTPUT_FILE = "test-IPC.xlsx"
+    RESULTS_DIR = "../results/speedup/baseline/"
+    OUTPUT_DIR = "../Excel_Output/Baseline/"
+    EXCEL_OUTPUT_FILE = "load_miss.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -112,7 +129,6 @@ def main():
 
     processed_files_log = load_json_data(PROCESSED_LOG_FILE)
     cached_data = load_json_data(DATA_CACHE_FILE)
-    headers = parse_champsim_file(None)
     
     # The structure is {group_key: {filepath: metrics}}
     # We will rebuild this dict completely to handle file deletions properly
@@ -131,7 +147,7 @@ def main():
         path_parts = relative_path.split(os.sep)
 
         group_key, experiment = None, None
-        
+
         if len(path_parts) == 4: # Edge case for nested directories: results/pref_l1/berti/exp1/subdir
             cache, size , prefetcher, experiment = path_parts
             group_key = f"{cache}_{size}_{prefetcher}"
@@ -139,6 +155,9 @@ def main():
         elif len(path_parts) == 3: # Standard case: results/pref_l1/berti/exp1
             cache_level, prefetcher, experiment = path_parts
             group_key = f"{cache_level}_{prefetcher}"
+        elif len(path_parts) == 2: # Standard case: results/pref_l1/berti/exp1
+                    prefetcher, experiment = path_parts
+                    group_key = f"{prefetcher}"
         elif len(path_parts) == 2: # Edge case for no_pref: results/no_pref/exp1
             cache_level, experiment = path_parts
             if cache_level == 'baseline': group_key = cache_level
@@ -148,17 +167,17 @@ def main():
                 filepath = os.path.join(root, filename)
                 
                 file_mod_time = os.path.getmtime(filepath)
-                cache_signature = {
-                    "mtime": file_mod_time,
-                    "parser_version": PARSER_VERSION,
-                }
                 # If file is unchanged, load its data from cache instead of re-parsing
-                if processed_files_log.get(filepath) == cache_signature:
-                    cached_metrics = cached_data.get(group_key, {}).get(filepath)
-                    if cached_metrics and all(header in cached_metrics for header in headers):
-                        data_by_prefetcher[group_key][filepath] = cached_metrics
-                        skipped_files_count += 1
-                        continue
+                log_entry = processed_files_log.get(filepath)
+                if (
+                    isinstance(log_entry, dict)
+                    and log_entry.get("mtime") == file_mod_time
+                    and log_entry.get("parser_cache_version") == PARSER_CACHE_VERSION
+                ):
+                    if group_key in cached_data and filepath in cached_data[group_key]:
+                        data_by_prefetcher[group_key][filepath] = cached_data[group_key][filepath]
+                    skipped_files_count += 1
+                    continue
                 
                 # If file is new or modified, announce the directory once
                 if root not in announced_dirs:
@@ -170,12 +189,16 @@ def main():
                 if metrics:
                     metrics["Experiment"] = experiment
                     data_by_prefetcher[group_key][filepath] = metrics
-                    processed_files_log[filepath] = cache_signature
+                    processed_files_log[filepath] = {
+                        "mtime": file_mod_time,
+                        "parser_cache_version": PARSER_CACHE_VERSION,
+                    }
 
     print(f"\nScan complete. Found {new_files_count} new/modified files. Skipped {skipped_files_count} unchanged files.")
 
     if new_files_count == 0:
-        print("\nNo file changes detected, but the workbook will be rebuilt from the current schema.")
+        print("\nOutput is already up-to-date.")
+        return
 
     print(f"\nProcessing data and updating {EXCEL_OUTPUT_FILE}...")
     final_output_path = os.path.join(OUTPUT_DIR, EXCEL_OUTPUT_FILE)
@@ -198,9 +221,8 @@ def main():
         if os.path.exists(final_output_path):
             try:
                 old_book = load_workbook(final_output_path)
-                generated_sheet_names = set(data_by_prefetcher.keys()) | {"IPC_Summary", "Placeholder"}
                 for sheet_name in old_book.sheetnames:
-                    if not sheet_name.startswith('raw_') and sheet_name not in generated_sheet_names:
+                    if not sheet_name.startswith('raw_'):
                         print(f"Preserving your custom sheet: {sheet_name}")
                         existing_custom_sheets[sheet_name] = old_book[sheet_name]
 
@@ -216,6 +238,9 @@ def main():
         left_alignment = Alignment(horizontal='left', vertical='center')
         right_alignment = Alignment(horizontal='right', vertical='center')
         
+        # Get the defined headers safely
+        headers = parse_champsim_file(None)
+
         # Build the new workbook content first
         for group_key in sorted(data_by_prefetcher.keys()):
             data_list = list(data_by_prefetcher[group_key].values())
@@ -299,7 +324,9 @@ def main():
                             cell.alignment = left_alignment
                         else:
                             cell.alignment = right_alignment
-                
+                            if isinstance(value, Number):
+                                cell.number_format = FULL_PRECISION_FORMAT
+
                 current_row += 1 + len(df_experiment)
             
             bold_font_for_trace = Font(bold=True)
@@ -317,52 +344,6 @@ def main():
             
             print(f" -> Finished processing sheet: {sheet_name}")
 
-        # Consolidate IPC values from every generated group sheet. Each row is
-        # one experiment/trace pair, and each group sheet becomes an IPC column.
-        summary_values = defaultdict(dict)
-        for group_key, records in data_by_prefetcher.items():
-            for metrics in records.values():
-                row_key = (metrics.get("Experiment", ""), metrics.get("Trace File", ""))
-                summary_values[row_key][group_key] = metrics.get("IPC")
-
-        if summary_values:
-            summary_sheet = book.create_sheet(title="IPC_Summary", index=0)
-            summary_headers = ["Experiment", "Trace File"] + sorted(data_by_prefetcher.keys())
-
-            for col_num, col_name in enumerate(summary_headers, 1):
-                cell = summary_sheet.cell(row=1, column=col_num, value=col_name)
-                cell.font = Font(bold=True, color="FFFFFF", size=12)
-                cell.fill = data_header_fill
-                cell.border = thin_border
-                cell.alignment = center_alignment
-
-            sorted_rows = sorted(
-                summary_values,
-                key=lambda item: (natural_sort_key(str(item[0])), natural_sort_key(str(item[1]))),
-            )
-            group_columns = summary_headers[2:]
-            for row_num, (experiment, trace_file) in enumerate(sorted_rows, start=2):
-                row_values = [experiment, trace_file]
-                row_values.extend(summary_values[(experiment, trace_file)].get(group) for group in group_columns)
-                for col_num, value in enumerate(row_values, 1):
-                    cell = summary_sheet.cell(row=row_num, column=col_num, value=value)
-                    cell.border = thin_border
-                    cell.alignment = left_alignment if col_num <= 2 else right_alignment
-
-            summary_sheet.freeze_panes = "C2"
-            summary_sheet.auto_filter.ref = summary_sheet.dimensions
-            summary_sheet.column_dimensions["A"].width = 24
-            summary_sheet.column_dimensions["B"].width = 50
-            for col_num in range(3, len(summary_headers) + 1):
-                column_letter = get_column_letter(col_num)
-                max_length = max(
-                    len(str(summary_sheet.cell(row=row_num, column=col_num).value or ""))
-                    for row_num in range(1, summary_sheet.max_row + 1)
-                )
-                summary_sheet.column_dimensions[column_letter].width = max_length + 2
-
-            print(" -> Finished processing consolidated sheet: IPC_Summary")
-
         # Add the preserved custom sheets back into the workbook
         for sheet_name, old_ws in existing_custom_sheets.items():
             new_ws = book.create_sheet(title=sheet_name)
@@ -370,16 +351,14 @@ def main():
                 for cell in row:
                     new_ws[cell.coordinate].value = cell.value
                     if cell.has_style:
-                        new_ws[cell.coordinate].font = cell.font.copy()
-                        new_ws[cell.coordinate].border = cell.border.copy()
-                        new_ws[cell.coordinate].fill = cell.fill.copy()
+                        # --- MODIFIED: Use copy.copy() to prevent DeprecationWarning ---
+                        new_ws[cell.coordinate].font = copy.copy(cell.font)
+                        new_ws[cell.coordinate].border = copy.copy(cell.border)
+                        new_ws[cell.coordinate].fill = copy.copy(cell.fill)
                         new_ws[cell.coordinate].number_format = cell.number_format
-                        new_ws[cell.coordinate].protection = cell.protection.copy()
-                        new_ws[cell.coordinate].alignment = cell.alignment.copy()
+                        new_ws[cell.coordinate].protection = copy.copy(cell.protection)
+                        new_ws[cell.coordinate].alignment = copy.copy(cell.alignment)
 
-
-        if "Placeholder" in book.sheetnames and len(book.sheetnames) > 1:
-            book.remove(book["Placeholder"])
 
         # Save the entire workbook to the temporary path first
         book.save(temp_output_path)
