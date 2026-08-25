@@ -33,33 +33,33 @@ workloads = [
 ]
 
 data = [
-52.9575,
-62.5709,
-59.1563,
-0.0000,
-7.9594,
-7.0018,
-0.0000,
-0.0000,
-0.0139,
-0.0000,
-0.0000,
-0.1226,
-0.3974,
-0.0000,
-0.0845,
-10.2430,
-2.0392,
-61.6284,
-77.1974,
-0.0000,
-5.3766,
-82.7290,
-67.2242,
-0.0000,
-0.0000,
-0.0000,
-19.1039
+0.051415,
+0.33053,
+2.31538,
+0.312035,
+0,
+2.58726,
+0.00001,
+0.002535,
+0.009925,
+0.00039,
+0.0028,
+0.001415,
+0.00017,
+0.000525,
+0,
+0.024225,
+0.00625,
+0.09058,
+0.208815,
+0.106435,
+0.004695,
+0.847705,
+0.0185,
+0.03358,
+0.00337,
+0.048445,
+0.269499615
 ]
 
 # Calculate arithmetic average
@@ -113,7 +113,7 @@ colors_list = ["#8C9EBC"] * (len(workloads) - 1) + ['#262f40']   #86A4DA (GOOD C
 rects = ax.bar(x_indices, data, width, color=colors_list, edgecolor='black', linewidth=0.5)
 
 # Labeling and details
-ax.set_ylabel('Percentage of prefetches filled \n in LLC', fontsize=5.0 * scale)
+ax.set_ylabel('# of MSHR Full events per \n kilo instruction', fontsize=5.0 * scale)
 #ax.set_xlabel('SPEC Workload')  
 ax.set_xticks(x_indices)
 ax.set_xticklabels(workloads, rotation=45, ha='right')
@@ -123,17 +123,18 @@ ax.set_xticklabels(workloads, rotation=45, ha='right')
 #ax.axhline(y=1.0, color='black', linewidth=0.65, linestyle='--', zorder=5)
 
 # Adjust limits (set y limit to 100 as requested)
+ylim_max = 0.2
 ax.set_xlim(-1.0, len(workloads))
-ax.set_ylim(0,10)
+ax.set_ylim(0,ylim_max)
 
 # Set y-axis ticks (major ticks every 10, minor ticks every 2)
 from matplotlib.ticker import MultipleLocator
-ax.yaxis.set_major_locator(MultipleLocator(2))
-ax.yaxis.set_minor_locator(MultipleLocator(1))
+ax.yaxis.set_major_locator(MultipleLocator(0.05))
+ax.yaxis.set_minor_locator(MultipleLocator(0.025))
 ax.tick_params(which='minor', length=2, color='black')
 
 # Annotate bars that exceed the y-limit of 100 using arrows with 90-degree rotated labels
-ylim_max = 10
+
 for rect in rects:
     height = rect.get_height()
     if height > ylim_max:
@@ -150,8 +151,8 @@ for rect in rects:
             color='black',
             rotation=90
         )
-out_name = 'Bingo_Percentage_of_Prefetches_filled_at_LLC'
-sample_dir = "../plots/bingo/"
+out_name = 'Bingo_MSHR_FULL'
+sample_dir = "../plots/Pref/"
 os.makedirs(sample_dir, exist_ok=True)
 
 plt.savefig(os.path.join(sample_dir, f'{out_name}.png'), bbox_inches='tight')

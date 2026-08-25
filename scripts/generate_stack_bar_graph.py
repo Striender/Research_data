@@ -36,89 +36,92 @@ workloads = [
 ]
 
 # Raw Data definitions (5-bin)
-cat_1_30 = [84.7327,
-83.8960,
-79.5038,
-64.5605,
-94.4940,
-93.3081,
-95.0357,
-95.4726,
-95.6924,
-95.7837,
-95.6641,
-95.8915,
-95.6132,
-95.8553,
-96.0155,
-85.2598,
-92.6002,
-79.0988,
-51.1762,
-68.0253,
-93.5949,
-93.2126,
-90.0623,
-55.1883,
-90.2357,
-51.3318
+cat_1_30 = [65.33112905,
+67.499168,
+3.997399995,
+82.98267823,
+0,
+19.71893045,
+100,
+90.53254438,
+67.25440806,
+0,
+61.78571429,
+8.480565371,
+0,
+37.14285714,
+0,
+57.11042312,
+60.24,
+65.43939059,
+43.74206834,
+70.32930897,
+55.37806177,
+2.567520541,
+81.18918919,
+78.76712329,
+94.21364985,
+77.16998658,
+53.5530871
 
 ]
-cat_31_60 = [12.92514518,
-10.73270961,
-16.27130168,
-32.78040148,
-1.484866094,
-2.736023318,
-1.083578322,
-0.732425307,
-1.249400793,
-0.523598744,
-0.874312383,
-0.60973472,
-1.022649082,
-0.915187349,
-0.583398413,
-4.797736746,
-3.731565571,
-14.27025125,
-42.89274738,
-27.58943151,
-3.636997116,
-1.507695302,
-4.523248126,
-41.76693181,
-4.784705731,
-45.12634219
+cat_31_60 = [
+0,
+2.60490727,
+73.2052622,
+1.225824026,
+0,
+52.73088132,
+0,
+0,
+0.856423174,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+22.06259129,
+0,
+0,
+90.81932984,
+0.135135135,
+0,
+0,
+0,
+8.356026548
 ]
 cat_61_90 = [
-  2.307740918,
-5.336380227,
-4.188127856,
-2.653730297,
-3.91316346,
-3.930438577,
-3.8634837,
-3.792144702,
-3.053060806,
-3.682775282,
-3.453526724,
-3.489966261,
-3.358534583,
-3.225273764,
-3.399445972,
-9.879576774,
-3.611899491,
-6.569805073,
-5.88181683,
-4.36330615,
-2.748999783,
-5.188161427,
-5.376293757,
-2.95977294,
-4.86996213,
-3.463992917
-
+  34.66887095,
+29.71591081,
+22.44771916,
+15.78508821,
+0,
+27.32350054,
+0,
+9.467455621,
+31.88916877,
+100,
+38.21428571,
+91.51943463,
+100,
+62.85714286,
+0,
+42.88957688,
+39.76,
+34.56060941,
+34.1737902,
+29.57203927,
+44.62193823,
+6.443869035,
+18.67567568,
+21.23287671,
+5.786350148,
+22.83001342,
+38.09088636
 ]
 #cat_91_120 = [
 #]
@@ -131,11 +134,20 @@ avg_61_90 = sum(cat_61_90) / len(cat_61_90)
 
 
 y_data = [
-    np.array(cat_1_30 + [avg_1_30]),
-    np.array(cat_31_60 + [avg_31_60]),
-    np.array(cat_61_90 + [avg_61_90]),
+    np.array(cat_1_30),
+    np.array(cat_31_60),
+    np.array(cat_61_90),
     #np.array(cat_91_120 + [avg_91_120])
 ]
+
+#when average is needed to be calculated
+#y_data = [
+#    np.array(cat_1_30 + [avg_1_30]),
+#    np.array(cat_31_60 + [avg_31_60]),
+#    np.array(cat_61_90 + [avg_61_90]),
+#    #np.array(cat_91_120 + [avg_91_120])
+#]
+#
 
 
 # Figure parameters
@@ -174,9 +186,9 @@ plt.rcParams.update(params)
 
 # Columns labels for legend (without %)
 labels = [
-    'Usefull Prefetches',
-    'Late Prefetches',
-    'Useless Prefetches',
+    'Load',
+    'RFO',
+    'Prefetches',
     #'Fill L2'
 ]
 
@@ -201,7 +213,7 @@ for i in range(3):
     bottom = bottom + y_data[i]
 
 # Labeling and details with dynamic wrapping
-y_label_text = 'Percentage of prefetch \n issued from L2'
+y_label_text = 'Distribution of request blocked \nwhen MSHR is Full'
 wrapped_y_label = "\n".join(textwrap.wrap(y_label_text, width=20))
 ax.set_ylabel(y_label_text, labelpad=10, fontsize=5.0 * scale)
 
@@ -218,13 +230,13 @@ ax.set_xlim(-spacing, x_indices[-1] + spacing)
 ax.set_ylim(0, 100)
 
 # Legend expanded to match exactly the active plot area width, with narrow box and small font size to prevent overlapping
-ax.legend(loc='lower left', bbox_to_anchor=(0.0, 1.02, 1.0, 0.1), mode="expand", ncol=5, frameon=True, facecolor='white', edgecolor='black', framealpha=1.0, fancybox=False, handlelength=1.0, handletextpad=0.3, fontsize=5.0 * scale)
+ax.legend(loc='lower center', bbox_to_anchor=(0.0, 1.02, 1.0, 0.1), ncol=5, frameon=True , facecolor='white', edgecolor='black', framealpha=1.0, fancybox=False, handlelength=1.0, handletextpad=0.3, fontsize=5.0 * scale, title='Request Type',) #add , mode="expand" to expand the 
 
-sample_dir = "../plots/bingo/"
+sample_dir = "../plots/Pref/Mshr_full"
 os.makedirs(sample_dir, exist_ok=True)
 
-plt.savefig(os.path.join(sample_dir, 'distribution_of_pf_requests.png'), bbox_inches='tight')
-plt.savefig(os.path.join(sample_dir, 'distribution_of_pf_requests.pdf'), bbox_inches='tight')
+plt.savefig(os.path.join(sample_dir, 'distribution_of_bingo-l2_MSHR_Full_events.png'), bbox_inches='tight')
+plt.savefig(os.path.join(sample_dir, 'distribution_of_bingo-l2_MSHR_Full_events.pdf'), bbox_inches='tight')
 plt.close()
 
 print("Successfully generated stacked bar sample plot with font size 15.")

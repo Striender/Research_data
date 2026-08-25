@@ -13,9 +13,9 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "MSHR", "L1d")
+    os.path.join(SCRIPT_DIR, "..", "results", "speedup", "MSHR_FULL_STREAKS")
 )
-DEFAULT_OUTPUT_FILE = "../Excel_Output/L1d_mshr_occupancy_distribution_5_bins_MSHR_sensitivity.xlsx"
+DEFAULT_OUTPUT_FILE = "../Excel_Output/mshr_full_streaks.xlsx"
 CACHE_LEVELS = ("L1D", "L2C", "LLC")
 SHEET_NAMES = {"L1D": "L1D", "L2C": "L2", "LLC": "LLC"}
 STREAK_SHEET_NAMES = {"L1D": "L1D_streaks", "L2C": "L2_streaks", "LLC": "LLC_streaks"}
