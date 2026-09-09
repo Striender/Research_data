@@ -248,7 +248,8 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 	//{
 			cout << cache->NAME;
 			cout << " PREFETCH  REQUESTED: " << setw(10) << cache->pf_requested << "  ISSUED: " << setw(10) << cache->pf_issued;
-			cout << "  USEFUL: " << setw(10) << cache->pf_useful << "  USELESS: " << setw(10) << cache->pf_useless << endl;
+			cout << "  USEFUL: " << setw(10) << cache->pf_useful << "  USELESS: " << setw(10) << cache->pf_useless ;
+            cout << " total_filled by prefetcher: " << setw(10)<< cache->pf_fill << endl;
 
 			//cout << cache->NAME << " PF LOWER LEVEL TEST: " << cache->pf_lower_level_test << endl;	
 			 cout << cache->NAME;
@@ -271,9 +272,10 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
             }
             cout << endl;
         
+            // this print for how many cycle MSHR is full in a row, and how many times it happened
             cout << endl << cache->NAME << " MSHR FULL STREAK LENGTHS: ";
             for (uint64_t length : cache->mshr_full_streak_lengths)
-                //cout << length << " ";
+                cout << length << " ";
 
             if (cache->current_mshr_full_streak > 0)
                 // cout << cache->current_mshr_full_streak << " ";
@@ -281,7 +283,19 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 
             cout << endl << cache->NAME << " LINE REUSE COUNT : ";
             for (auto const &entry : cache->line_reuse_count) {
-                //cout << entry.first << ":" << entry.second << " ";
+                cout << entry.first << ":" << entry.second << " ";
+            }
+            cout << endl;
+
+            cout << cache->NAME << " PREFETCH LINE REUSE COUNT : ";
+            for (auto const &entry : cache->prefetch_line_reuse_count) {
+                cout << entry.first << ":" << entry.second << " ";
+            }
+            cout << endl;
+
+            cout << cache->NAME << " DEMAND LINE REUSE COUNT : ";
+            for (auto const &entry : cache->demand_line_reuse_count) {
+                cout << entry.first << ":" << entry.second << " ";
             }
             cout << endl;
 
@@ -294,8 +308,8 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 			cout << " AVERAGE MISS LATENCY: " << setw(10) << (1.0*(cache->total_miss_latency))/TOTAL_MISS << " cycles";
             cout << " AVERAGE LOAD MISS LATENCY: " << setw(10) << (1.0*(cache->total_load_miss_latency))/cache->sim_miss[cpu][0] << " cycles";
             cout << " Load Miss "<< setw(10) << cache->sim_miss[cpu][0]  << endl;
-            cout << cache->NAME << " Average MSHR Occupancy: " << setw(10)  << (double)cache->average_mshr_occupancy / ooo_cpu[cpu].finish_sim_cycle << endl;
-	}
+            cout << cache->NAME << setw(10) << " Average MSHR Load Occupancy: " << setw(10) << (double)cache->average_mshr_load_occupancy / cache->atleast_miss << endl;
+    }
 
     //@Vishal: Will work only for 1 core, for multi-core this will give sim_result not roi_result
 	if(cache->RQ.ACCESS)
@@ -400,7 +414,7 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
 	cout << " MSHR FULL   TOTAL: " << setw(10) << TOTAL_MSHR_FULL << "  LOAD: " << setw(10) << cache->MSHR_FULL[LOAD] << "  RFO: " << setw(10) << cache->MSHR_FULL[RFO] << "  PREFETCH: " << setw(10) << cache->MSHR_FULL[PREFETCH] << "  WRITEBACK: " << setw(10) << cache->MSHR_FULL[WRITEBACK] << endl;
 	double mshr_full_percent = cache->mshr_accessed ? (100.0 * cache->mshr_full_accesses / cache->mshr_accessed) : 0.0;
 	cout << cache->NAME << " MSHR ACCESSED: " << setw(10) << cache->mshr_accessed << " MSHR FULL ACCESSES: " << setw(10) << cache->mshr_full_accesses << " MSHR FULL ACCESS %: " << setw(10) << mshr_full_percent << endl;
-
+    
     cout << endl <<cache->NAME;
     cout << "MSHR OCCUPANCY DISTRIBUTION: ";
     for (uint32_t occ = 0; occ <= cache->MSHR_SIZE; occ++) {
@@ -420,7 +434,19 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
   
     cout << endl << cache->NAME << " LINE REUSE COUNT : ";
     for (auto const &entry : cache->line_reuse_count) {
-        //cout << entry.first << ":" << entry.second << " ";
+        cout << entry.first << ":" << entry.second << " ";
+    }
+    cout << endl;
+
+    cout << cache->NAME << " PREFETCH LINE REUSE COUNT : ";
+    for (auto const &entry : cache->prefetch_line_reuse_count) {
+        cout << entry.first << ":" << entry.second << " ";
+    }
+    cout << endl;
+
+    cout << cache->NAME << " DEMAND LINE REUSE COUNT : ";
+    for (auto const &entry : cache->demand_line_reuse_count) {
+        cout << entry.first << ":" << entry.second << " ";
     }
     cout << endl;
 
@@ -455,6 +481,26 @@ void print_dram_stats()
     for (uint32_t i=0; i<DRAM_CHANNELS; i++) {
         cout << " CHANNEL " << i << endl;
         cout << " RQ ROW_BUFFER_HIT: " << setw(10) << uncore.DRAM.RQ[i].ROW_BUFFER_HIT << "  ROW_BUFFER_MISS: " << setw(10) << uncore.DRAM.RQ[i].ROW_BUFFER_MISS << endl;
+        const double average_rq_occupancy = uncore.DRAM.rq_occupancy_samples[i]
+            ? static_cast<double>(uncore.DRAM.rq_occupancy_sum[i]) / uncore.DRAM.rq_occupancy_samples[i]
+            : 0.0;
+        const double average_wq_occupancy = uncore.DRAM.wq_occupancy_samples[i]
+            ? static_cast<double>(uncore.DRAM.wq_occupancy_sum[i]) / uncore.DRAM.wq_occupancy_samples[i]
+            : 0.0;
+        const double average_queue_occupancy = uncore.DRAM.queue_occupancy_samples[i]
+            ? static_cast<double>(uncore.DRAM.queue_occupancy_sum[i]) / uncore.DRAM.queue_occupancy_samples[i]
+            : 0.0;
+        cout << fixed << setprecision(3);
+        cout << " RQ ACCESS-SAMPLED AVERAGE_OCCUPANCY: " << average_rq_occupancy << " / " << uncore.DRAM.RQ[i].SIZE
+             << " (" << (100.0 * average_rq_occupancy / uncore.DRAM.RQ[i].SIZE) << "%)"
+             << " SAMPLES: " << uncore.DRAM.rq_occupancy_samples[i] << endl;
+        cout << " WQ ACCESS-SAMPLED AVERAGE_OCCUPANCY: " << average_wq_occupancy << " / " << uncore.DRAM.WQ[i].SIZE
+             << " (" << (100.0 * average_wq_occupancy / uncore.DRAM.WQ[i].SIZE) << "%)"
+             << " SAMPLES: " << uncore.DRAM.wq_occupancy_samples[i] << endl;
+        //cout << " DRAM ACCESS-SAMPLED AVERAGE_OCCUPANCY: " << average_queue_occupancy
+        //     << " SAMPLES: " << uncore.DRAM.queue_occupancy_samples[i] << endl;
+        cout << defaultfloat;
+        cout << " Number time DRAM Write watermark reached: " << static_cast<int>(uncore.DRAM.do_write) << endl;
         cout << " DBUS_CONGESTED: " << setw(10) << uncore.DRAM.dbus_congested[NUM_TYPES][NUM_TYPES] << endl; 
         cout << " WQ ROW_BUFFER_HIT: " << setw(10) << uncore.DRAM.WQ[i].ROW_BUFFER_HIT << "  ROW_BUFFER_MISS: " << setw(10) << uncore.DRAM.WQ[i].ROW_BUFFER_MISS;
         cout << "  FULL: " << setw(10) << uncore.DRAM.WQ[i].FULL << endl; 
@@ -489,17 +535,21 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
     }
 
 	cache->total_miss_latency = 0;
-	cache->average_mshr_occupancy=0;
+	cache->average_mshr_load_occupancy=0;
+    cache->atleast_miss=0;
 	cache->mshr_accessed=0;
 	cache->mshr_full_accesses=0;
 
     cache->mshr_full_streak_lengths.clear();
     cache->current_mshr_full_streak = 0;
     cache->line_reuse_count.clear();
+    cache->prefetch_line_reuse_count.clear();
+    cache->demand_line_reuse_count.clear();
 
     for (uint32_t set = 0; set < cache->NUM_SET; set++) {
         for (uint32_t way = 0; way < cache->NUM_WAY; way++) {
             cache->block[set][way].reuse_counter = 0;
+            cache->block[set][way].prefetch = 0;
         }
     }
 
@@ -567,6 +617,7 @@ void finish_warmup()
     elapsed_minute -= elapsed_hour*60;
     elapsed_second -= (elapsed_hour*3600 + elapsed_minute*60);
 
+
     reset_l2c_pollution_stats();
     reset_llc_pollution_stats();
     reuse_distance_clear();
@@ -593,6 +644,7 @@ void finish_warmup()
 
         ooo_cpu[i].begin_sim_cycle = current_core_cycle[i]; 
         ooo_cpu[i].begin_sim_instr = ooo_cpu[i].num_retired;
+        ooo_cpu[i].reset_prefetch_criticality_stats();
 
 	//Neelu: Setting current_epoch_all_ip_prefetch.
 	//ooo_cpu[i].current_epoch_all_ip_prefetch = 1;
@@ -643,6 +695,7 @@ void finish_warmup()
         uncore.DRAM.WQ[i].ROW_BUFFER_HIT = 0;
         uncore.DRAM.WQ[i].ROW_BUFFER_MISS = 0;
     }
+    uncore.DRAM.reset_queue_occupancy_stats();
 
     // set actual cache latency
     for (uint32_t i=0; i<NUM_CPUS; i++) {
@@ -1610,6 +1663,7 @@ int main(int argc, char** argv)
             //cout << " stall_cycle: " << stall_cycle[i] << " current: " << current_core_cycle[i] << endl;
 
 	    
+            uint32_t retired_this_cycle = 0;
 
             // core might be stalled due to page fault or branch misprediction
             if (stall_cycle[i] <= current_core_cycle[i]) {
@@ -1636,7 +1690,7 @@ int main(int argc, char** argv)
 		// retire
 		// Neelu: Commented first condition. 
                 if (/*(ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed == COMPLETED) && */ (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle <= current_core_cycle[i]))
-			ooo_cpu[i].retire_rob();
+			retired_this_cycle = ooo_cpu[i].retire_rob();
 
 		// complete 
                 ooo_cpu[i].update_rob();
@@ -1698,6 +1752,11 @@ int main(int argc, char** argv)
 			}
 		}
             }
+
+            // Record every ROI core cycle. In particular, cycles where the
+            // head event is not ready never enter retire_rob(), but still
+            // retire zero instructions and belong in the RETIRED_0 bin.
+            ooo_cpu[i].record_retirement_cycle(retired_this_cycle);
 
             // heartbeat information
 	    
