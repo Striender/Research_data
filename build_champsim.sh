@@ -210,9 +210,9 @@ mkdir -p bin
 rm -f bin/champsim
 make clean
 if [ "$#" -eq 19 ]; then
-    make CC=${19} CCX=${19}
+    make CC=${19} CCX=${19} EXTRA_CFLAGS="${EXTRA_CFLAGS}"
 else
-    make
+    make EXTRA_CFLAGS="${EXTRA_CFLAGS}"
 fi
 
 # Sanity check
