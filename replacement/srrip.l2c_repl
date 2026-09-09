@@ -50,7 +50,7 @@ uint32_t CACHE::l2c_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
         {
             if (l2_rrpv[set][i] == maxRRPV)
             {
-                if (!(current_set[i].prefetch && type == PREFETCH))
+                if ( type == PREFETCH && !(current_set[i].prefetch) )
                 {
                     l2c_evicted_by_prefetch.insert({current_set[i].full_addr >> LOG2_BLOCK_SIZE, full_addr >> LOG2_BLOCK_SIZE});
                 }

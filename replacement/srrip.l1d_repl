@@ -6,6 +6,7 @@
 uint32_t l1d_rrpv[L1D_SET][L1D_WAY];
 unordered_set<uint64_t> l1d_demand_resident;
 unordered_map<uint64_t, uint64_t> l1d_evicted_by_prefetch;
+uint32_t invalid_lines_l1d[L1D_SET][L1D_WAY];
 uint64_t l1d_pollution_count = 0;
 uint64_t miss_l1d = 0;
 
@@ -25,6 +26,7 @@ void CACHE::l1d_initialize_replacement()
         for (int j = 0; j < L1D_WAY; j++)
         {
             l1d_rrpv[i][j] = maxRRPV;
+            invalid_lines_l1d[i][j] = 1;
         }
     }
 }
@@ -36,11 +38,19 @@ uint32_t CACHE::l1d_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
     // look for the maxRRPV line
     while (1)
     {
+        for(int i=0; i<L1D_WAY; i++)
+        {
+            if(invalid_lines_l1d[set][i] == 1)
+            {
+                invalid_lines_l1d[set][i] = 0;
+                return i;
+            }
+        }
         for (int i = 0; i < L1D_WAY; i++)
         {
             if (l1d_rrpv[set][i] == maxRRPV)
             {
-                if (!(current_set[i].prefetch && type == PREFETCH))
+                if (!(current_set[i].prefetch )&& type == PREFETCH)
                 {
                     l1d_evicted_by_prefetch.insert({current_set[i].full_addr >> LOG2_BLOCK_SIZE, full_addr >> LOG2_BLOCK_SIZE});
                 }

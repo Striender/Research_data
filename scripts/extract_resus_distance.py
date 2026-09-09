@@ -3,9 +3,9 @@
 import os
 import csv
 
-ROOT_DIR = "../results/spec/MSHR/pref_l1_l2/vberti_bingo_dpc3/exp14_srrip_mockingjay"
+ROOT_DIR = "../results_bingo/pref_l1_l2/"
 
-OUTPUT_CSV = "reuse_distance_summary.csv"
+OUTPUT_CSV = "../Excel_Output/aiml_bingo/bingo+bingo_reuse_distance_summary.csv"
 
 CACHE_BINS = {
     "l1d": [

@@ -17,11 +17,11 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "speedup", "MSHR_FULL_STREAKS","baseline")
+    os.path.join(SCRIPT_DIR, "..", "results_bingo" )
 )
 
 DEFAULT_OUTPUT_FILE = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "Excel_Output","baseline", "dram_queue_occupancy.xlsx")
+    os.path.join(SCRIPT_DIR, "..", "Excel_Output","aiml_bingo","Dram_queue_occupancy.xlsx")
 )
 
 NUMBER_PATTERN = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"

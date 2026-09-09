@@ -97,9 +97,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/speedup/test"
-    OUTPUT_DIR = "../Excel_Output/IPC/"
-    EXCEL_OUTPUT_FILE = "test-IPC.xlsx"
+    RESULTS_DIR = "../results_bingo/"
+    OUTPUT_DIR = "../Excel_Output/aiml_bingo/"
+    EXCEL_OUTPUT_FILE = "IPC.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -125,6 +125,11 @@ def main():
     print(f"Starting scan in directory: '{RESULTS_DIR}'...")
     # Walk through the directory tree to collect all data
     for root, dirs, files in os.walk(RESULTS_DIR):
+        # os.walk() does not guarantee an ordering. Sort both directory names
+        # and trace files so rows follow the natural directory order (trace2
+        # before trace10).
+        dirs.sort(key=natural_sort_key)
+        files.sort(key=natural_sort_key)
         if not files: continue
 
         relative_path = os.path.relpath(root, RESULTS_DIR)
@@ -144,7 +149,7 @@ def main():
             if cache_level == 'baseline': group_key = cache_level
         
         if group_key and experiment:
-            for filename in sorted(files):
+            for filename in files:
                 filepath = os.path.join(root, filename)
                 
                 file_mod_time = os.path.getmtime(filepath)

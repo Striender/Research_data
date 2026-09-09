@@ -15,9 +15,9 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "speedup", "test")
+    os.path.join(SCRIPT_DIR, "..", "results_bingo" )
 )
-DEFAULT_OUTPUT_FILE = "../Excel_Output/Pref_l2/test_Prefetcher_accuracy.xlsx"
+DEFAULT_OUTPUT_FILE = "../Excel_Output/aiml_bingo/Prefetcher_accuracy.xlsx"
 CACHE_LEVELS = ("L1D", "L2C", "LLC")
 
 

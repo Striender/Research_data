@@ -20,7 +20,7 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "speedup","baseline")
+    os.path.join(SCRIPT_DIR, "..", "results_bingo")
 )
 
 DEFAULT_OUTPUT_FILE = os.path.normpath(
@@ -28,8 +28,8 @@ DEFAULT_OUTPUT_FILE = os.path.normpath(
         SCRIPT_DIR,
         "..",
         "Excel_Output",
-        "baseline",
-        "Bingo_average_load_miss_latency.xlsx",
+        "aiml_bingo",
+        "Average_load_miss_latency.xlsx",
     )
 )
 

@@ -10,11 +10,11 @@ except ImportError:
     raise SystemExit("The 'openpyxl' library is required. Install it with: pip install openpyxl")
 
 
-DEFAULT_RESULTS_DIR = "../results/ai_ml/Reuse_Count_all_packets"
-DEFAULT_OUTPUT_FILE = "line_reuse_count.xlsx"
+DEFAULT_RESULTS_DIR = "../results_bingo/pref_l1_l2/"
+DEFAULT_OUTPUT_FILE = "../Excel_Output/aiml_bingo/line_reuse_count.xlsx"
 CACHE_LEVELS = ("L1D", "L2C", "LLC")
 SHEET_NAMES = {"L1D": "L1D", "L2C": "L2", "LLC": "LLC"}
-DEFAULT_WAYS = {"L1D": 4, "L2C": 6, "LLC": 3}
+DEFAULT_WAYS = {"L1D": 50, "L2C": 20, "LLC": 5}
 
 
 def natural_sort_key(value):

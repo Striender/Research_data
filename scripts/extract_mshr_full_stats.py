@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract MSHR full breakdown and MSHR access stats from ChampSim results."""
+"""Extract L1D/L2C/LLC MSHR statistics from ChampSim results into Excel."""
 
 import argparse
 import os
@@ -17,26 +17,36 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results", "speedup", "MSHR_FULL_STREAKS","baseline")
+    os.path.join(SCRIPT_DIR, "..", "results_bingo")
 )
 
 DEFAULT_OUTPUT_FILE = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "Excel_Output","baseline", "mshr_full_stats.xlsx")
+    os.path.join(SCRIPT_DIR, "..", "Excel_Output","aiml_bingo", "mshr_full_stats.xlsx")
 )
 
 DEFAULT_CACHES = ("L1D", "L2C", "LLC")
 
 MSHR_FULL_PATTERN = re.compile(
-    r"^(\S+)\s+MSHR FULL\s+TOTAL:\s+(\d+)\s+LOAD:\s+(\d+)\s+"
-    r"RFO:\s+(\d+)\s+PREFETCH:\s+(\d+)\s+WRITEBACK:\s+(\d+)",
+    r"^(\S+)\s+MSHR FULL\s+TOTAL:\s+([0-9a-fA-F]+)\s+LOAD:\s+([0-9a-fA-F]+)\s+"
+    r"RFO:\s+([0-9a-fA-F]+)\s+PREFETCH:\s+([0-9a-fA-F]+)\s+WRITEBACK:\s+([0-9a-fA-F]+)",
     flags=re.MULTILINE,
 )
 
 MSHR_ACCESSED_PATTERN = re.compile(
-    r"^(\S+)\s+MSHR ACCESSED:\s+(\d+)\s+MSHR FULL ACCESSES:\s+(\d+)\s+"
+    r"^(\S+)\s+MSHR ACCESSED:\s+([0-9a-fA-F]+)\s+MSHR FULL ACCESSES:\s+([0-9a-fA-F]+)\s+"
     r"MSHR FULL ACCESS %:\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)",
     flags=re.MULTILINE,
 )
+
+FINAL_INSTRUCTIONS_PATTERN = re.compile(
+    r"^CPU 0 cumulative IPC:.*?\binstructions:\s+([0-9a-fA-F]+)\b",
+    flags=re.MULTILINE,
+)
+
+
+def parse_counter(value):
+    """ChampSim prints these counters as hexadecimal values without a 0x prefix."""
+    return int(value, 16)
 
 
 def natural_sort_key(value):
@@ -51,16 +61,20 @@ def parse_file(filepath):
         content = result_file.read()
 
     metrics = {}
+    instruction_matches = FINAL_INSTRUCTIONS_PATTERN.findall(content)
+    instructions = (
+        parse_counter(instruction_matches[-1]) if instruction_matches else None
+    )
 
     for match in MSHR_FULL_PATTERN.finditer(content):
         cache_name = match.group(1)
         metrics.setdefault(cache_name, {}).update(
             {
-                "mshr_full_total": int(match.group(2)),
-                "mshr_full_load": int(match.group(3)),
-                "mshr_full_rfo": int(match.group(4)),
-                "mshr_full_prefetch": int(match.group(5)),
-                "mshr_full_writeback": int(match.group(6)),
+                "mshr_full_total": parse_counter(match.group(2)),
+                "mshr_full_load": parse_counter(match.group(3)),
+                "mshr_full_rfo": parse_counter(match.group(4)),
+                "mshr_full_prefetch": parse_counter(match.group(5)),
+                "mshr_full_writeback": parse_counter(match.group(6)),
             }
         )
 
@@ -68,13 +82,13 @@ def parse_file(filepath):
         cache_name = match.group(1)
         metrics.setdefault(cache_name, {}).update(
             {
-                "mshr_accessed": int(match.group(2)),
-                "mshr_full_accesses": int(match.group(3)),
+                "mshr_accessed": parse_counter(match.group(2)),
+                "mshr_full_accesses": parse_counter(match.group(3)),
                 "mshr_full_access_percent": match.group(4),
             }
         )
 
-    return metrics
+    return metrics, instructions
 
 
 def collect_records(results_dir, requested_caches):
@@ -91,7 +105,7 @@ def collect_records(results_dir, requested_caches):
             if not os.path.isfile(filepath):
                 continue
 
-            metrics = parse_file(filepath)
+            metrics, instructions = parse_file(filepath)
 
             if requested:
                 metrics = {
@@ -107,6 +121,7 @@ def collect_records(results_dir, requested_caches):
                 {
                     "trace": filename,
                     "metrics": metrics,
+                    "instructions": instructions,
                 }
             )
 
@@ -122,13 +137,20 @@ def collect_records(results_dir, requested_caches):
     return folder_records
 
 
-def get_cache_order(records):
+def get_cache_order(records, requested_caches):
     cache_names = set()
 
     for record in records:
         cache_names.update(record["metrics"].keys())
 
-    return sorted(cache_names, key=natural_sort_key)
+    requested_order = [cache.upper() for cache in requested_caches]
+    return [
+        cache_name
+        for cache_name in requested_order
+        if cache_name in cache_names
+    ] + sorted(
+        cache_names - set(requested_order), key=natural_sort_key
+    )
 
 
 def make_unique_sheet_name(folder_name, used_names):
@@ -150,43 +172,49 @@ def make_unique_sheet_name(folder_name, used_names):
     return sheet_name
 
 
-def write_cache_sheet(worksheet, records, cache_name):
-    headers = [
-        "Trace",
-        "MSHR Accessed",
-        "MSHR Full Accesses",
-        "MSHR Full Access %",
-        "MSHR Full Total",
-        "MSHR Full Load",
-        "MSHR Full RFO",
-        "MSHR Full Prefetch",
-        "MSHR Full Writeback",
+def write_folder_sheet(worksheet, records, cache_order):
+    metric_headers = [
+        ("MSHR Accessed", "mshr_accessed"),
+        ("MSHR Full Accesses", "mshr_full_accesses"),
+        ("MSHR Full Accesses / KI", "mshr_full_accesses_per_ki"),
+        ("MSHR Full Access %", "mshr_full_access_percent"),
+        ("MSHR Full Total", "mshr_full_total"),
+        ("MSHR Full Load", "mshr_full_load"),
+        ("MSHR Full RFO", "mshr_full_rfo"),
+        ("MSHR Full Prefetch", "mshr_full_prefetch"),
+        ("MSHR Full Writeback", "mshr_full_writeback"),
     ]
+    sorted_records = sorted(records, key=lambda item: natural_sort_key(item["trace"]))
 
-    worksheet.append(headers)
+    for cache_index, cache_name in enumerate(cache_order):
+        if cache_index:
+            worksheet.append([])
 
-    for cell in worksheet[1]:
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
+        worksheet.append([f"{cache_name} MSHR Statistics"])
+        title_cell = worksheet.cell(row=worksheet.max_row, column=1)
+        title_cell.font = Font(bold=True)
 
-    for record in sorted(records, key=lambda item: natural_sort_key(item["trace"])):
-        stats = record["metrics"].get(cache_name, {})
-        worksheet.append(
-            [
-                record["trace"],
-                stats.get("mshr_accessed", ""),
-                stats.get("mshr_full_accesses", ""),
-                stats.get("mshr_full_access_percent", ""),
-                stats.get("mshr_full_total", ""),
-                stats.get("mshr_full_load", ""),
-                stats.get("mshr_full_rfo", ""),
-                stats.get("mshr_full_prefetch", ""),
-                stats.get("mshr_full_writeback", ""),
-            ]
-        )
+        worksheet.append(["Trace"] + [label for label, _ in metric_headers])
+        header_row = worksheet.max_row
+        for cell in worksheet[header_row]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
 
-    worksheet.freeze_panes = "B2"
-    worksheet.auto_filter.ref = worksheet.dimensions
+        for record in sorted_records:
+            stats = record["metrics"].get(cache_name, {})
+            full_accesses = stats.get("mshr_full_accesses")
+            instructions = record["instructions"]
+            stats["mshr_full_accesses_per_ki"] = (
+                full_accesses * 1000 / instructions
+                if full_accesses is not None and instructions
+                else ""
+            )
+            worksheet.append(
+                [record["trace"]]
+                + [stats.get(key, "") for _, key in metric_headers]
+            )
+
+    worksheet.freeze_panes = "B3"
 
     for column_cells in worksheet.columns:
         max_len = max(
@@ -198,7 +226,7 @@ def write_cache_sheet(worksheet, records, cache_name):
         )
 
 
-def write_workbook(folder_records, output_file):
+def write_workbook(folder_records, output_file, requested_caches):
     workbook = Workbook()
     workbook.remove(workbook.active)
 
@@ -206,13 +234,14 @@ def write_workbook(folder_records, output_file):
 
     for folder_name in sorted(folder_records, key=natural_sort_key):
         records = folder_records[folder_name]
-
-        for cache_name in get_cache_order(records):
-            sheet_base_name = f"{cache_name}"
-            worksheet = workbook.create_sheet(
-                make_unique_sheet_name(sheet_base_name, used_names)
-            )
-            write_cache_sheet(worksheet, records, cache_name)
+        worksheet = workbook.create_sheet(
+            make_unique_sheet_name(folder_name, used_names)
+        )
+        write_folder_sheet(
+            worksheet,
+            records,
+            get_cache_order(records, requested_caches),
+        )
 
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     workbook.save(output_file)
@@ -252,7 +281,7 @@ def main():
     if not folder_records:
         raise SystemExit(f"No MSHR full/accessed stats found in {args.results_dir}")
 
-    write_workbook(folder_records, args.output)
+    write_workbook(folder_records, args.output, requested_caches)
 
     total_files = sum(len(records) for records in folder_records.values())
     print(f"Extracted {total_files} files from {len(folder_records)} folders")

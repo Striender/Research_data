@@ -50,7 +50,7 @@ def save_json_data(file_path, data):
     except IOError as e:
         print(f"Warning: Could not save the cache/log file at {file_path}: {e}")
 
-PARSER_CACHE_VERSION = 3
+PARSER_CACHE_VERSION = 4
 FULL_NUMBER_PATTERN = r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)"
 
 def parse_champsim_file(filepath):
@@ -64,6 +64,7 @@ def parse_champsim_file(filepath):
         "L1D Load MPKI": None,
         "L2C Load Miss": None,
         "L2C Load MPKI": None,
+        "L2C Instruction Load MPKI": None,
         "LLC Load Miss": None,
         "LLC Load MPKI": None,
     }
@@ -74,10 +75,10 @@ def parse_champsim_file(filepath):
     try:
         with open(filepath, 'r', errors='ignore') as f:
             content = f.read()
-            l1d_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
-            if l1d_load_match:
-                metrics["L1D Load Miss"] = l1d_load_match.group(1)
-                metrics["L1D Load MPKI"] = l1d_load_match.group(2)
+            L1I_load_match = re.search(r"L1D LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
+            if L1I_load_match:
+                metrics["L1D Load Miss"] = L1I_load_match.group(1)
+                metrics["L1D Load MPKI"] = L1I_load_match.group(2)
                 
 
             l2c_load_match = re.search(
@@ -87,6 +88,15 @@ def parse_champsim_file(filepath):
             if l2c_load_match:
                 metrics["L2C Load Miss"] = l2c_load_match.group(1)
                 metrics["L2C Load MPKI"] = l2c_load_match.group(2)
+
+            l2c_instruction_load_mpki_match = re.search(
+                rf"L2C INSTRUCTION LOAD MPKI:\s+{FULL_NUMBER_PATTERN}",
+                content,
+            )
+            if l2c_instruction_load_mpki_match:
+                metrics["L2C Instruction Load MPKI"] = (
+                    l2c_instruction_load_mpki_match.group(1)
+                )
 
             llc_load_match = re.search(rf"LLC LOAD\s+ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+(\d+).*?MPKI:\s+([\d.]+)", content)
             if llc_load_match:
@@ -114,9 +124,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/speedup/baseline/"
-    OUTPUT_DIR = "../Excel_Output/Baseline/"
-    EXCEL_OUTPUT_FILE = "load_miss.xlsx"
+    RESULTS_DIR = "../results_bingo"
+    OUTPUT_DIR = "../Excel_Output/aiml_bingo/"
+    EXCEL_OUTPUT_FILE = "Load_MPKI.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------
@@ -141,6 +151,12 @@ def main():
     print(f"Starting scan in directory: '{RESULTS_DIR}'...")
     # Walk through the directory tree to collect all data
     for root, dirs, files in os.walk(RESULTS_DIR):
+        # os.walk() does not guarantee an ordering.  Sort both directory names
+        # and trace files so rows are emitted in the same natural order as the
+        # traces appear when the results directory is sorted (trace2 before
+        # trace10).
+        dirs.sort(key=natural_sort_key)
+        files.sort(key=natural_sort_key)
         if not files: continue
 
         relative_path = os.path.relpath(root, RESULTS_DIR)
@@ -163,7 +179,7 @@ def main():
             if cache_level == 'baseline': group_key = cache_level
         
         if group_key and experiment:
-            for filename in sorted(files):
+            for filename in files:
                 filepath = os.path.join(root, filename)
                 
                 file_mod_time = os.path.getmtime(filepath)
