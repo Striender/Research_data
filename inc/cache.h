@@ -78,8 +78,8 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 #define STLB_LATENCY 8
 
 // L1 INSTRUCTION CACHE
-#define L1I_SET 128
-#define L1I_WAY 8
+#define L1I_SET 64
+#define L1I_WAY 16
 #define L1I_RQ_SIZE 64
 #define L1I_WQ_SIZE 64 
 #define L1I_PQ_SIZE 32
@@ -165,7 +165,8 @@ class CACHE : public MEMORY {
 	     data_evicting_data,
 	     instr_evicting_instr,
 	     transl_evicting_transl,
-	         average_mshr_occupancy,
+	         average_mshr_load_occupancy,
+             atleast_miss,
              mshr_accessed, //
              mshr_full_accesses,
 	         mshr_counter;
@@ -173,6 +174,8 @@ class CACHE : public MEMORY {
     std::vector<uint64_t> mshr_full_streak_lengths;    // count n store lengths of consecutive cycles when MSHR is full
     uint64_t current_mshr_full_streak;
     std::map<uint64_t, uint64_t> line_reuse_count;
+    std::map<uint64_t, uint64_t> prefetch_line_reuse_count;
+    std::map<uint64_t, uint64_t> demand_line_reuse_count;
 
     uint64_t *mshr_occupancy_cycles;
     uint64_t pref_useful[NUM_CPUS][6],
@@ -283,7 +286,8 @@ class CACHE : public MEMORY {
 	data_evicting_data = 0;
 	instr_evicting_instr = 0;
 	transl_evicting_transl = 0,
-	    average_mshr_occupancy = 0;
+	    average_mshr_load_occupancy = 0;
+        atleast_miss = 0;
         mshr_accessed = 0;
         mshr_full_accesses = 0;
 	    mshr_counter = 0; 
