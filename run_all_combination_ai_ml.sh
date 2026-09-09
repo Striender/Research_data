@@ -24,24 +24,27 @@ fi
 ###############################################################################
 # PATHS & CONSTANTS
 ###############################################################################
-TRACE_DIR=/home1/sweta/traces/DPC4-Traces/AI_ML
-RESULT_ROOT=./results/ai_ml/bingo_32KB
-BIN_DIR=./bin
+TRACE_DIR=/home/sweta/traces/AI_ML/
+
+RESULT_ROOT=results_bingo/Dump_L1d
+
+BIN_DIR=bin
 
 SKIP_TRACE_PREFIXES=(
     rwkv
     biogpt.cpp-ggml-model-tocilizumab
+    llama2.c-llama2_7b.5
 )
 
 WARMUP=50000000
 SIM=200000000
-MAX_CORES_PER_COMBO=26
+MAX_CORES_PER_COMBO=80
 
 ###############################################################################
 # PREFETCHER COMBINATIONS
 ###############################################################################
 PREFETCHER_COMBINATIONS=(
- #d  "ipcp_isca2020:ppf"
+ #d  "ipcp_isca2020:ppf".
  #d "ipcp_isca2020:bingo_dpc3"
  #d "ipcp_isca2020:spp"
  #d "ipcp_isca2020:ip_stride"
@@ -49,27 +52,36 @@ PREFETCHER_COMBINATIONS=(
  #d "vberti:ppf"
  #d "vberti:spp"
 #"vberti:bingo_dpc3"
+  #"gaze:bingo_dpc3"
  # "vberti:ip_stride"
 #d
+ #"vberti:bingo_dpc3"
  #d "mlop_dpc3:ip_stride"
  #d "mlop_dpc3:ppf"
  #d "mlop_dpc3:spp"
  #d "mlop_dpc3:bingo_dpc3"
 #d
  #d "ip_stride:ppf"
- #d "ip_stride:bingo_dpc3"
+  #"ip_stride:bingo_dpc3"
  #d "ip_stride:spp"
+ #"gaze:sms"
+ #"vberti:sms"
 
+ "bingo_dpc3:bingo_dpc3"
+
+  "bingo_dpc3:no"
   #"ipcp_isca2020:no"
   #"mlop_dpc3:no"
   #"vberti:no"
   #"ip_stride:no"
+  #"next_line:no"
+  #"gaze:no"
   #"no:spp"
-  "no:bingo_dpc3"
+ #"no:bingo_dpc3"
   #"no:ppf"
-  #"no:ip_stride"
+  #"no:ip_stride"d
   #"no:sms"
- #"no:no"
+   "no:no"
 )
 
 
@@ -130,6 +142,8 @@ echo "CORES PER COMBO       : $CORES_PER_COMBO"
 echo "PARALLEL COMBINATIONS : $MAX_PARALLEL_COMBOS"
 echo "=============================================================="
 
+
+
 ###############################################################################
 # PREFETCHER NAME → BINARY TOKEN
 ###############################################################################
@@ -169,8 +183,7 @@ run_traces() {
         [[ "$skip_trace" == true ]] && continue
 
         NAME="${TRACE_FILE%.champsimtrace.gz}"
-
-        echo "\"$BINARY\" \
+        echo "$BINARY \
           -warmup_instructions $WARMUP \
           -simulation_instructions $SIM \
           -traces \"$TRACE\" \
@@ -208,11 +221,12 @@ run_single_rp() {
     local L2_BIN=$2
     local PREF_DIR=$3
     local j=$4
+    local l1d_repl=srrip
 
     [ "$j" -le 7 ] && base="lru" || base="srrip"
     pol=${repl_policies[$((j-1))]}
 
-    binary="$BIN_DIR/hashed_perceptron-no-${L1_BIN}-${L2_BIN}-no-no-no-no-lru-lru-lru-${base}-${pol}-lru-lru-lru-1core-no"
+    binary="$BIN_DIR/hashed_perceptron-no-${L1_BIN}-${L2_BIN}-no-no-no-no-lru-lru-${l1d_repl}-${base}-${pol}-lru-lru-lru-1core-no"
 
     if [ ! -x "$binary" ]; then
         echo "❌ Binary not found: $binary"
@@ -221,6 +235,8 @@ run_single_rp() {
 
     exp_dir="$RESULT_ROOT/$PREF_DIR/exp${j}_${base}_${pol}"
 
+    echo "Experiment Directory: $exp_dir"
+    echo "=============================================================="
     echo "[RUNNING] $PREF_DIR | RP=$j | ${base}/${pol}"
     run_traces "$binary" "$exp_dir"
     echo "[DONE]    $PREF_DIR | RP=$j"
@@ -316,6 +332,3 @@ fi
 echo "=============================================================="
 echo "✅ ALL AI/ML TRACES COMPLETED SUCCESSFULLY"
 echo "=============================================================="
-
-
-

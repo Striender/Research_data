@@ -30,13 +30,13 @@ fi
 ###############################################################################
 # PATHS & CONSTANTS
 ###############################################################################
-TRACE_DIR=./tracer/traces
-RESULT_ROOT=./results/spec/bingo_16KB
+TRACE_DIR=./tracer/traces/
+RESULT_ROOT=./results/ass/
 BIN_DIR=./bin
 
 WARMUP=50000000
-SIM=200000000
-MAX_CORES_PER_COMBO=64
+SIM=50000000
+MAX_CORES_PER_COMBO=45
 
 ###############################################################################
 # PREFETCHER COMBINATIONS
@@ -55,15 +55,18 @@ PREFETCHER_COMBINATIONS=(
   #"mlop_dpc3:bingo_dpc3"
   #
 #
-  #"ipcp_isca2020:no"
+  "ipcp_isca2020:no"
   #"mlop_dpc3:no"
   #"vberti:no" 
 
   #"no:spp"
-  "no:bingo_dpc3"
+  #"no:bingo_dpc3"
   #"no:ppf"
   #"no:ip_stride"
   #"no:no"
+  #"bingo_dpc3:bingo_dpc3"
+  "test:no"
+  "ip_stride:no"
 )
 
 ###############################################################################
@@ -170,7 +173,7 @@ run_single_rp() {
     [ "$j" -le 7 ] && base="lru" || base="srrip"
     pol=${repl_policies[$((j-1))]}
 
-    binary="$BIN_DIR/hashed_perceptron-no-${L1}-${L2}-no-no-no-no-lru-lru-lru-${base}-${pol}-lru-lru-lru-1core-no"
+    binary="$BIN_DIR/hashed_perceptron-no-${L1}-${L2}-no-no-no-no-lru-lru-srrip-${base}-${pol}-lru-lru-lru-1core-no"
 
     if [ ! -x "$binary" ]; then
         echo "❌ Binary missing: $binary"

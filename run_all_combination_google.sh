@@ -39,7 +39,7 @@ PREFETCHER_COMBINATIONS=(
  #d "mlop_dpc3:bingo_dpc3"
 #d
  #d "ip_stride:ppf"
- #d "ip_stride:bingo_dpc3"
+ #d "ip_stride:bingo_dpc3"s
  #d "ip_stride:spp"
 
   #"ipcp_isca2020:no"
