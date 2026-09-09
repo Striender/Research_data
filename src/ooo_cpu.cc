@@ -17,7 +17,6 @@ int asid_index=0;
 
 int reg_instruction_pointer = REG_INSTRUCTION_POINTER, reg_flags = REG_FLAGS, reg_stack_pointer = REG_STACK_POINTER;
 
-
 void O3_CPU::initialize_core()
 {
 #ifdef PERFECT_L1D
@@ -2114,9 +2113,9 @@ int O3_CPU::execute_load(uint32_t rob_index, uint32_t lq_index, uint32_t data_in
     data_packet.asid[0] = LQ.entry[lq_index].asid[0];
     data_packet.asid[1] = LQ.entry[lq_index].asid[1];
     data_packet.event_cycle = LQ.entry[lq_index].event_cycle;
-    
-    int rq_index = L1D.add_rq(&data_packet);
 
+    int rq_index = L1D.add_rq(&data_packet);
+    
     if (rq_index == -2)
         return rq_index;
     else 
@@ -2684,11 +2683,13 @@ void O3_CPU::release_load_queue(uint32_t lq_index)
     LQ.occupancy--;
 }
 
+
 void O3_CPU::retire_rob()
 {
     for (uint32_t n=0; n<RETIRE_WIDTH; n++) {
-        if (ROB.entry[ROB.head].ip == 0)
+        if (ROB.entry[ROB.head].ip == 0) 
             return;
+        
 
 
         // retire is in-order
@@ -2782,7 +2783,6 @@ void O3_CPU::retire_rob()
         //cout << "[ROB] " << __func__ << " instr_id: " << ROB.entry[ROB.head].instr_id << " is retired" << endl; });
 
 
-
         ooo_model_instr empty_entry;
         ROB.entry[ROB.head] = empty_entry;
 
@@ -2793,7 +2793,7 @@ void O3_CPU::retire_rob()
         completed_executions--;
         num_retired++;
 
-			
+        
     }
 }
 
@@ -2801,5 +2801,3 @@ void O3_CPU::core_final_stats()
 {
 
 }
-
-

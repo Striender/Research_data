@@ -35,6 +35,7 @@
 //Neelu: Perfect vs. Practical Perfect: 
 //Practical Perfect takes into account the bandwidth constraint between the current cache level and the outer cache hierarchy. What does this mean? 
 //Perfect marks requests as hits and avoids sending them to the rest of the memory hierarchy and so no fills will happen in the current cache level either. In this case, instruction requests at L2/LLC may get serviced earlier as data requests are not going to these caches. 
+
 //Practical perfect marks all requests as hits, but in case it would've been a miss in the non-perfect case, it also sends out a request to the outer level cache, so over-estimation of perfect-case performance doesn't happen due to under-estimating the load on MSHRs and outer level cache. 
 //#define PERFECT_L1D
 //#define PRACTICAL_PERFECT_L1D
