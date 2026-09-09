@@ -13,6 +13,17 @@ uint64_t last_bank_busy_ccc[DRAM_CHANNELS][NUM_CPUS] = {0}, last_bank_busy_cpu[D
 uint64_t banks_busy_read_cycles[DRAM_CHANNELS][DRAM_RANKS][DRAM_BANKS+1] = {0}, banks_busy_write_cycles[DRAM_CHANNELS][DRAM_RANKS][DRAM_BANKS+1] = {0};
 //Neelu: Done adding variables for DRAM busy stats.
 
+void MEMORY_CONTROLLER::reset_queue_occupancy_stats()
+{
+    for (uint32_t channel = 0; channel < DRAM_CHANNELS; channel++) {
+        rq_occupancy_sum[channel] = 0;
+        wq_occupancy_sum[channel] = 0;
+        rq_occupancy_samples[channel] = 0;
+        wq_occupancy_samples[channel] = 0;
+        queue_occupancy_samples[channel] = 0;
+    }
+}
+
 void MEMORY_CONTROLLER::reset_remain_requests(PACKET_QUEUE *queue, uint32_t channel)
 {
     for (uint32_t i=0; i<queue->SIZE; i++) {
@@ -78,6 +89,7 @@ void MEMORY_CONTROLLER::reset_remain_requests(PACKET_QUEUE *queue, uint32_t chan
 void MEMORY_CONTROLLER::operate()
 {
 
+   
 	//Neelu: Capturing DRAM busy stats.
 	if(all_warmup_complete >= NUM_CPUS)
 	//if(warmup_complete[0])
@@ -156,7 +168,8 @@ void MEMORY_CONTROLLER::operate()
                                                         if(read_or_write[i] == 0)
                                                                 last_bank_busy_cpu[i] = RQ[i].entry[bank_request[i][j][k].request_index].cpu;
                                                         else if(read_or_write[i] == 1)
-                                                                last_bank_busy_cpu[i] = WQ[i].entry[bank_request[i][j][k].request_index].cpu;
+                                                                last_bank_busy_cpu[i] = 
+                                                                [i].entry[bank_request[i][j][k].request_index].cpu;
                                                         else
                                                                 assert(0);
 	
@@ -202,7 +215,7 @@ void MEMORY_CONTROLLER::operate()
         //if ((write_mode[i] == 0) && (WQ[i].occupancy >= DRAM_WRITE_HIGH_WM)) {
       if ((write_mode[i] == 0) && ((WQ[i].occupancy >= DRAM_WRITE_HIGH_WM) || ((RQ[i].occupancy == 0) && (WQ[i].occupancy > 0)))) { // use idle cycles to perform writes
             write_mode[i] = 1;
-
+            do_write++;
             // reset scheduled RQ requests
             reset_remain_requests(&RQ[i], i);
             // add data bus turn-around time
@@ -595,6 +608,9 @@ int MEMORY_CONTROLLER::add_rq(PACKET *packet)
             
             RQ[channel].entry[index] = *packet;
             RQ[channel].occupancy++;
+            rq_occupancy_sum[channel] += RQ[channel].occupancy;
+            rq_occupancy_samples[channel]++;
+            queue_occupancy_samples[channel]++;
 
 #ifdef DEBUG_PRINT
             uint32_t channel = dram_get_channel(packet->address),
@@ -653,7 +669,9 @@ int MEMORY_CONTROLLER::add_wq(PACKET *packet)
             
             WQ[channel].entry[index] = *packet;
             WQ[channel].occupancy++;
-
+            wq_occupancy_sum[channel] += WQ[channel].occupancy;
+            wq_occupancy_samples[channel]++;
+            queue_occupancy_samples[channel]++;
 #ifdef DEBUG_PRINT
             uint32_t channel = dram_get_channel(packet->address),
                      rank = dram_get_rank(packet->address),

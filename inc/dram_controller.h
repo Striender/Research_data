@@ -33,6 +33,13 @@ class MEMORY_CONTROLLER : public MEMORY {
     uint32_t processed_writes, scheduled_reads[DRAM_CHANNELS], scheduled_writes[DRAM_CHANNELS];
     int fill_level;
 
+    // Access-sampled DRAM queue occupancy during the region of interest (ROI).
+    // Each sum accumulates occupancy only when a new DRAM queue entry is accepted.
+    uint64_t rq_occupancy_sum[DRAM_CHANNELS], wq_occupancy_sum[DRAM_CHANNELS];
+    uint64_t queue_occupancy_sum[DRAM_CHANNELS];
+    uint64_t rq_occupancy_samples[DRAM_CHANNELS], wq_occupancy_samples[DRAM_CHANNELS];
+    uint64_t queue_occupancy_samples[DRAM_CHANNELS];
+
     BANK_REQUEST bank_request[DRAM_CHANNELS][DRAM_RANKS][DRAM_BANKS];
 
     // queues
@@ -53,6 +60,12 @@ class MEMORY_CONTROLLER : public MEMORY {
             write_mode[i] = 0;
             scheduled_reads[i] = 0;
             scheduled_writes[i] = 0;
+            rq_occupancy_sum[i] = 0;
+            wq_occupancy_sum[i] = 0;
+            queue_occupancy_sum[i] = 0;
+            rq_occupancy_samples[i] = 0;
+            wq_occupancy_samples[i] = 0;
+            queue_occupancy_samples[i] = 0;
 
             for (uint32_t j=0; j<DRAM_RANKS; j++) {
                 for (uint32_t k=0; k<DRAM_BANKS; k++)
@@ -92,7 +105,8 @@ class MEMORY_CONTROLLER : public MEMORY {
          update_schedule_cycle(PACKET_QUEUE *queue),
          update_process_cycle(PACKET_QUEUE *queue),
          reset_remain_requests(PACKET_QUEUE *queue, uint32_t channel),
-	 print_DRAM_busy_stats();
+	 print_DRAM_busy_stats(),
+         reset_queue_occupancy_stats();
 
     uint32_t dram_get_channel(uint64_t address),
              dram_get_rank   (uint64_t address),
