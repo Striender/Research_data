@@ -26,7 +26,7 @@ fi
 ###############################################################################
 TRACE_DIR=/home/sweta/traces/AI_ML/
 
-RESULT_ROOT=results_bingo/Dump_L1d
+RESULT_ROOT=results_bingo/testing_mlp
 
 BIN_DIR=bin
 
@@ -68,8 +68,8 @@ PREFETCHER_COMBINATIONS=(
  #"vberti:sms"
 
  "bingo_dpc3:bingo_dpc3"
-
-  "bingo_dpc3:no"
+#
+  #"bingo_dpc3:no"
   #"ipcp_isca2020:no"
   #"mlop_dpc3:no"
   #"vberti:no"
@@ -81,7 +81,7 @@ PREFETCHER_COMBINATIONS=(
   #"no:ppf"
   #"no:ip_stride"d
   #"no:sms"
-   "no:no"
+   #"no:no"
 )
 
 

@@ -21,12 +21,12 @@ except ImportError:
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-DEFAULT_RESULTS_DIR = PROJECT_ROOT / "results_bingo"
+DEFAULT_RESULTS_DIR = PROJECT_ROOT / "results_bingo"/ "testing_mlp"
 DEFAULT_OUTPUT_FILE = (
     PROJECT_ROOT
     / "Excel_Output"
     / "aiml_bingo"
-    / "average_mshr_load_occupancy.xlsx"
+    / "testing_average_mshr_load_occupancy.xlsx"
 )
 
 CACHES = ("L1D", "L2C", "LLC")
