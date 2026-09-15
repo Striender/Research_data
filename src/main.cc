@@ -308,7 +308,7 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 			cout << " AVERAGE MISS LATENCY: " << setw(10) << (1.0*(cache->total_miss_latency))/TOTAL_MISS << " cycles";
             cout << " AVERAGE LOAD MISS LATENCY: " << setw(10) << (1.0*(cache->total_load_miss_latency))/cache->sim_miss[cpu][0] << " cycles";
             cout << " Load Miss "<< setw(10) << cache->sim_miss[cpu][0]  << endl;
-            cout << cache->NAME << setw(10) << " Average MSHR Load Occupancy: " << setw(10) << (double)cache->average_mshr_load_occupancy / cache->atleast_miss << endl;
+            cout << cache->NAME << setw(10) << " Average MSHR Load Occupancy: " << setw(10) << (double)cache->average_mshr_load_occupancy / ooo_cpu[0].finish_sim_cycle << endl;
     }
 
     //@Vishal: Will work only for 1 core, for multi-core this will give sim_result not roi_result
@@ -644,7 +644,7 @@ void finish_warmup()
 
         ooo_cpu[i].begin_sim_cycle = current_core_cycle[i]; 
         ooo_cpu[i].begin_sim_instr = ooo_cpu[i].num_retired;
-        ooo_cpu[i].reset_prefetch_criticality_stats();
+        //ooo_cpu[i].reset_prefetch_criticality_stats();
 
 	//Neelu: Setting current_epoch_all_ip_prefetch.
 	//ooo_cpu[i].current_epoch_all_ip_prefetch = 1;
@@ -1690,7 +1690,7 @@ int main(int argc, char** argv)
 		// retire
 		// Neelu: Commented first condition. 
                 if (/*(ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed == COMPLETED) && */ (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle <= current_core_cycle[i]))
-			retired_this_cycle = ooo_cpu[i].retire_rob();
+			ooo_cpu[i].retire_rob();
 
 		// complete 
                 ooo_cpu[i].update_rob();
@@ -1753,10 +1753,6 @@ int main(int argc, char** argv)
 		}
             }
 
-            // Record every ROI core cycle. In particular, cycles where the
-            // head event is not ready never enter retire_rob(), but still
-            // retire zero instructions and belong in the RETIRED_0 bin.
-            ooo_cpu[i].record_retirement_cycle(retired_this_cycle);
 
             // heartbeat information
 	    

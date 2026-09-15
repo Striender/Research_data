@@ -1437,16 +1437,6 @@ void CACHE::handle_read()
     uint64_t demand_mshr_count = 0;
     if(MSHR.occupancy > 0)
     {
-        //atleast_miss++;
-        for (uint32_t i = 0; i < MSHR_SIZE; ++i)
-        {
-            if (MSHR.entry[i].address != 0 && MSHR.entry[i].type == LOAD && MSHR.entry[i].instruction == 0)
-            {
-                atleast_miss++;
-                break;
-            }
-        }
-
         for (uint32_t i = 0; i < MSHR_SIZE; ++i)
         {
             if (MSHR.entry[i].address != 0 && MSHR.entry[i].type == LOAD && MSHR.entry[i].instruction == 0)
@@ -1457,7 +1447,8 @@ void CACHE::handle_read()
     }
     
     average_mshr_load_occupancy += demand_mshr_count;
-        // average_mshr_load_occupancy += MSHR.occupancy;
+
+    
 
         if (cache_type == IS_L1D)
     {
@@ -2902,7 +2893,7 @@ void CACHE::handle_prefetch()
 
 void CACHE::operate()
 {
-
+ 
     handle_fill();
     handle_writeback();
     reads_available_this_cycle = MAX_READ;
