@@ -3089,6 +3089,23 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
                     bool is_zero = (block[set][way].reuse_counter == 0);
                     update_l1d_pred(v_evicted_addr, is_zero);
                 }
+
+                bool is_canary = (set == 0 || set == 32);
+                if (is_canary && warmup_complete[cpu]) {
+                    if (block[set][way].predicted_bypass) {
+                        if (block[set][way].reuse_counter == 0) {
+                            canary_true_zero_reuse++;
+                        } else {
+                            canary_false_zero_reuse++;
+                        }
+                    } else {
+                        if (block[set][way].reuse_counter == 0) {
+                            canary_false_keep++;
+                        } else {
+                            canary_true_keep++;
+                        }
+                    }
+                }
             }
 #endif
         }
@@ -3102,6 +3119,34 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
     // flag must not be cleared when a demand access makes a prefetch useful.
     block[set][way].is_prefetched = block[set][way].prefetch;
     block[set][way].used = 0;
+
+#ifdef L1D_BYPASS
+    if (cache_type == IS_L1D) {
+        bool is_canary = (set == 0 || set == 32);
+        if (is_canary && packet->type == LOAD) {
+            uint64_t v_fill_addr = 0;
+            if (packet->full_virtual_address != 0) {
+                v_fill_addr = packet->full_virtual_address;
+            } else {
+                auto ppage_check = inverse_table.find(packet->full_addr >> LOG2_PAGE_SIZE);
+                if (ppage_check != inverse_table.end()) {
+                    v_fill_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
+                    v_fill_addr |= (packet->full_addr & ((1 << LOG2_PAGE_SIZE) - 1));
+                } else {
+                    v_fill_addr = packet->full_addr;
+                }
+            }
+            bool pred = predict_l1d_bypass(v_fill_addr);
+            block[set][way].predicted_bypass = pred ? 1 : 0;
+            if (warmup_complete[cpu]) {
+                if (pred) canary_predicted_bypass++;
+                else canary_predicted_keep++;
+            }
+        } else {
+            block[set][way].predicted_bypass = 0;
+        }
+    }
+#endif
 
     // Neelu: Setting instruction and translation fields in L2C
     if (cache_type == IS_L2C)

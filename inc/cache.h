@@ -187,6 +187,14 @@ class CACHE : public MEMORY {
     uint8_t l1d_zero_reuse_table[L1D_PRED_TABLE_SIZE];
     uint64_t l1d_bypass_demands;
 
+    // Canary Set Stats for Predictor Accuracy & Precision
+    uint64_t canary_predicted_bypass;
+    uint64_t canary_true_zero_reuse;   // Correctly predicted 0-reuse (True Positive)
+    uint64_t canary_false_zero_reuse;  // Incorrectly predicted 0-reuse, but had reuse (False Positive)
+    uint64_t canary_predicted_keep;
+    uint64_t canary_true_keep;         // Correctly predicted keep, had reuse (True Negative)
+    uint64_t canary_false_keep;        // Incorrectly predicted keep, but had 0-reuse (False Negative)
+
     inline uint32_t get_l1d_pred_index(uint64_t v_addr) {
         uint64_t vpn = v_addr >> LOG2_PAGE_SIZE;
         return (vpn ^ (vpn >> 6) ^ (vpn >> 12)) & L1D_PRED_INDEX_MASK;
@@ -346,6 +354,12 @@ class CACHE : public MEMORY {
           l1d_zero_reuse_table[i] = 0;
       }
       l1d_bypass_demands = 0;
+      canary_predicted_bypass = 0;
+      canary_true_zero_reuse = 0;
+      canary_false_zero_reuse = 0;
+      canary_predicted_keep = 0;
+      canary_true_keep = 0;
+      canary_false_keep = 0;
 
     };
 

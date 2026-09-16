@@ -301,7 +301,33 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 
 #ifdef L1D_BYPASS
             if (cache->cache_type == IS_L1D) {
-                cout << cache->NAME << " Total Demands Bypassed: " << cache->l1d_bypass_demands << endl;
+                uint64_t total_demands = cache->roi_access[cpu][LOAD];
+                uint64_t total_misses = cache->roi_miss[cpu][LOAD];
+                double bypass_miss_pct = total_misses ? (100.0 * cache->l1d_bypass_demands / total_misses) : 0.0;
+                double bypass_demand_pct = total_demands ? (100.0 * cache->l1d_bypass_demands / total_demands) : 0.0;
+
+                cout << endl << "=================== L1D BYPASS PREDICTOR STATS ===================" << endl;
+                cout << cache->NAME << " Total Demands Bypassed:            " << setw(12) << cache->l1d_bypass_demands << endl;
+                cout << cache->NAME << " Bypass Rate (% of Demand Misses):   " << setw(11) << fixed << setprecision(2) << bypass_miss_pct << "%" << endl;
+                cout << cache->NAME << " Bypass Rate (% of Total Demands):   " << setw(11) << bypass_demand_pct << "%" << endl;
+                cout << cache->NAME << " L1D Cache Evictions Saved:          " << setw(12) << cache->l1d_bypass_demands << endl;
+
+                uint64_t total_canary_eval = cache->canary_true_zero_reuse + cache->canary_false_zero_reuse;
+                if (total_canary_eval > 0) {
+                    double precision = 100.0 * cache->canary_true_zero_reuse / total_canary_eval;
+                    double fp_rate = 100.0 * cache->canary_false_zero_reuse / total_canary_eval;
+                    cout << cache->NAME << " Canary Bypass Precision:            " << setw(11) << precision << "% (Correct 0-Reuse)" << endl;
+                    cout << cache->NAME << " Canary False Positive Rate:         " << setw(11) << fp_rate << "% (Harmful Bypasses)" << endl;
+                    cout << cache->NAME << "   - Canary True Zero-Reuse (TP):    " << setw(12) << cache->canary_true_zero_reuse << endl;
+                    cout << cache->NAME << "   - Canary Reused / Harmful (FP):   " << setw(12) << cache->canary_false_zero_reuse << endl;
+                }
+
+                uint64_t total_canary_all = total_canary_eval + cache->canary_true_keep + cache->canary_false_keep;
+                if (total_canary_all > 0) {
+                    double overall_acc = 100.0 * (cache->canary_true_zero_reuse + cache->canary_true_keep) / total_canary_all;
+                    cout << cache->NAME << " Canary Overall Accuracy:            " << setw(11) << overall_acc << "%" << endl;
+                }
+                cout << "==================================================================" << endl;
             }
 #endif
 
@@ -458,7 +484,33 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
 
 #ifdef L1D_BYPASS
     if (cache->cache_type == IS_L1D) {
-        cout << cache->NAME << " Total Demands Bypassed: " << cache->l1d_bypass_demands << endl;
+        uint64_t total_demands = cache->sim_access[cpu][LOAD];
+        uint64_t total_misses = cache->sim_miss[cpu][LOAD];
+        double bypass_miss_pct = total_misses ? (100.0 * cache->l1d_bypass_demands / total_misses) : 0.0;
+        double bypass_demand_pct = total_demands ? (100.0 * cache->l1d_bypass_demands / total_demands) : 0.0;
+
+        cout << endl << "=================== L1D BYPASS PREDICTOR STATS ===================" << endl;
+        cout << cache->NAME << " Total Demands Bypassed:            " << setw(12) << cache->l1d_bypass_demands << endl;
+        cout << cache->NAME << " Bypass Rate (% of Demand Misses):   " << setw(11) << fixed << setprecision(2) << bypass_miss_pct << "%" << endl;
+        cout << cache->NAME << " Bypass Rate (% of Total Demands):   " << setw(11) << bypass_demand_pct << "%" << endl;
+        cout << cache->NAME << " L1D Cache Evictions Saved:          " << setw(12) << cache->l1d_bypass_demands << endl;
+
+        uint64_t total_canary_eval = cache->canary_true_zero_reuse + cache->canary_false_zero_reuse;
+        if (total_canary_eval > 0) {
+            double precision = 100.0 * cache->canary_true_zero_reuse / total_canary_eval;
+            double fp_rate = 100.0 * cache->canary_false_zero_reuse / total_canary_eval;
+            cout << cache->NAME << " Canary Bypass Precision:            " << setw(11) << precision << "% (Correct 0-Reuse)" << endl;
+            cout << cache->NAME << " Canary False Positive Rate:         " << setw(11) << fp_rate << "% (Harmful Bypasses)" << endl;
+            cout << cache->NAME << "   - Canary True Zero-Reuse (TP):    " << setw(12) << cache->canary_true_zero_reuse << endl;
+            cout << cache->NAME << "   - Canary Reused / Harmful (FP):   " << setw(12) << cache->canary_false_zero_reuse << endl;
+        }
+
+        uint64_t total_canary_all = total_canary_eval + cache->canary_true_keep + cache->canary_false_keep;
+        if (total_canary_all > 0) {
+            double overall_acc = 100.0 * (cache->canary_true_zero_reuse + cache->canary_true_keep) / total_canary_all;
+            cout << cache->NAME << " Canary Overall Accuracy:            " << setw(11) << overall_acc << "%" << endl;
+        }
+        cout << "==================================================================" << endl;
     }
 #endif
 }
@@ -559,6 +611,12 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
 #ifdef L1D_BYPASS
     if (cache->cache_type == IS_L1D) {
         cache->l1d_bypass_demands = 0;
+        cache->canary_predicted_bypass = 0;
+        cache->canary_true_zero_reuse = 0;
+        cache->canary_false_zero_reuse = 0;
+        cache->canary_predicted_keep = 0;
+        cache->canary_true_keep = 0;
+        cache->canary_false_keep = 0;
         for (int p = 0; p < L1D_PRED_TABLE_SIZE; p++) {
             cache->l1d_zero_reuse_table[p] = 0;
         }

@@ -36,6 +36,9 @@ class BLOCK {
     // Neeraj:: reuse counter
     uint64_t reuse_counter;
 
+    // L1D Bypass Predictor Canary Tag
+    uint8_t predicted_bypass;
+
     BLOCK() {
         valid = 0;
         prefetch = 0;
@@ -44,6 +47,7 @@ class BLOCK {
         used = 0;
 	instruction = 0;
 	translation = 0;
+        predicted_bypass = 0;
 
         delta = 0;
         depth = 0;
