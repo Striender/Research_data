@@ -35,6 +35,26 @@ ostream &operator<<(ostream &os, const PACKET &packet)
     return os << " cpu: " << packet.cpu << " instr_id: " << packet.instr_id << " Translated: " << +packet.translated << " address: " << hex << packet.address << " full_addr: " << packet.full_addr << dec << " full_virtual_address: " << hex << packet.full_virtual_address << " full_physical_address: " << packet.full_physical_address << dec << "Type: " << +packet.type << " event_cycle: " << packet.event_cycle << " current_core_cycle: " << current_core_cycle[packet.cpu] << endl;
 };
 
+void CACHE::load_oracle_zero_reuse_file(const std::string &filename)
+{
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "[" << NAME << "] WARNING: Failed to open oracle zero-reuse file: " << filename << std::endl;
+        return;
+    }
+
+    uint64_t addr = 0;
+    while (file >> std::hex >> addr) {
+        oracle_zero_reuse_set.insert(addr);
+    }
+    file.close();
+
+    oracle_bypass_enabled = true;
+    std::cout << "[" << NAME << "] Successfully loaded " << oracle_zero_reuse_set.size()
+              << " oracle zero-reuse block addresses from " << filename
+              << ". Oracle Bypass ENABLED." << std::endl;
+}
+
 void CACHE::handle_fill()
 {
     // handle fill
@@ -44,7 +64,6 @@ void CACHE::handle_fill()
 
     if (MSHR.next_fill_cycle <= current_core_cycle[fill_cpu])
     {
-
 #ifdef SANITY_CHECK
         if (MSHR.next_fill_index >= MSHR.SIZE)
             assert(0);
@@ -55,23 +74,40 @@ void CACHE::handle_fill()
 #ifdef L1D_BYPASS
         if (cache_type == IS_L1D && MSHR.entry[mshr_index].type == LOAD)
         {
-            uint64_t v_fill_addr = 0;
-            if (MSHR.entry[mshr_index].full_virtual_address != 0) {
-                v_fill_addr = MSHR.entry[mshr_index].full_virtual_address;
-            } else {
-                auto ppage_check = inverse_table.find(MSHR.entry[mshr_index].full_addr >> LOG2_PAGE_SIZE);
-                if (ppage_check != inverse_table.end()) {
-                    v_fill_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
-                    v_fill_addr |= (MSHR.entry[mshr_index].full_addr & ((1 << LOG2_PAGE_SIZE) - 1));
+            bool should_bypass = false;
+
+            if (oracle_bypass_enabled)
+            {
+                if (oracle_zero_reuse_set.find(MSHR.entry[mshr_index].address) != oracle_zero_reuse_set.end())
+                {
+                    should_bypass = true;
+                }
+            }
+            else
+            {
+                uint64_t v_fill_addr = 0;
+                if (MSHR.entry[mshr_index].full_virtual_address != 0) {
+                    v_fill_addr = MSHR.entry[mshr_index].full_virtual_address;
                 } else {
-                    v_fill_addr = MSHR.entry[mshr_index].full_addr;
+                    auto ppage_check = inverse_table.find(MSHR.entry[mshr_index].full_addr >> LOG2_PAGE_SIZE);
+                    if (ppage_check != inverse_table.end()) {
+                        v_fill_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
+                        v_fill_addr |= (MSHR.entry[mshr_index].full_addr & ((1 << LOG2_PAGE_SIZE) - 1));
+                    } else {
+                        v_fill_addr = MSHR.entry[mshr_index].full_addr;
+                    }
+                }
+
+                uint32_t bypass_set = get_set(MSHR.entry[mshr_index].address);
+                bool is_canary_set = (bypass_set == 0 || bypass_set == 32);
+
+                if (!is_canary_set && predict_l1d_bypass(v_fill_addr))
+                {
+                    should_bypass = true;
                 }
             }
 
-            uint32_t bypass_set = get_set(MSHR.entry[mshr_index].address);
-            bool is_canary_set = (bypass_set == 0 || bypass_set == 32);
-
-            if (!is_canary_set && predict_l1d_bypass(v_fill_addr))
+            if (should_bypass)
             {
                 if (PROCESSED.occupancy >= PROCESSED.SIZE)
                     return;
@@ -3079,30 +3115,33 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
 #ifdef L1D_BYPASS
             if (cache_type == IS_L1D && !block[set][way].is_prefetched)
             {
-                uint64_t v_evicted_addr = 0;
-                auto ppage_check = inverse_table.find(block[set][way].address >> (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE));
-                if (ppage_check != inverse_table.end()) {
-                    v_evicted_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
-                    v_evicted_addr |= ((block[set][way].address << LOG2_BLOCK_SIZE) & ((1 << LOG2_PAGE_SIZE) - 1));
-                }
-                if (v_evicted_addr != 0) {
-                    bool is_zero = (block[set][way].reuse_counter == 0);
-                    update_l1d_pred(v_evicted_addr, is_zero);
-                }
+                if (!oracle_bypass_enabled)
+                {
+                    uint64_t v_evicted_addr = 0;
+                    auto ppage_check = inverse_table.find(block[set][way].address >> (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE));
+                    if (ppage_check != inverse_table.end()) {
+                        v_evicted_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
+                        v_evicted_addr |= ((block[set][way].address << LOG2_BLOCK_SIZE) & ((1 << LOG2_PAGE_SIZE) - 1));
+                    }
+                    if (v_evicted_addr != 0) {
+                        bool is_zero = (block[set][way].reuse_counter == 0);
+                        update_l1d_pred(v_evicted_addr, is_zero);
+                    }
 
-                bool is_canary = (set == 0 || set == 32);
-                if (is_canary && warmup_complete[cpu]) {
-                    if (block[set][way].predicted_bypass) {
-                        if (block[set][way].reuse_counter == 0) {
-                            canary_true_zero_reuse++;
+                    bool is_canary = (set == 0 || set == 32);
+                    if (is_canary && warmup_complete[cpu]) {
+                        if (block[set][way].predicted_bypass) {
+                            if (block[set][way].reuse_counter == 0) {
+                                canary_true_zero_reuse++;
+                            } else {
+                                canary_false_zero_reuse++;
+                            }
                         } else {
-                            canary_false_zero_reuse++;
-                        }
-                    } else {
-                        if (block[set][way].reuse_counter == 0) {
-                            canary_false_keep++;
-                        } else {
-                            canary_true_keep++;
+                            if (block[set][way].reuse_counter == 0) {
+                                canary_false_keep++;
+                            } else {
+                                canary_true_keep++;
+                            }
                         }
                     }
                 }
@@ -3122,25 +3161,29 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
 
 #ifdef L1D_BYPASS
     if (cache_type == IS_L1D) {
-        bool is_canary = (set == 0 || set == 32);
-        if (is_canary && packet->type == LOAD) {
-            uint64_t v_fill_addr = 0;
-            if (packet->full_virtual_address != 0) {
-                v_fill_addr = packet->full_virtual_address;
-            } else {
-                auto ppage_check = inverse_table.find(packet->full_addr >> LOG2_PAGE_SIZE);
-                if (ppage_check != inverse_table.end()) {
-                    v_fill_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
-                    v_fill_addr |= (packet->full_addr & ((1 << LOG2_PAGE_SIZE) - 1));
+        if (!oracle_bypass_enabled) {
+            bool is_canary = (set == 0 || set == 32);
+            if (is_canary && packet->type == LOAD) {
+                uint64_t v_fill_addr = 0;
+                if (packet->full_virtual_address != 0) {
+                    v_fill_addr = packet->full_virtual_address;
                 } else {
-                    v_fill_addr = packet->full_addr;
+                    auto ppage_check = inverse_table.find(packet->full_addr >> LOG2_PAGE_SIZE);
+                    if (ppage_check != inverse_table.end()) {
+                        v_fill_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
+                        v_fill_addr |= (packet->full_addr & ((1 << LOG2_PAGE_SIZE) - 1));
+                    } else {
+                        v_fill_addr = packet->full_addr;
+                    }
                 }
-            }
-            bool pred = predict_l1d_bypass(v_fill_addr);
-            block[set][way].predicted_bypass = pred ? 1 : 0;
-            if (warmup_complete[cpu]) {
-                if (pred) canary_predicted_bypass++;
-                else canary_predicted_keep++;
+                bool pred = predict_l1d_bypass(v_fill_addr);
+                block[set][way].predicted_bypass = pred ? 1 : 0;
+                if (warmup_complete[cpu]) {
+                    if (pred) canary_predicted_bypass++;
+                    else canary_predicted_keep++;
+                }
+            } else {
+                block[set][way].predicted_bypass = 0;
             }
         } else {
             block[set][way].predicted_bypass = 0;

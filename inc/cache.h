@@ -4,6 +4,8 @@
 #include "memory_class.h"
 #include <vector>
 #include <map>
+#include <unordered_set>
+#include <fstream>
 // reset pollution count variables
 extern void reset_llc_pollution_stats();
 extern void reset_l2c_pollution_stats();
@@ -178,11 +180,15 @@ class CACHE : public MEMORY {
     std::map<uint64_t, uint64_t> demand_line_reuse_count;
 
     // ----------------------------------------------------
-    // L1D ZERO-REUSE BYPASS PREDICTOR (128 Bytes SRAM)
+    // L1D ZERO-REUSE ORACLE & HARDWARE BYPASS
     // ----------------------------------------------------
     #define L1D_BYPASS 1
     #define L1D_PRED_TABLE_SIZE 512
     #define L1D_PRED_INDEX_MASK 0x1FF
+
+    bool oracle_bypass_enabled;
+    std::unordered_set<uint64_t> oracle_zero_reuse_set;
+    void load_oracle_zero_reuse_file(const std::string &filename);
 
     uint8_t l1d_zero_reuse_table[L1D_PRED_TABLE_SIZE];
     uint64_t l1d_bypass_demands;
@@ -353,6 +359,8 @@ class CACHE : public MEMORY {
       for (int i = 0; i < L1D_PRED_TABLE_SIZE; i++) {
           l1d_zero_reuse_table[i] = 0;
       }
+      oracle_bypass_enabled = false;
+      oracle_zero_reuse_set.clear();
       l1d_bypass_demands = 0;
       canary_predicted_bypass = 0;
       canary_true_zero_reuse = 0;
