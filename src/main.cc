@@ -299,6 +299,12 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
             }
             cout << endl;
 
+#ifdef L1D_BYPASS
+            if (cache->cache_type == IS_L1D) {
+                cout << cache->NAME << " Total Demands Bypassed: " << cache->l1d_bypass_demands << endl;
+            }
+#endif
+
     if(cache->cache_type == IS_PSCL5 || cache->cache_type == IS_PSCL4 || cache->cache_type == IS_PSCL3 || cache->cache_type == IS_PSCL2)
 	{
 	}
@@ -450,7 +456,11 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
     }
     cout << endl;
 
-
+#ifdef L1D_BYPASS
+    if (cache->cache_type == IS_L1D) {
+        cout << cache->NAME << " Total Demands Bypassed: " << cache->l1d_bypass_demands << endl;
+    }
+#endif
 }
 
 void print_branch_stats()
@@ -545,6 +555,15 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
     cache->line_reuse_count.clear();
     cache->prefetch_line_reuse_count.clear();
     cache->demand_line_reuse_count.clear();
+
+#ifdef L1D_BYPASS
+    if (cache->cache_type == IS_L1D) {
+        cache->l1d_bypass_demands = 0;
+        for (int p = 0; p < L1D_PRED_TABLE_SIZE; p++) {
+            cache->l1d_zero_reuse_table[p] = 0;
+        }
+    }
+#endif
 
     for (uint32_t set = 0; set < cache->NUM_SET; set++) {
         for (uint32_t way = 0; way < cache->NUM_WAY; way++) {

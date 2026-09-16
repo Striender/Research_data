@@ -177,6 +177,37 @@ class CACHE : public MEMORY {
     std::map<uint64_t, uint64_t> prefetch_line_reuse_count;
     std::map<uint64_t, uint64_t> demand_line_reuse_count;
 
+    // ----------------------------------------------------
+    // L1D ZERO-REUSE BYPASS PREDICTOR (128 Bytes SRAM)
+    // ----------------------------------------------------
+    #define L1D_BYPASS 1
+    #define L1D_PRED_TABLE_SIZE 512
+    #define L1D_PRED_INDEX_MASK 0x1FF
+
+    uint8_t l1d_zero_reuse_table[L1D_PRED_TABLE_SIZE];
+    uint64_t l1d_bypass_demands;
+
+    inline uint32_t get_l1d_pred_index(uint64_t v_addr) {
+        uint64_t vpn = v_addr >> LOG2_PAGE_SIZE;
+        return (vpn ^ (vpn >> 6) ^ (vpn >> 12)) & L1D_PRED_INDEX_MASK;
+    }
+
+    inline bool predict_l1d_bypass(uint64_t v_addr) {
+        uint32_t idx = get_l1d_pred_index(v_addr);
+        return (l1d_zero_reuse_table[idx] >= 2);
+    }
+
+    inline void update_l1d_pred(uint64_t v_addr, bool is_zero_reuse) {
+        uint32_t idx = get_l1d_pred_index(v_addr);
+        if (is_zero_reuse) {
+            if (l1d_zero_reuse_table[idx] < 3)
+                l1d_zero_reuse_table[idx]++;
+        } else {
+            if (l1d_zero_reuse_table[idx] > 0)
+                l1d_zero_reuse_table[idx]--;
+        }
+    }
+
     uint64_t *mshr_occupancy_cycles;
     uint64_t pref_useful[NUM_CPUS][6],
     pref_filled[NUM_CPUS][6],
@@ -310,6 +341,11 @@ class CACHE : public MEMORY {
       update_replacement_state = &CACHE::base_update_replacement_state;
       find_victim = &CACHE::base_find_victim;
       replacement_final_stats = &CACHE::base_replacement_final_stats;
+
+      for (int i = 0; i < L1D_PRED_TABLE_SIZE; i++) {
+          l1d_zero_reuse_table[i] = 0;
+      }
+      l1d_bypass_demands = 0;
 
     };
 

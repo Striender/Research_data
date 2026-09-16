@@ -52,6 +52,55 @@ void CACHE::handle_fill()
 
         uint32_t mshr_index = MSHR.next_fill_index;
 
+#ifdef L1D_BYPASS
+        if (cache_type == IS_L1D && MSHR.entry[mshr_index].type == LOAD)
+        {
+            uint64_t v_fill_addr = 0;
+            if (MSHR.entry[mshr_index].full_virtual_address != 0) {
+                v_fill_addr = MSHR.entry[mshr_index].full_virtual_address;
+            } else {
+                auto ppage_check = inverse_table.find(MSHR.entry[mshr_index].full_addr >> LOG2_PAGE_SIZE);
+                if (ppage_check != inverse_table.end()) {
+                    v_fill_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
+                    v_fill_addr |= (MSHR.entry[mshr_index].full_addr & ((1 << LOG2_PAGE_SIZE) - 1));
+                } else {
+                    v_fill_addr = MSHR.entry[mshr_index].full_addr;
+                }
+            }
+
+            uint32_t bypass_set = get_set(MSHR.entry[mshr_index].address);
+            bool is_canary_set = (bypass_set == 0 || bypass_set == 32);
+
+            if (!is_canary_set && predict_l1d_bypass(v_fill_addr))
+            {
+                if (PROCESSED.occupancy >= PROCESSED.SIZE)
+                    return;
+
+                l1d_bypass_demands++;
+
+                // Collect stats
+                sim_miss[fill_cpu][MSHR.entry[mshr_index].type]++;
+                sim_access[fill_cpu][MSHR.entry[mshr_index].type]++;
+
+                // Return data directly to CPU core
+                PROCESSED.add_queue(&MSHR.entry[mshr_index]);
+
+                // Track miss latency
+                if (warmup_complete[fill_cpu]) {
+                    uint64_t current_miss_latency = (current_core_cycle[fill_cpu] - MSHR.entry[mshr_index].cycle_enqueued);
+                    if (MSHR.entry[mshr_index].cycle_enqueued > 0)
+                        total_load_miss_latency += current_miss_latency;
+                    total_miss_latency += current_miss_latency;
+                }
+
+                MSHR.remove_queue(&MSHR.entry[mshr_index]);
+                MSHR.num_returned--;
+                update_fill_cycle();
+                return;
+            }
+        }
+#endif
+
         // find victim
         uint32_t set = get_set(MSHR.entry[mshr_index].address), way;
         way = (this->*find_victim)(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
@@ -3027,6 +3076,21 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
             else{
                 demand_line_reuse_count[block[set][way].reuse_counter]++;
             }
+#ifdef L1D_BYPASS
+            if (cache_type == IS_L1D && !block[set][way].is_prefetched)
+            {
+                uint64_t v_evicted_addr = 0;
+                auto ppage_check = inverse_table.find(block[set][way].address >> (LOG2_PAGE_SIZE - LOG2_BLOCK_SIZE));
+                if (ppage_check != inverse_table.end()) {
+                    v_evicted_addr = (ppage_check->second) << LOG2_PAGE_SIZE;
+                    v_evicted_addr |= ((block[set][way].address << LOG2_BLOCK_SIZE) & ((1 << LOG2_PAGE_SIZE) - 1));
+                }
+                if (v_evicted_addr != 0) {
+                    bool is_zero = (block[set][way].reuse_counter == 0);
+                    update_l1d_pred(v_evicted_addr, is_zero);
+                }
+            }
+#endif
         }
     }
 
