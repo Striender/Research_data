@@ -20,7 +20,7 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results_bingo")
+    os.path.join(SCRIPT_DIR, "..", "results_bingo/cache_seni_test1/")
 )
 
 DEFAULT_OUTPUT_FILE = os.path.normpath(
@@ -28,7 +28,7 @@ DEFAULT_OUTPUT_FILE = os.path.normpath(
         SCRIPT_DIR,
         "..",
         "Excel_Output",
-        "aiml_bingo",
+        "Cache_sensi_test2",
         "Average_load_miss_latency.xlsx",
     )
 )
@@ -222,6 +222,69 @@ def write_sheet(worksheet, records):
         ].width = min(max_len + 2, 90)
 
 
+def write_summary_sheet(worksheet, folder_records, cache_level):
+    """Write a summary sheet for one cache level.
+
+    Layout:
+        Row 1  : header  – "Trace" | folder1 | folder2 | ...
+        Row 2+ : one row per trace, Avg Load Miss Latency value per folder
+    """
+
+    sorted_folders = sorted(folder_records, key=natural_sort_key)
+
+    # Collect the union of all trace names across every folder
+    all_traces = sorted(
+        {
+            record["trace"]
+            for records in folder_records.values()
+            for record in records
+        },
+        key=natural_sort_key,
+    )
+
+    # Build a quick-lookup dict:  folder → trace → avg_load_miss_latency
+    lookup = {}
+    for folder_name, records in folder_records.items():
+        lookup[folder_name] = {
+            record["trace"]: record["metrics"].get(cache_level, {}).get(
+                "average_load_miss_latency"
+            )
+            for record in records
+        }
+
+    # --- Header row ---
+    header = ["Trace"] + sorted_folders
+    worksheet.append(header)
+
+    for cell in worksheet[1]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center")
+
+    # --- Data rows ---
+    for trace in all_traces:
+        row = [trace]
+        for folder_name in sorted_folders:
+            value = lookup.get(folder_name, {}).get(trace)
+            row.append(float(value) if value is not None else "N/A")
+        worksheet.append(row)
+
+    # Freeze header / first column
+    worksheet.freeze_panes = "B2"
+
+    # Filters
+    worksheet.auto_filter.ref = worksheet.dimensions
+
+    # Auto-size columns
+    for column_cells in worksheet.columns:
+        max_len = max(
+            len(str(cell.value)) if cell.value is not None else 0
+            for cell in column_cells
+        )
+        worksheet.column_dimensions[
+            column_cells[0].column_letter
+        ].width = min(max_len + 2, 90)
+
+
 def write_workbook(folder_records, output_file):
     workbook = Workbook()
 
@@ -248,6 +311,15 @@ def write_workbook(folder_records, output_file):
             worksheet,
             folder_records[folder_name],
         )
+
+    # --- Summary sheets (one per cache level) ---
+    for cache_level in CACHE_LEVELS:
+        summary_name = make_unique_sheet_name(
+            f"Summary_{cache_level}_AvgLoadMissLat",
+            used_names,
+        )
+        ws_summary = workbook.create_sheet(title=summary_name)
+        write_summary_sheet(ws_summary, folder_records, cache_level)
 
     workbook.save(output_file)
 
