@@ -14,6 +14,8 @@ class BLOCK {
             dirty,
             used,
 	    instruction,
+        type,
+        warmup,
 	    translation;
 
     int delta,
@@ -26,7 +28,7 @@ class BLOCK {
              full_addr,
              tag,
              data,
-	     ip,
+	            ip,
              cpu,
              instr_id;
 
@@ -36,7 +38,7 @@ class BLOCK {
     // Neeraj:: reuse counter
     uint64_t reuse_counter;
 
-    // L1D Bypass Predictor Canary Tag
+    // L1D Bypass Predictor Bimodal Tag
     uint8_t predicted_bypass;
 
     BLOCK() {
@@ -46,20 +48,22 @@ class BLOCK {
         dirty = 0;
         used = 0;
 	instruction = 0;
+    warmup = 0;
 	translation = 0;
+    type = 0;
         predicted_bypass = 0;
 
         delta = 0;
         depth = 0;
         signature = 0;
         confidence = 0;
-	pref_class = 0;
+	    pref_class = 0;
 
         address = 0;
         full_addr = 0;
         tag = 0;
         data = 0;
-	ip = 0;
+	    ip = 0;
         cpu = 0;
         instr_id = 0;
 
@@ -91,7 +95,8 @@ class PACKET {
             fetched,
             prefetched,
             drc_tag_read,
-	    critical_ip_flag;	//Neelu: Adding to indicate that current packet's ip has been identified as critical.
+	    critical_ip_flag,	//Neelu: Adding to indicate that current packet's ip has been identified as critical.
+	    data_fill_level;
 
     int fill_level, 
         pf_origin_level,
@@ -169,6 +174,7 @@ class PACKET {
         send_both_tlb = 0;
 	send_both_cache = 0;
 	late_pref = 0;
+	data_fill_level = 0;
 
 	pf_metadata = 0;
 
