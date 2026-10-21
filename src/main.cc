@@ -321,20 +321,20 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
                     cout << cache->NAME << " Bypass Rate (% of Total Demands):   " << setw(11) << bypass_demand_pct << "%" << endl;
                     cout << cache->NAME << " L1D Cache Evictions Saved:          " << setw(12) << cache->l1d_bypass_demands << endl;
 
-                    uint64_t total_canary_eval = cache->canary_true_zero_reuse + cache->canary_false_zero_reuse;
-                    if (total_canary_eval > 0) {
-                        double precision = 100.0 * cache->canary_true_zero_reuse / total_canary_eval;
-                        double fp_rate = 100.0 * cache->canary_false_zero_reuse / total_canary_eval;
-                        cout << cache->NAME << " Canary Bypass Precision:            " << setw(11) << precision << "% (Correct 0-Reuse)" << endl;
-                        cout << cache->NAME << " Canary False Positive Rate:         " << setw(11) << fp_rate << "% (Harmful Bypasses)" << endl;
-                        cout << cache->NAME << "   - Canary True Zero-Reuse (TP):    " << setw(12) << cache->canary_true_zero_reuse << endl;
-                        cout << cache->NAME << "   - Canary Reused / Harmful (FP):   " << setw(12) << cache->canary_false_zero_reuse << endl;
+                    uint64_t total_Bimodal_eval = cache->Bimodal_true_zero_reuse + cache->Bimodal_false_zero_reuse;
+                    if (total_Bimodal_eval > 0) {
+                        double precision = 100.0 * cache->Bimodal_true_zero_reuse / total_Bimodal_eval;
+                        double fp_rate = 100.0 * cache->Bimodal_false_zero_reuse / total_Bimodal_eval;
+                        cout << cache->NAME << " Bimodal Bypass Precision:            " << setw(11) << precision << "% (Correct 0-Reuse)" << endl;
+                        cout << cache->NAME << " Bimodal False Positive Rate:         " << setw(11) << fp_rate << "% (Harmful Bypasses)" << endl;
+                        cout << cache->NAME << "   - Bimodal True Zero-Reuse (TP):    " << setw(12) << cache->Bimodal_true_zero_reuse << endl;
+                        cout << cache->NAME << "   - Bimodal Reused / Harmful (FP):   " << setw(12) << cache->Bimodal_false_zero_reuse << endl;
                     }
 
-                    uint64_t total_canary_all = total_canary_eval + cache->canary_true_keep + cache->canary_false_keep;
-                    if (total_canary_all > 0) {
-                        double overall_acc = 100.0 * (cache->canary_true_zero_reuse + cache->canary_true_keep) / total_canary_all;
-                        cout << cache->NAME << " Canary Overall Accuracy:            " << setw(11) << overall_acc << "%" << endl;
+                    uint64_t total_Bimodal_all = total_Bimodal_eval + cache->Bimodal_true_keep + cache->Bimodal_false_keep;
+                    if (total_Bimodal_all > 0) {
+                        double overall_acc = 100.0 * (cache->Bimodal_true_zero_reuse + cache->Bimodal_true_keep) / total_Bimodal_all;
+                        cout << cache->NAME << " Bimodal Overall Accuracy:            " << setw(11) << overall_acc << "%" << endl;
                     }
                     cout << "==================================================================" << endl;
                 }
@@ -350,7 +350,8 @@ void print_roi_stats(uint32_t cpu, CACHE *cache)
 			cout << " AVERAGE MISS LATENCY: " << setw(10) << (1.0*(cache->total_miss_latency))/TOTAL_MISS << " cycles";
             cout << " AVERAGE LOAD MISS LATENCY: " << setw(10) << (1.0*(cache->total_load_miss_latency))/cache->sim_miss[cpu][0] << " cycles";
             cout << " Load Miss "<< setw(10) << cache->sim_miss[cpu][0]  << endl;
-            cout << cache->NAME << setw(10) << " Average MSHR Load Occupancy: " << setw(10) << (double)cache->average_mshr_load_occupancy / ooo_cpu[0].finish_sim_cycle << endl;
+            cout << cache->NAME << setw(10) << " Average MSHR Load Occupancy: " << setw(10) << (double)cache->average_mshr_load_occupancy / cache->total_active_miss_cycles << endl;
+            cout << "MSHR Load Occupancy: " << cache->average_mshr_load_occupancy << " / " << cache->total_active_miss_cycles << endl;
     }
 
     //@Vishal: Will work only for 1 core, for multi-core this will give sim_result not roi_result
@@ -514,20 +515,20 @@ void print_sim_stats(uint32_t cpu, CACHE *cache)
             cout << cache->NAME << " Bypass Rate (% of Total Demands):   " << setw(11) << bypass_demand_pct << "%" << endl;
             cout << cache->NAME << " L1D Cache Evictions Saved:          " << setw(12) << cache->l1d_bypass_demands << endl;
 
-            uint64_t total_canary_eval = cache->canary_true_zero_reuse + cache->canary_false_zero_reuse;
-            if (total_canary_eval > 0) {
-                double precision = 100.0 * cache->canary_true_zero_reuse / total_canary_eval;
-                double fp_rate = 100.0 * cache->canary_false_zero_reuse / total_canary_eval;
-                cout << cache->NAME << " Canary Bypass Precision:            " << setw(11) << precision << "% (Correct 0-Reuse)" << endl;
-                cout << cache->NAME << " Canary False Positive Rate:         " << setw(11) << fp_rate << "% (Harmful Bypasses)" << endl;
-                cout << cache->NAME << "   - Canary True Zero-Reuse (TP):    " << setw(12) << cache->canary_true_zero_reuse << endl;
-                cout << cache->NAME << "   - Canary Reused / Harmful (FP):   " << setw(12) << cache->canary_false_zero_reuse << endl;
+            uint64_t total_Bimodal_eval = cache->Bimodal_true_zero_reuse + cache->Bimodal_false_zero_reuse;
+            if (total_Bimodal_eval > 0) {
+                double precision = 100.0 * cache->Bimodal_true_zero_reuse / total_Bimodal_eval;
+                double fp_rate = 100.0 * cache->Bimodal_false_zero_reuse / total_Bimodal_eval;
+                cout << cache->NAME << " Bimodal Bypass Precision:            " << setw(11) << precision << "% (Correct 0-Reuse)" << endl;
+                cout << cache->NAME << " Bimodal False Positive Rate:         " << setw(11) << fp_rate << "% (Harmful Bypasses)" << endl;
+                cout << cache->NAME << "   - Bimodal True Zero-Reuse (TP):    " << setw(12) << cache->Bimodal_true_zero_reuse << endl;
+                cout << cache->NAME << "   - Bimodal Reused / Harmful (FP):   " << setw(12) << cache->Bimodal_false_zero_reuse << endl;
             }
 
-            uint64_t total_canary_all = total_canary_eval + cache->canary_true_keep + cache->canary_false_keep;
-            if (total_canary_all > 0) {
-                double overall_acc = 100.0 * (cache->canary_true_zero_reuse + cache->canary_true_keep) / total_canary_all;
-                cout << cache->NAME << " Canary Overall Accuracy:            " << setw(11) << overall_acc << "%" << endl;
+            uint64_t total_Bimodal_all = total_Bimodal_eval + cache->Bimodal_true_keep + cache->Bimodal_false_keep;
+            if (total_Bimodal_all > 0) {
+                double overall_acc = 100.0 * (cache->Bimodal_true_zero_reuse + cache->Bimodal_true_keep) / total_Bimodal_all;
+                cout << cache->NAME << " Bimodal Overall Accuracy:            " << setw(11) << overall_acc << "%" << endl;
             }
             cout << "==================================================================" << endl;
         }
@@ -617,9 +618,11 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
     }
 
 	cache->total_miss_latency = 0;
+    cache->total_load_miss_latency = 0;
 	cache->average_mshr_load_occupancy=0;
-    cache->atleast_miss=0;
-	cache->mshr_accessed=0;
+    cache->total_active_miss_cycles=0;
+    cache->atleast_miss = 0;
+    cache->mshr_accessed=0;
 	cache->mshr_full_accesses=0;
 
     cache->mshr_full_streak_lengths.clear();
@@ -631,12 +634,12 @@ void reset_cache_stats(uint32_t cpu, CACHE *cache)
 #ifdef L1D_BYPASS
     if (cache->cache_type == IS_L1D) {
         cache->l1d_bypass_demands = 0;
-        cache->canary_predicted_bypass = 0;
-        cache->canary_true_zero_reuse = 0;
-        cache->canary_false_zero_reuse = 0;
-        cache->canary_predicted_keep = 0;
-        cache->canary_true_keep = 0;
-        cache->canary_false_keep = 0;
+        cache->Bimodal_predicted_bypass = 0;
+        cache->Bimodal_true_zero_reuse = 0;
+        cache->Bimodal_false_zero_reuse = 0;
+        cache->Bimodal_predicted_keep = 0;
+        cache->Bimodal_true_keep = 0;
+        cache->Bimodal_false_keep = 0;
         for (int p = 0; p < L1D_PRED_TABLE_SIZE; p++) {
             cache->l1d_zero_reuse_table[p] = 0;
         }
@@ -1296,8 +1299,10 @@ int main(int argc, char** argv)
     cout << "Simulation Instructions: " << simulation_instructions << endl;
     //cout << "Scramble Loads: " << (knob_scramble_loads ? "ture" : "false") << endl;
     cout << "Number of CPUs: " << NUM_CPUS << endl;
+    cout << "L1d Size: " << L1D_SET * L1D_WAY * BLOCK_SIZE / 1024 << " KB" << "     L1D Latency: "<< L1D_LATENCY <<endl;
     cout << "LLC sets: " << LLC_SET << endl;
     cout << "LLC ways: " << LLC_WAY << endl;
+    
 #ifdef CAPTURE_DYNAMIC_ENERGY_PROFILE
     cout << "PHASE_SIZE_IN_CYCLES: " << PHASE_SIZE_IN_CYCLES << endl;
 #endif
@@ -1357,6 +1362,7 @@ int main(int argc, char** argv)
                 assert(0);
             }
 
+#ifdef L1D_BYPASS
             std::string trace_str(ooo_cpu[count_traces].trace_string);
             size_t slash_pos = trace_str.find_last_of("/\\");
             std::string trace_fname = (slash_pos == std::string::npos) ? trace_str : trace_str.substr(slash_pos + 1);
@@ -1379,8 +1385,8 @@ int main(int argc, char** argv)
                     oracle_file = env_oracle;
                 } else {
                     std::string c1 = "oracle_zero_reuse_" + base_name + ".txt";
-                    std::string c2 = "oracle_lists/oracle_zero_reuse_" + base_name + ".txt";
-                    std::string c3 = "../oracle_lists/oracle_zero_reuse_" + base_name + ".txt";
+                    std::string c2 = "oracle_lists_pref_warmup/oracle_zero_reuse_" + base_name + ".txt";
+                    std::string c3 = "../oracle_lists_pref_warmup/oracle_zero_reuse_" + base_name + ".txt";
                     std::string c4 = "../oracle_zero_reuse_" + base_name + ".txt";
                     std::ifstream f1(c1);
                     if (f1.good()) {
@@ -1400,11 +1406,13 @@ int main(int argc, char** argv)
                             }
                         }
                     }
+                    std::cout << "Oracle file: " << oracle_file << std::endl;
                 }
                 if (!oracle_file.empty()) {
                     ooo_cpu[count_traces].L1D.load_oracle_zero_reuse_file(oracle_file);
                 }
             }
+#endif
 
             char *pch[100];
             int count_str = 0;
@@ -1834,9 +1842,7 @@ int main(int argc, char** argv)
 
 
 		// retire
-		// Neelu: Commented first condition. 
-                if (/*(ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed == COMPLETED) && */ (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle <= current_core_cycle[i]))
-			ooo_cpu[i].retire_rob();
+		ooo_cpu[i].retire_rob();
 
 		// complete 
                 ooo_cpu[i].update_rob();
@@ -1897,6 +1903,12 @@ int main(int argc, char** argv)
 				cout << "operatingINDEX"<<ooo_cpu[cs_file[index].swap_cpu[0]].operating_index << " "<< ooo_cpu[cs_file[index].swap_cpu[1]].operating_index <<  endl;
 			}
 		}
+            }
+            else {
+                if (warmup_complete[i]) {
+                    ooo_cpu[i].rob_stall_other++;
+                    ooo_cpu[i].total_rob_stall_cycles++;
+                }
             }
 
 

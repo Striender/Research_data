@@ -99,9 +99,9 @@ void CACHE::handle_fill()
                 }
 
                 uint32_t bypass_set = get_set(MSHR.entry[mshr_index].address);
-                bool is_canary_set = (bypass_set == 0 || bypass_set == 32);
+                bool is_Bimodal_set = (bypass_set == 0 || bypass_set == 32);
 
-                if (!is_canary_set && predict_l1d_bypass(v_fill_addr))
+                if (!is_Bimodal_set && predict_l1d_bypass(v_fill_addr))
                 {
                     should_bypass = true;
                 }
@@ -1520,20 +1520,24 @@ void CACHE::handle_read()
 {
 
     uint64_t demand_mshr_count = 0;
-    if(MSHR.occupancy > 0)
+    if (MSHR.occupancy > 0 && warmup_complete[cpu])
     {
         for (uint32_t i = 0; i < MSHR_SIZE; ++i)
         {
+            // Only count active data load misses (excluding instruction fetches in unified L2/LLC)
             if (MSHR.entry[i].address != 0 && MSHR.entry[i].type == LOAD && MSHR.entry[i].instruction == 0)
             {
                 demand_mshr_count++;
             }
         }
+        if(cache_type == IS_L1D)
+            //cout<< demand_mshr_count << " ";
+        if (demand_mshr_count > 0)
+        {
+            total_active_miss_cycles++;
+            average_mshr_load_occupancy += demand_mshr_count;
+        }
     }
-    
-    average_mshr_load_occupancy += demand_mshr_count;
-
-    
 
         if (cache_type == IS_L1D)
     {
@@ -1803,6 +1807,7 @@ void CACHE::handle_read()
                 // else if (cache_type == IS_L1D) {
                 else if ((cache_type == IS_L1D) && (RQ.entry[index].type != PREFETCH))
                 {
+                    RQ.entry[index].data_fill_level = FILL_L1;
                     if (PROCESSED.occupancy < PROCESSED.SIZE)
                         PROCESSED.add_queue(&RQ.entry[index]);
                 }
@@ -1889,7 +1894,7 @@ void CACHE::handle_read()
 
                 // Count demand-load reuse for data cache lines.
                 if (warmup_complete[read_cpu] &&
-                    (cache_type == IS_L1D || cache_type == IS_L2C || cache_type == IS_LLC) /*&& RQ.entry[index].type == LOAD*/ &&
+                    (cache_type == IS_L1D || cache_type == IS_L2C || cache_type == IS_LLC) && RQ.entry[index].type == LOAD &&
                     RQ.entry[index].instruction == 0)
                 {
                     block[set][way].reuse_counter++;
@@ -1898,6 +1903,7 @@ void CACHE::handle_read()
                 // COLLECT STATS
                 sim_hit[read_cpu][RQ.entry[index].type]++;
                 sim_access[read_cpu][RQ.entry[index].type]++;
+                RQ.entry[index].data_fill_level = fill_level;
 
                 // check fill level
                 // data should be updated (for TLBs) in case of hit
@@ -3096,22 +3102,29 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
     // Neeraj: on cache fill , reset the reuse counter to 0
     if (cache_type == IS_L1D || cache_type == IS_L2C || cache_type == IS_LLC)
     {
-        if (block[set][way].valid && warmup_complete[packet->cpu])
+        if (block[set][way].valid && warmup_complete[packet->cpu] && block[set][way].warmup == 0)
         {   
-            if(NAME == "L1D"){
-            cout << NAME << " "
-                 << (block[set][way].is_prefetched ? "PREFETCH" : "DEMAND")
-                 << " IP: 0x" << hex << block[set][way].ip
-                 << " ADDRESS: 0x" << block[set][way].full_addr<<LOG2_BLOCK_SIZE << dec
-                 << " REUSE: " << block[set][way].reuse_counter << endl;
-            }
+            //if(NAME == "L1D" && (block[set][way].type == LOAD && block[set][way].is_prefetched == 0)){
+            //    cout << NAME << " " << "Demand   "
+            //         << " IP: 0x" << hex << block[set][way].ip
+            //         << " ADDRESS: 0x" << hex << (block[set][way].address) << dec
+            //         << " REUSE: " << block[set][way].reuse_counter << endl;
+            //}
+            //if (NAME == "L1D" && block[set][way].is_prefetched)
+            //{
+            //    cout << NAME << " " << "Prefetch   "
+            //         << " IP: 0x" << hex << block[set][way].ip
+            //         << " ADDRESS: 0x" << hex << (block[set][way].address )<< dec
+            //         << " REUSE: " << block[set][way].reuse_counter << endl;
+            //}
             line_reuse_count[block[set][way].reuse_counter]++;
             if (block[set][way].is_prefetched){
                 prefetch_line_reuse_count[block[set][way].reuse_counter]++;
             }
-            else{
+            else if(block[set][way].type == LOAD) {
                 demand_line_reuse_count[block[set][way].reuse_counter]++;
             }
+            
 #ifdef L1D_BYPASS
             if (cache_type == IS_L1D && !block[set][way].is_prefetched)
             {
@@ -3128,19 +3141,19 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
                         update_l1d_pred(v_evicted_addr, is_zero);
                     }
 
-                    bool is_canary = (set == 0 || set == 32);
-                    if (is_canary && warmup_complete[cpu]) {
+                    bool is_Bimodal = (set == 0 || set == 32);
+                    if (is_Bimodal && warmup_complete[cpu]) {
                         if (block[set][way].predicted_bypass) {
                             if (block[set][way].reuse_counter == 0) {
-                                canary_true_zero_reuse++;
+                                Bimodal_true_zero_reuse++;
                             } else {
-                                canary_false_zero_reuse++;
+                                Bimodal_false_zero_reuse++;
                             }
                         } else {
                             if (block[set][way].reuse_counter == 0) {
-                                canary_false_keep++;
+                                Bimodal_false_keep++;
                             } else {
-                                canary_true_keep++;
+                                Bimodal_true_keep++;
                             }
                         }
                     }
@@ -3157,13 +3170,18 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
     // Keep the fill origin until this block is evicted. Unlike prefetch, this
     // flag must not be cleared when a demand access makes a prefetch useful.
     block[set][way].is_prefetched = block[set][way].prefetch;
+    block[set][way].type = packet->type;
     block[set][way].used = 0;
+    if(!warmup_complete[packet->cpu])
+        block[set][way].warmup = 1;
+    else
+        block[set][way].warmup = 0;
 
 #ifdef L1D_BYPASS
     if (cache_type == IS_L1D) {
         if (!oracle_bypass_enabled) {
-            bool is_canary = (set == 0 || set == 32);
-            if (is_canary && packet->type == LOAD) {
+            bool is_Bimodal = (set == 0 || set == 32);
+            if (is_Bimodal && packet->type != PREFETCH) {
                 uint64_t v_fill_addr = 0;
                 if (packet->full_virtual_address != 0) {
                     v_fill_addr = packet->full_virtual_address;
@@ -3179,8 +3197,8 @@ void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
                 bool pred = predict_l1d_bypass(v_fill_addr);
                 block[set][way].predicted_bypass = pred ? 1 : 0;
                 if (warmup_complete[cpu]) {
-                    if (pred) canary_predicted_bypass++;
-                    else canary_predicted_keep++;
+                    if (pred) Bimodal_predicted_bypass++;
+                    else Bimodal_predicted_keep++;
                 }
             } else {
                 block[set][way].predicted_bypass = 0;
@@ -3406,6 +3424,7 @@ int CACHE::add_rq(PACKET *packet)
         // update processed packets
         if ((cache_type == IS_L1D) && (packet->type != PREFETCH))
         {
+            packet->data_fill_level = FILL_L1;
             if (PROCESSED.occupancy < PROCESSED.SIZE)
                 PROCESSED.add_queue(packet);
 
@@ -4348,6 +4367,7 @@ void CACHE::return_data(PACKET *packet)
     // no need to do memcpy
     MSHR.num_returned++;
     MSHR.entry[mshr_index].returned = COMPLETED;
+    MSHR.entry[mshr_index].data_fill_level = packet->data_fill_level;
 #ifdef INS_PAGE_TABLE_WALKER
     if (cache_type == IS_STLB)
     {
