@@ -63,6 +63,8 @@ def parse_champsim_file(filepath):
         "L1D Load MPKI": None,
         "L2C Load MPKI": None,
         "LLC Load MPKI": None,
+        "DTLB Load MPKI": None,
+        "STLB Load MPKI": None,
     }
     
     if not filepath:
@@ -85,6 +87,14 @@ def parse_champsim_file(filepath):
             if llc_load_match:
                 metrics["LLC Load MPKI"] = llc_load_match.group(1)
 
+            dtlb_load_match = re.search(r"DTLB LOAD TRANSLATION ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+\d+.*?MPKI:\s*" + FULL_NUMBER_PATTERN, content)
+            if dtlb_load_match:
+                metrics["DTLB Load MPKI"] = dtlb_load_match.group(1)
+
+            stlb_load_match = re.search(r"STLB LOAD TRANSLATION ACCESS:\s+\d+\s+HIT:\s+\d+\s+MISS:\s+\d+.*?MPKI:\s*" + FULL_NUMBER_PATTERN, content)
+            if stlb_load_match:
+                metrics["STLB Load MPKI"] = stlb_load_match.group(1)
+
     except IOError as e:
         print(f"Error reading file {filepath}: {e}")
         return None
@@ -106,9 +116,9 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results/SMS_region/testing/16k_16w_4r"
-    OUTPUT_DIR = "../Excel_Output/"
-    EXCEL_OUTPUT_FILE = "SMS_MPKI_testing.xlsx"
+    RESULTS_DIR = "../results_bingo/cache_seni_test1/"
+    OUTPUT_DIR = "../Excel_Output/Cache_sensi_test2/"
+    EXCEL_OUTPUT_FILE = "Load_MPKI.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
     # -------------------

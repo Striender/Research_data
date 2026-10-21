@@ -14,8 +14,8 @@ except ImportError:
     )
 
 
-DEFAULT_RESULTS_DIR = "../results_bingo/pref_l1_l2/"
-DEFAULT_OUTPUT_FILE = "../Excel_Output/aiml_bingo/prefetch_line_reuse_count.xlsx"
+DEFAULT_RESULTS_DIR = "../results_bingo/Cache_Sensitivity/48KB/pref_l1"
+DEFAULT_OUTPUT_FILE = "../Excel_Output/cache_sensitivity/Prefetch_line_reuse_count.xlsx"
 CACHE_LEVELS = ("L1D", "L2C", "LLC")
 SHEET_NAMES = {"L1D": "L1D", "L2C": "L2", "LLC": "LLC"}
 DEFAULT_WAYS = {"L1D": 30, "L2C": 10, "LLC": 1}

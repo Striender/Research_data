@@ -80,158 +80,155 @@ workloads = [
 ]
 
 data_baseline = [
-4.495,
-5.235,
-5.889,
-5.563,
-5.660,
-5.295,
-5.398,
-6.079,
-5.883,
-5.677,
-4.610,
-4.469,
-5.486,
-3.736,
-5.711,
-3.098,
-3.161,
-3.039,
-3.063,
-3.198,
-3.156,
-3.061,
-3.048,
-3.122,
-3.162,
-3.050,
-3.147,
-3.019,
-3.074,
-3.161,
-3.134,
-3.134,
-3.134,
-3.178,
-3.175,
-3.179,
-2.948,
-2.944,
-2.947,
-6.038,
-6.664,
-1.113,
-5.918,
-2.262,
-1.018,
-5.359,
-5.585,
-6.672,
-1.017,
-5.877,
-6.367,
-6.581,
-2.267,
-5.838,
-4.364,
-4.719,
-4.597,
-4.369,
-4.391,
-4.233,
-6.382,
-6.326,
-6.073,
-6.199,
-8.415,
-6.289,
-6.102,
-2.729
-
-
-]
-
-data_prefetcher = [
-8.365   ,
-8.299,
-10.008,
-10.907,
-10.858,
-10.282,
-8.390,
-11.653,
-11.366,
-11.002,
-8.421,
-8.077,
-9.380,
-6.437,
-9.543,
-6.521,
-7.013,
-7.392,
-6.998,
-7.618,
-6.738,
-7.428,
-7.217,
-7.480,
-6.605,
-6.961,
-6.657,
-7.053,
-7.433,
-6.684,
-6.807,
-6.827,
-6.817,
-6.501,
-6.476,
-6.497,
-6.720,
-6.728,
-6.717,
-11.156,
-12.667,
-2.132,
-12.108,
-9.328,
-1.085,
-9.654,
-12.369,
-12.814,
-1.098,
-11.935,
-12.609,
-12.689,
-9.198,
-11.524,
-8.241,
-8.067,
-7.601,
-8.156,
-7.067,
-8.208,
-12.561,
-12.539,
-12.403,
-12.070,
-17.400,
-11.206,
-11.873 ,
-5.432
-
+0.123  ,
+0.2241,
+0.3186,
+0.2896,
+20.9426,
+0.2927,
+0.1355,
+18.6554,
+19.506,
+20.3263,
+0.0736,
+0.0962,
+0.0959,
+5.5438,
+0.1127,
+0.5559,
+0.5561,
+0.556,
+0.5561,
+0.556,
+0.5561,
+0.5564,
+0.5561,
+0.5562,
+0.5564,
+0.5561,
+0.5567,
+0.5561,
+0.5564,
+0.5563,
+0.5501,
+0.5504,
+0.5498,
+0.5358,
+0.5254,
+0.525,
+0.5466,
+0.5471,
+0.5466,
+2.098,
+0.4715,
+0.2077,
+0.2379,
+2.7592,
+0.2258,
+1.0675,
+0.9216,
+0.4694,
+0.1879,
+0.4715,
+2.1204,
+0.4755,
+4.0505,
+1.6906,
+0.1421,
+0.6746,
+0.1244,
+0.0616,
+0.061,
+0.1832,
+0.1302,
+0.135,
+0.1288,
+0.5002,
+0.604,
+0.1999,
+0.5082,
+0.1518
 
 ]
 
-# Calculate averages
+data_prefetcher = [ 
+0.0043  ,
+0.0122,
+0.0578,
+0.0235,
+0.3947,
+0.0156,
+0.0108,
+0.4978,
+0.4618,
+0.4143,
+0.0588,
+0.013,
+0.0714,
+0.1008,
+0.016,
+0.5559,
+0.556,
+0.5559,
+0.5561,
+0.5559,
+0.5561,
+0.5564,
+0.556,
+0.5562,
+0.5564,
+0.5561,
+0.5567,
+0.5562,
+0.5564,
+0.5563,
+0.5497,
+0.5499,
+0.5496,
+0.5288,
+0.5184,
+0.5181,
+0.545,
+0.5452,
+0.545,
+0.128,
+0.1182,
+0.0066,
+0.116,
+0.1234,
+0.0058,
+0.0254,
+0.2472,
+0.1182,
+0.0057,
+0.1363,
+0.1214,
+0.1182,
+0.0781,
+0.087,
+0.0125,
+0.0054,
+0.0553,
+0.0332,
+0.0032,
+0.0584,
+0.1062,
+0.1061,
+0.1062,
+0.2982,
+0.3812,
+0.0189,
+0.2769,
+0.0037
+]
+
+# Calcula,te averages
 avg_baseline   = np.mean(data_baseline)
 avg_prefetcher = np.mean(data_prefetcher)
 
 plot_workloads  = workloads + ["Average"]
 plot_baseline   = data_baseline  + [avg_baseline]
-plot_prefetcher = data_prefetcher+ [avg_prefetcher]
+plot_prefetcher = data_prefetcher + [avg_prefetcher]
 
 # Figure parameters — exact Thesis.ipynb style
 scale = 1.5
@@ -277,10 +274,10 @@ fig, ax = plt.subplots()
 color_baseline   = '#8C9EBC'
 color_prefetcher = '#394761'
 
-bars1 = ax.bar(x - bar_width/2, plot_baseline,   bar_width, label='No prefetcher', color=color_baseline,   edgecolor='black', linewidth=0.5)
-bars2 = ax.bar(x + bar_width/2, plot_prefetcher, bar_width, label='Bingo (L1D) + Bingo (L2)', color=color_prefetcher, edgecolor='black', linewidth=0.5)
+bars1 = ax.bar(x - bar_width/2, plot_baseline,   bar_width, label='DTLB', color=color_baseline,   edgecolor='black', linewidth=0.5)
+bars2 = ax.bar(x + bar_width/2, plot_prefetcher, bar_width, label='STLB', color=color_prefetcher, edgecolor='black', linewidth=0.5)
 
-ax.set_ylabel('Average DRAM read \n queue occupancy', fontsize=3 * scale)
+ax.set_ylabel('MPKI', fontsize=3 * scale)
 ax.set_xticks(x)
 ax.set_xticklabels(plot_workloads, rotation=90)
 ax.set_xlim(-1.0, n)
@@ -288,9 +285,9 @@ ax.set_xlim(-1.0, n)
 #ax.axhline(y=1.0, color='black', linewidth=0.65, linestyle='--', zorder=5)
 
 
-ax.set_ylim(0,12)
-ax.yaxis.set_major_locator(MultipleLocator(2))
-ax.yaxis.set_minor_locator(MultipleLocator(1))
+ax.set_ylim(0,1)
+ax.yaxis.set_major_locator(MultipleLocator(0.2))
+ax.yaxis.set_minor_locator(MultipleLocator(0.1))
 ax.tick_params(which='minor', length=2, color='black')
 
 # ── Collision-safe annotations for bars exceeding ylim ───────────────────────
@@ -333,7 +330,7 @@ for bar_x, height in overflow_bars:
         
         ha='center',
         va='bottom',
-        fontsize=2.5 * scale,
+        fontsize=2 * scale,
         color='black',
         rotation=90,
         clip_on=False
@@ -341,12 +338,12 @@ for bar_x, height in overflow_bars:
 # ───────────────────────────────────────────────────────────────────────────
 
 ax.legend(
-    loc='lower center', bbox_to_anchor=(0.35, 1.02), ncol=2,
+    loc='lower center', bbox_to_anchor=(0.355, 1.02), ncol=2,
     frameon=True, facecolor='white', edgecolor='black', title_fontsize=3.0 * scale, framealpha=1.0, fancybox=False)
     
 
-out_name = "Bingo+bingo_DRAM_RQ"
-root_dir = "../plots/aiml_bingo/"
+out_name = "TLB_MPKI_48KB"
+root_dir = "../plots/cache_sensitivity/"
 os.makedirs(root_dir, exist_ok=True)
 
 out_png = os.path.join(root_dir, f'{out_name}.png')
