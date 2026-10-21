@@ -465,6 +465,7 @@ void MEMORY_CONTROLLER::process(PACKET_QUEUE *queue)
                 // update data bus cycle time
                 dbus_cycle_available[op_channel] = current_core_cycle[op_cpu] + DRAM_DBUS_RETURN_TIME;
                 queue->entry[request_index].event_cycle = dbus_cycle_available[op_channel]; 
+                queue->entry[request_index].data_fill_level = FILL_DRAM; 
 
                 DP ( if (warmup_complete[op_cpu]) {
                 cout << "[" << queue->NAME << "] " <<  __func__ << " return data" << hex;

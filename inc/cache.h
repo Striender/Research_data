@@ -89,14 +89,15 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 #define L1I_LATENCY 4
 
 // L1 DATA CACHE
-//checking cache sensitivity for AI/ML workloads by reducing L1D size from 48KB to 32KB and 16KB.
-#define L1D_SET 64
+// Cache senstivity original size 48KB:   16KB, 32KB, 64KB, 128KB, 256KB, 512KB 
+
+#define L1D_SET 64     
 #define L1D_WAY 12
 #define L1D_RQ_SIZE 64
 #define L1D_WQ_SIZE 64 
 #define L1D_PQ_SIZE 8     //	Neelu: Changed from 8 to 16. 
 #define L1D_MSHR_SIZE 16  //    Originally 16, 
-#define L1D_LATENCY 5
+#define L1D_LATENCY 5  // Original for 48KB it is 5
 
 // L2 CACHE 
 #define L2C_SET 2 * 1024    //Neeraj: original 2048, 
@@ -168,6 +169,7 @@ class CACHE : public MEMORY {
 	     instr_evicting_instr,
 	     transl_evicting_transl,
 	         average_mshr_load_occupancy,
+             total_active_miss_cycles,
              atleast_miss,
              mshr_accessed, //
              mshr_full_accesses,
@@ -182,10 +184,11 @@ class CACHE : public MEMORY {
     // ----------------------------------------------------
     // L1D ZERO-REUSE ORACLE & HARDWARE BYPASS
     // ----------------------------------------------------
-    #define L1D_BYPASS 1
+    //#define L1D_BYPASS 1
     #define L1D_PRED_TABLE_SIZE 512
     #define L1D_PRED_INDEX_MASK 0x1FF
 
+    
     bool oracle_bypass_enabled;
     std::unordered_set<uint64_t> oracle_zero_reuse_set;
     void load_oracle_zero_reuse_file(const std::string &filename);
@@ -193,13 +196,13 @@ class CACHE : public MEMORY {
     uint8_t l1d_zero_reuse_table[L1D_PRED_TABLE_SIZE];
     uint64_t l1d_bypass_demands;
 
-    // Canary Set Stats for Predictor Accuracy & Precision
-    uint64_t canary_predicted_bypass;
-    uint64_t canary_true_zero_reuse;   // Correctly predicted 0-reuse (True Positive)
-    uint64_t canary_false_zero_reuse;  // Incorrectly predicted 0-reuse, but had reuse (False Positive)
-    uint64_t canary_predicted_keep;
-    uint64_t canary_true_keep;         // Correctly predicted keep, had reuse (True Negative)
-    uint64_t canary_false_keep;        // Incorrectly predicted keep, but had 0-reuse (False Negative)
+    // Bimodal Set Stats for Predictor Accuracy & Precision
+    uint64_t Bimodal_predicted_bypass;
+    uint64_t Bimodal_true_zero_reuse;   // Correctly predicted 0-reuse (True Positive)
+    uint64_t Bimodal_false_zero_reuse;  // Incorrectly predicted 0-reuse, but had reuse (False Positive)
+    uint64_t Bimodal_predicted_keep;
+    uint64_t Bimodal_true_keep;         // Correctly predicted keep, had reuse (True Negative)
+    uint64_t Bimodal_false_keep;        // Incorrectly predicted keep, but had 0-reuse (False Negative)
 
     inline uint32_t get_l1d_pred_index(uint64_t v_addr) {
         uint64_t vpn = v_addr >> LOG2_PAGE_SIZE;
@@ -332,6 +335,7 @@ class CACHE : public MEMORY {
 	instr_evicting_instr = 0;
 	transl_evicting_transl = 0,
 	    average_mshr_load_occupancy = 0;
+        total_active_miss_cycles = 0;
         atleast_miss = 0;
         mshr_accessed = 0;
         mshr_full_accesses = 0;
@@ -359,15 +363,16 @@ class CACHE : public MEMORY {
       for (int i = 0; i < L1D_PRED_TABLE_SIZE; i++) {
           l1d_zero_reuse_table[i] = 0;
       }
+      
       oracle_bypass_enabled = false;
       oracle_zero_reuse_set.clear();
       l1d_bypass_demands = 0;
-      canary_predicted_bypass = 0;
-      canary_true_zero_reuse = 0;
-      canary_false_zero_reuse = 0;
-      canary_predicted_keep = 0;
-      canary_true_keep = 0;
-      canary_false_keep = 0;
+      Bimodal_predicted_bypass = 0;
+      Bimodal_true_zero_reuse = 0;
+      Bimodal_false_zero_reuse = 0;
+      Bimodal_predicted_keep = 0;
+      Bimodal_true_keep = 0;
+      Bimodal_false_keep = 0;
 
     };
 

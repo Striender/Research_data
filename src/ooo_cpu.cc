@@ -6,6 +6,7 @@
 #include <iterator>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
 
 // out-of-order core
 O3_CPU ooo_cpu[NUM_CPUS]; 
@@ -576,6 +577,13 @@ uint32_t O3_CPU::add_to_rob(ooo_model_instr *arch_instr)
 
     ROB.entry[index] = *arch_instr;
     ROB.entry[index].event_cycle = current_core_cycle[cpu];
+    if (ROB.occupancy == 0)
+        ROB.entry[index].head_entry_cycle = current_core_cycle[cpu];
+    else
+        ROB.entry[index].head_entry_cycle = 0;
+    ROB.entry[index].head_stall_cycles = 0;
+    ROB.entry[index].head_translation_cycles = 0;
+    ROB.entry[index].completed_fill_level = 0;
 
     ROB.occupancy++;
     ROB.tail++;
@@ -1656,6 +1664,8 @@ void O3_CPU::add_load_queue(uint32_t rob_index, uint32_t data_index)
             uint32_t fwr_rob_index = LQ.entry[lq_index].rob_index;
             ROB.entry[fwr_rob_index].num_mem_ops--;
             ROB.entry[fwr_rob_index].event_cycle = current_core_cycle[cpu];
+            if (FILL_L1 > ROB.entry[fwr_rob_index].completed_fill_level)
+                ROB.entry[fwr_rob_index].completed_fill_level = FILL_L1;
             if (ROB.entry[fwr_rob_index].num_mem_ops < 0) {
                 cerr << "instr_id: " << ROB.entry[fwr_rob_index].instr_id << endl;
                 assert(0);
@@ -2062,6 +2072,8 @@ void O3_CPU::execute_store(uint32_t rob_index, uint32_t sq_index, uint32_t data_
                         uint32_t fwr_rob_index = LQ.entry[lq_index].rob_index;
                         ROB.entry[fwr_rob_index].num_mem_ops--;
                         ROB.entry[fwr_rob_index].event_cycle = current_core_cycle[cpu];
+                        if (FILL_L1 > ROB.entry[fwr_rob_index].completed_fill_level)
+                            ROB.entry[fwr_rob_index].completed_fill_level = FILL_L1;
 #ifdef SANITY_CHECK
                         if (ROB.entry[fwr_rob_index].num_mem_ops < 0) {
                             cerr << "instr_id: " << ROB.entry[fwr_rob_index].instr_id << endl;
@@ -2473,6 +2485,8 @@ void O3_CPU::complete_data_fetch(PACKET_QUEUE *queue, uint8_t is_it_tlb)
             LQ.entry[lq_index].event_cycle = current_core_cycle[cpu];
             ROB.entry[rob_index].num_mem_ops--;
             ROB.entry[rob_index].event_cycle = queue->entry[index].event_cycle;
+            if (queue->entry[index].data_fill_level > ROB.entry[rob_index].completed_fill_level)
+                ROB.entry[rob_index].completed_fill_level = queue->entry[index].data_fill_level;
 
 #ifdef SANITY_CHECK
             if (ROB.entry[rob_index].num_mem_ops < 0) {
@@ -2650,6 +2664,8 @@ void O3_CPU::handle_merged_load(PACKET *provider)
      
 	ROB.entry[merged_rob_index].num_mem_ops--;
         ROB.entry[merged_rob_index].event_cycle = current_core_cycle[cpu];
+        if (provider->data_fill_level > ROB.entry[merged_rob_index].completed_fill_level)
+            ROB.entry[merged_rob_index].completed_fill_level = provider->data_fill_level;
 
 #ifdef SANITY_CHECK
         if (ROB.entry[merged_rob_index].num_mem_ops < 0) {
@@ -2686,18 +2702,20 @@ void O3_CPU::release_load_queue(uint32_t lq_index)
 
 void O3_CPU::retire_rob()
 {
+    uint32_t retired_this_cycle = 0;
+    uint8_t sq_blocked = 0;
+
     for (uint32_t n=0; n<RETIRE_WIDTH; n++) {
         if (ROB.entry[ROB.head].ip == 0) 
-            return;
-        
-
+            break;
 
         // retire is in-order
         if (ROB.entry[ROB.head].executed != COMPLETED) { 
+            break;
+        }
 
-            //DP ( if (warmup_complete[cpu]) {
-            //cout << "[ROB] " << __func__ << " instr_id: " << ROB.entry[ROB.head].instr_id << " head: " << ROB.head << " is not executed yet" << endl; });
-            return;
+        if (ROB.entry[ROB.head].event_cycle > current_core_cycle[cpu]) {
+            break;
         }
 
         // check store instruction
@@ -2724,9 +2742,6 @@ void O3_CPU::retire_rob()
                         data_packet.sq_index = sq_index;
 
                         //@Vishal: VIPT, send virtual address
-                        //data_packet.address = SQ.entry[sq_index].physical_address >> LOG2_BLOCK_SIZE;
-                        //data_packet.full_addr = SQ.entry[sq_index].physical_address;
-
                         data_packet.address = SQ.entry[sq_index].virtual_address >> LOG2_BLOCK_SIZE;
                         data_packet.full_addr = SQ.entry[sq_index].virtual_address;
 			data_packet.full_virtual_address = SQ.entry[sq_index].virtual_address;
@@ -2739,8 +2754,6 @@ void O3_CPU::retire_rob()
                         data_packet.asid[1] = SQ.entry[sq_index].asid[1];
                         data_packet.event_cycle = current_core_cycle[cpu];
 
-			
-
                         L1D.add_wq(&data_packet);
 
 			sim_store_sent++;
@@ -2748,13 +2761,84 @@ void O3_CPU::retire_rob()
                 }
             }
             else {
-                //DP ( if (warmup_complete[cpu]) {
-                //cout << "[ROB] " << __func__ << " instr_id: " << ROB.entry[ROB.head].instr_id << " L1D WQ is full" << endl; });
-
                 L1D.WQ.FULL++;
                 L1D.STALL[RFO]++;
+                sq_blocked = 1;
+                break;
+            }
+        }
 
-                return;
+        // Attribute head-of-ROB cycles accumulated by this instruction
+        if (warmup_complete[cpu]) {
+            uint64_t stalls = ROB.entry[ROB.head].head_stall_cycles;
+            if (stalls > 0) {
+                bool is_load = false;
+                for (uint32_t j = 0; j < NUM_INSTR_SOURCES; j++) {
+                    if (ROB.entry[ROB.head].source_memory[j]) {
+                        is_load = true;
+                        break;
+                    }
+                }
+                bool is_store = false;
+                for (uint32_t j = 0; j < MAX_INSTR_DESTINATIONS; j++) {
+                    if (ROB.entry[ROB.head].destination_memory[j]) {
+                        is_store = true;
+                        break;
+                    }
+                }
+
+                if (is_load) {
+                    uint64_t trans_cycles = ROB.entry[ROB.head].head_translation_cycles;
+                    if (trans_cycles > stalls)
+                        trans_cycles = stalls;
+                    rob_cycle_translation += trans_cycles;
+                    uint64_t remaining_cycles = stalls - trans_cycles;
+
+                    if (remaining_cycles > 0) {
+                        // 1. Up to 5 cycles for L1D baseline access latency
+                        uint64_t l1_part = std::min(remaining_cycles, (uint64_t)5);
+                        rob_stall_load_l1 += l1_part;
+                        remaining_cycles -= l1_part;
+
+                        // 2. Next up to 15 cycles (5 to 20) for L2C latency delta
+                        if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level >= FILL_L2) {
+                            uint64_t l2_part = std::min(remaining_cycles, (uint64_t)15);
+                            rob_stall_load_l2 += l2_part;
+                            remaining_cycles -= l2_part;
+                        }
+
+                        // 3. Next up to 45 cycles (20 to 65) for LLC latency delta
+                        if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level >= FILL_LLC) {
+                            uint64_t llc_part = std::min(remaining_cycles, (uint64_t)45);
+                            rob_stall_load_llc += llc_part;
+                            remaining_cycles -= llc_part;
+                        }
+
+                        // 4. Next up to 140 cycles (65 to 205) for off-chip DRAM latency delta
+                        if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level == FILL_DRAM) {
+                            uint64_t dram_part = std::min(remaining_cycles, (uint64_t)140);
+                            rob_stall_load_dram += dram_part;
+                            remaining_cycles -= dram_part;
+                        }
+
+                        // 5. Any excess cycles beyond nominal latency: dynamic MSHR/port/queue contention
+                        if (remaining_cycles > 0) {
+                            rob_cycle_mem_contention += remaining_cycles;
+                        }
+                    }
+                }
+                else if (is_store) {
+                    rob_cycle_store_commit += stalls;
+                }
+                else if (ROB.entry[ROB.head].is_branch) {
+                    rob_stall_branch += stalls;
+                }
+                else if (ROB.entry[ROB.head].num_reg_dependent > 0 || ROB.entry[ROB.head].reg_RAW_producer) {
+                    rob_stall_raw_dep += stalls;
+                }
+                else {
+                    rob_stall_compute += stalls;
+                }
             }
         }
 
@@ -2762,11 +2846,6 @@ void O3_CPU::retire_rob()
         for (uint32_t i=0; i<MAX_INSTR_DESTINATIONS; i++) {
             if (ROB.entry[ROB.head].sq_index[i] != UINT32_MAX) {
                 uint32_t sq_index = ROB.entry[ROB.head].sq_index[i];
-
-                //DP ( if (warmup_complete[cpu]) {
-                //cout << "[SQ] " << __func__ << " instr_id: " << ROB.entry[ROB.head].instr_id << " releases sq_index: " << sq_index;
-                //cout << hex << " address: " << (SQ.entry[sq_index].physical_address>>LOG2_BLOCK_SIZE);
-                //cout << " full_addr: " << SQ.entry[sq_index].physical_address << dec << endl; });
 
                 LSQ_ENTRY empty_entry;
                 SQ.entry[sq_index] = empty_entry;
@@ -2779,10 +2858,6 @@ void O3_CPU::retire_rob()
         }
 
         // release ROB entry
-        //DP ( if (warmup_complete[cpu]) {
-        //cout << "[ROB] " << __func__ << " instr_id: " << ROB.entry[ROB.head].instr_id << " is retired" << endl; });
-
-
         ooo_model_instr empty_entry;
         ROB.entry[ROB.head] = empty_entry;
 
@@ -2792,12 +2867,172 @@ void O3_CPU::retire_rob()
         ROB.occupancy--;
         completed_executions--;
         num_retired++;
+        retired_this_cycle++;
+    }
 
-        
+    if (warmup_complete[cpu]) {
+        if (retired_this_cycle > 0) {
+            rob_retire_cycles++;
+        }
+        else {
+            total_rob_stall_cycles++;
+            if (ROB.occupancy == 0 || ROB.entry[ROB.head].ip == 0) {
+                rob_empty_cycles++;
+            }
+            else if (sq_blocked) {
+                rob_stall_sq_full++;
+            }
+            else {
+                ROB.entry[ROB.head].head_stall_cycles++;
+
+                // Track address translation delay if ROB head load is awaiting TLB/PTW translation
+                bool waiting_translation = false;
+                for (uint32_t j = 0; j < NUM_INSTR_SOURCES; j++) {
+                    if (ROB.entry[ROB.head].source_memory[j]) {
+                        uint32_t lq_idx = ROB.entry[ROB.head].lq_index[j];
+                        if (lq_idx < LQ.SIZE && LQ.entry[lq_idx].translated != COMPLETED) {
+                            waiting_translation = true;
+                            break;
+                        }
+                    }
+                }
+                if (waiting_translation) {
+                    ROB.entry[ROB.head].head_translation_cycles++;
+                }
+            }
+        }
     }
 }
 
 void O3_CPU::core_final_stats()
 {
+    // If the simulation ended with an instruction stalled at head of ROB, attribute its remaining cycles:
+    if (ROB.occupancy > 0 && ROB.entry[ROB.head].ip != 0 && ROB.entry[ROB.head].head_stall_cycles > 0) {
+        uint64_t stalls = ROB.entry[ROB.head].head_stall_cycles;
+        bool is_load = false;
+        for (uint32_t j = 0; j < NUM_INSTR_SOURCES; j++) {
+            if (ROB.entry[ROB.head].source_memory[j]) {
+                is_load = true;
+                break;
+            }
+        }
+        bool is_store = false;
+        for (uint32_t j = 0; j < MAX_INSTR_DESTINATIONS; j++) {
+            if (ROB.entry[ROB.head].destination_memory[j]) {
+                is_store = true;
+                break;
+            }
+        }
 
+        if (is_load) {
+            uint64_t trans_cycles = ROB.entry[ROB.head].head_translation_cycles;
+            if (trans_cycles > stalls)
+                trans_cycles = stalls;
+            rob_cycle_translation += trans_cycles;
+            uint64_t remaining_cycles = stalls - trans_cycles;
+
+            if (remaining_cycles > 0) {
+                // 1. Up to 5 cycles for L1D baseline access latency
+                uint64_t l1_part = std::min(remaining_cycles, (uint64_t)5);
+                rob_stall_load_l1 += l1_part;
+                remaining_cycles -= l1_part;
+
+                // 2. Next up to 15 cycles (5 to 20) for L2C latency delta
+                if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level >= FILL_L2) {
+                    uint64_t l2_part = std::min(remaining_cycles, (uint64_t)15);
+                    rob_stall_load_l2 += l2_part;
+                    remaining_cycles -= l2_part;
+                }
+
+                // 3. Next up to 45 cycles (20 to 65) for LLC latency delta
+                if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level >= FILL_LLC) {
+                    uint64_t llc_part = std::min(remaining_cycles, (uint64_t)45);
+                    rob_stall_load_llc += llc_part;
+                    remaining_cycles -= llc_part;
+                }
+
+                // 4. Next up to 140 cycles (65 to 205) for off-chip DRAM latency delta
+                if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level == FILL_DRAM) {
+                    uint64_t dram_part = std::min(remaining_cycles, (uint64_t)140);
+                    rob_stall_load_dram += dram_part;
+                    remaining_cycles -= dram_part;
+                }
+
+                // 5. Any excess cycles beyond nominal latency: dynamic MSHR/port/queue contention
+                if (remaining_cycles > 0) {
+                    rob_cycle_mem_contention += remaining_cycles;
+                }
+            }
+        }
+        else if (is_store) {
+            rob_cycle_store_commit += stalls;
+        }
+        else if (ROB.entry[ROB.head].is_branch) {
+            rob_stall_branch += stalls;
+        }
+        else if (ROB.entry[ROB.head].num_reg_dependent > 0 || ROB.entry[ROB.head].reg_RAW_producer) {
+            rob_stall_raw_dep += stalls;
+        }
+        else {
+            rob_stall_compute += stalls;
+        }
+        ROB.entry[ROB.head].head_stall_cycles = 0;
+    }
+
+    uint64_t total_sim_inst = (num_retired > begin_sim_instr) ? (num_retired - begin_sim_instr) : num_retired;
+    uint64_t total_sim_cyc = (current_core_cycle[cpu] > begin_sim_cycle) ? (current_core_cycle[cpu] - begin_sim_cycle) : current_core_cycle[cpu];
+    if (total_sim_cyc == 0) total_sim_cyc = 1;
+    if (total_sim_inst == 0) total_sim_inst = 1;
+
+    double cpi = (double)total_sim_cyc / (double)total_sim_inst;
+    double ipc = (double)total_sim_inst / (double)total_sim_cyc;
+
+    auto print_line = [&](const char* name, uint64_t cycles) {
+        double pct = (double)cycles * 100.0 / (double)total_sim_cyc;
+        double cpi_contrib = (double)cycles / (double)total_sim_inst;
+        cout << left << setw(32) << name << " : "
+             << right << setw(14) << cycles << "  "
+             << setw(8) << fixed << setprecision(2) << pct << "%  "
+             << setw(10) << fixed << setprecision(4) << cpi_contrib << endl;
+    };
+
+    cout << endl;
+    cout << "================================================================================" << endl;
+    cout << "CPU " << cpu << " HEAD-OF-ROB CYCLE / CPI STACK BREAKDOWN" << endl;
+    cout << "================================================================================" << endl;
+    cout << "Simulated Instructions : " << total_sim_inst << endl;
+    cout << "Simulated Cycles       : " << total_sim_cyc << endl;
+    cout << "Base CPI / IPC         : " << fixed << setprecision(4) << cpi << " / " << fixed << setprecision(4) << ipc << endl;
+    cout << "--------------------------------------------------------------------------------" << endl;
+    cout << left << setw(32) << "Category" << " : "
+         << right << setw(14) << "Cycles" << "  "
+         << setw(9) << "% Cycles" << "  "
+         << setw(10) << "CPI Contrib" << endl;
+    cout << "--------------------------------------------------------------------------------" << endl;
+
+    print_line("Active Retirement Cycles", rob_retire_cycles);
+    print_line("ROB Empty (Frontend/Fetch)", rob_empty_cycles);
+    print_line("Load Access - L1D (Base)", rob_stall_load_l1);
+    print_line("Load Serving - L2C (Delta)", rob_stall_load_l2);
+    print_line("Load Serving - LLC (Delta)", rob_stall_load_llc);
+    print_line("Load Serving - DRAM (Delta)", rob_stall_load_dram);
+    print_line("Memory Queue / Port Contention", rob_cycle_mem_contention);
+    print_line("Address Translation (TLB/PTW)", rob_cycle_translation);
+    print_line("Store Commit Wait", rob_cycle_store_commit);
+    print_line("Store Queue Full (L1D WQ)", rob_stall_sq_full);
+    print_line("RAW Dependency Wait", rob_stall_raw_dep);
+    print_line("Compute / Exec Latency", rob_stall_compute);
+    print_line("Branch Resolution Wait", rob_stall_branch);
+    if (rob_stall_load_other > 0)
+        print_line("Other Memory Delays", rob_stall_load_other);
+    if (rob_stall_other > 0)
+        print_line("Other Wait Cycles", rob_stall_other);
+
+    cout << "--------------------------------------------------------------------------------" << endl;
+    print_line("Total Non-Retiring Cycles", total_rob_stall_cycles);
+    uint64_t total_accounted = rob_retire_cycles + total_rob_stall_cycles;
+    print_line("Total Accounted Cycles", total_accounted);
+    cout << "================================================================================" << endl;
+    cout << endl;
+    cout << endl;
 }

@@ -111,10 +111,14 @@ class ooo_model_instr {
              event_cycle,
 	     stall_begin_cycle,	//Neelu: Adding to count number of stall cycles in ROB
 	     load_stall_begin_cycle,
-	     stall_begin_rob_occupancy;	//Neelu: Adding to capture ROB occupancy at stall start.
+	     stall_begin_rob_occupancy,	//Neelu: Adding to capture ROB occupancy at stall start.
+	     head_entry_cycle,
+	     head_stall_cycles,
+	     head_translation_cycles;
 
     uint8_t is_branch,
             is_memory,
+            completed_fill_level,
             branch_taken,
             branch_mispredicted,
 	    branch_prediction_made,
@@ -192,6 +196,10 @@ class ooo_model_instr {
 	load_stall_flag = 0;
 	stall_flag = 0;
 	retire_window_fellow_is_trouble = 0;
+	head_entry_cycle = 0;
+	head_stall_cycles = 0;
+	head_translation_cycles = 0;
+	completed_fill_level = 0;
 
         is_branch = 0;
         is_memory = 0;
