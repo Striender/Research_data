@@ -21,11 +21,11 @@ except ImportError:
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-DEFAULT_RESULTS_DIR = PROJECT_ROOT / "results_bingo/cache_seni_test1/"
+DEFAULT_RESULTS_DIR = PROJECT_ROOT / "results_bingo/removing_llc/"
 DEFAULT_OUTPUT_FILE = (
     PROJECT_ROOT
     / "Excel_Output"
-    / "Cache_sensi_test2"
+    / "removing_llc"
     / "average_mshr_load_occupancy.xlsx"
 )
 

@@ -20,7 +20,7 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_RESULTS_DIR = os.path.normpath(
-    os.path.join(SCRIPT_DIR, "..", "results_bingo/cache_seni_test1/")
+    os.path.join(SCRIPT_DIR, "..", "results_bingo/removing_llc/")
 )
 
 DEFAULT_OUTPUT_FILE = os.path.normpath(
@@ -28,7 +28,7 @@ DEFAULT_OUTPUT_FILE = os.path.normpath(
         SCRIPT_DIR,
         "..",
         "Excel_Output",
-        "Cache_sensi_test2",
+        "removing_llc",
         "Average_load_miss_latency.xlsx",
     )
 )

@@ -3,7 +3,6 @@ import numpy as np
 import os
 # SPEC Workloads (41 items + Average)
 workloads = [
-   
     "bark.coarse_token_gen.1",
     "bark.coarse_token_gen.2",
     "bark.coarse_token_gen.3",
@@ -20,13 +19,6 @@ workloads = [
     "clip_trace_4",
     "clip_trace_5",
     "llama2.c-llama2_7b.1",
-    "llama2.c-llama2_7b.10",
-    "llama2.c-llama2_7b.11",
-    "llama2.c-llama2_7b.12",
-    "llama2.c-llama2_7b.13",
-    "llama2.c-llama2_7b.14",
-    "llama2.c-llama2_7b.15",
-    "llama2.c-llama2_7b.16",
     "llama2.c-llama2_7b.2",
     "llama2.c-llama2_7b.3",
     "llama2.c-llama2_7b.4",
@@ -34,15 +26,22 @@ workloads = [
     "llama2.c-llama2_7b.7",
     "llama2.c-llama2_7b.8",
     "llama2.c-llama2_7b.9",
-    "llama2.c-stories110M.1",
-    "llama2.c-stories110M.2",
-    "llama2.c-stories110M.3",
+    "llama2.c-llama2_7b.10",
+    "llama2.c-llama2_7b.11",
+    "llama2.c-llama2_7b.12",
+    "llama2.c-llama2_7b.13",
+    "llama2.c-llama2_7b.14",
+    "llama2.c-llama2_7b.15",
+    "llama2.c-llama2_7b.16",
     "llama2.c-stories15M.1",
     "llama2.c-stories15M.2",
     "llama2.c-stories15M.3",
     "llama2.c-stories42M.1",
     "llama2.c-stories42M.2",
     "llama2.c-stories42M.3",
+    "llama2.c-stories110M.1",
+    "llama2.c-stories110M.2",
+    "llama2.c-stories110M.3",
     "sd.cpp-sd-v1-4.ckpt.1",
     "sd.cpp-sd-v1-4.ckpt.2",
     "sd.cpp-sd-v1-4.ckpt.3",
@@ -72,78 +71,79 @@ workloads = [
     "whisper_trace_6",
     "whisper_trace_7",
     "whisper_trace_8",
-        "Average"
+        "Geomean"
 ]
 
-data = [58.2288,
-86.5596,
-67.8362,
-85.7148,
-7.2964,
-84.2720,
-65.2575,
-7.9319,
-6.1437,
-7.3245,
-72.2353,
-80.1704,
-67.9678,
-62.0534,
-77.0810,
-92.8313,
-91.5673,
-90.8235,
-91.4334,
-91.1985,
-92.9259,
-90.7676,
-90.8649,
-90.8404,
-92.9566,
-91.4032,
-92.8483,
-91.4245,
-90.7104,
-92.4723,
-93.3932,
-93.2588,
-93.4453,
-93.3363,
-93.2437,
-93.2566,
-93.1621,
-93.1798,
-93.0766,
-91.1115,
-91.9539,
-90.0344,
-90.2867,
-81.5035,
-90.3033,
-91.5684,
-77.4463,
-91.5852,
-90.0568,
-74.3207,
-89.3982,
-91.6189,
-81.9379,
-90.6957,
-88.3650,
-67.4534,
-87.7802,
-75.3536,
-72.6327,
-74.5177,
-56.1640,
-56.7674,
-55.6202,
-74.3053,
-77.5618,
-79.6402,
-73.1138,
-65.6445,
-78.95933824
+data = [
+    1.025142921,
+1.010058164,
+1.024061634,
+1.03477979,
+1.039778979,
+1.031110606,
+1.033831393,
+1.08688761,
+1.060767134,
+1.034589615,
+1.026019813,
+0.9971266816,
+1.026219986,
+1.009575487,
+1.005962032,
+1.008552187,
+1.010966692,
+1.048215521,
+1.041203823,
+1.099424009,
+0.9830139917,
+1.039126798,
+1.058845541,
+1.020951869,
+0.9781638662,
+1.046569094,
+0.9820166773,
+1.06340031,
+1.034835867,
+1.01193091,
+0.9221892933,
+0.9278713152,
+0.9274627512,
+0.9138620909,
+0.9185220877,
+0.9189343371,
+1.039659322,
+1.042172077,
+1.022184801,
+1.036790685,
+1.02574985,
+0.9998499028,
+1.061600156,
+1.082551769,
+0.9989244501,
+1.006159084,
+1.040253022,
+1.026112735,
+0.9987922002,
+1.007388905,
+1.023476964,
+1.022527973,
+1.056543039,
+1.020132287,
+1.008442202,
+0.9912725816,
+1.0252517,
+1.017995341,
+0.9744674943,
+1.02243685,
+1.027449805,
+1.029018602,
+1.031169812,
+1.040186923,
+1.031091596,
+1.002833538,
+1.039498589,
+0.9903850887,
+1.01609431
 ]
 
 # Calculate arithmetic average
@@ -197,24 +197,24 @@ colors_list = ["#8C9EBC"] * (len(workloads) - 1) + ['#262f40']   #86A4DA (GOOD C
 rects = ax.bar(x_indices, data, width, color=colors_list, edgecolor='black', linewidth=0.5)
 
 # Labeling and details
-ax.set_ylabel('L1D Prefetcher \nAccuracy (%)', fontsize=4.0 * scale)
+ax.set_ylabel('Speedup', fontsize=4.0 * scale)
 #ax.set_xlabel('SPEC Workload')  
 ax.set_xticks(x_indices)
 ax.set_xticklabels(workloads, rotation=90)
 
 
 # Baseline reference line at y = 1.0
-#ax.axhline(y=1.0, color='black', linewidth=0.65, linestyle='--', zorder=5)
+ax.axhline(y=1.0, color='black', linewidth=0.65, linestyle='--', zorder=5)
 
 # Adjust limits (set y limit to 100 as requested)
-ylim_max = 100
+ylim_max = 1.2
 ax.set_xlim(-1.0, len(workloads))
-ax.set_ylim(0,ylim_max)
+ax.set_ylim(0.8,ylim_max)
 
 # Set y-axis ticks (major ticks every 10, minor ticks every 2)
 from matplotlib.ticker import MultipleLocator
-ax.yaxis.set_major_locator(MultipleLocator(20))
-ax.yaxis.set_minor_locator(MultipleLocator(10))
+ax.yaxis.set_major_locator(MultipleLocator(0.1))
+ax.yaxis.set_minor_locator(MultipleLocator(0.05))
 ax.tick_params(which='minor', length=2, color='black')
 
 # Annotate bars that exceed the y-limit of 100 using arrows with 90-degree rotated labels
@@ -235,11 +235,11 @@ for rect in rects:
             color='black',
             rotation=90
         )
-out_name = 'Bingo_prefetch_accuracy'
-sample_dir = "../plots/aiml_bingo/"
+out_name = 'Speedup_48KB_L1D_without_LLC_over_48KB_L1D_with_LLC'
+sample_dir = "../plots/cache_sensitivity/without_llc/"
 os.makedirs(sample_dir, exist_ok=True)
 
-plt.savefig(os.path.join(sample_dir, f'{out_name}.svg'), bbox_inches='tight')
+#plt.savefig(os.path.join(sample_dir, f'{out_name}.svg'), bbox_inches='tight')
 plt.savefig(os.path.join(sample_dir, f'{out_name}.png'), bbox_inches='tight')
 #plt.savefig(os.path.join(sample_dir, f'{out_name}.pdf'), bbox_inches='tight')
 plt.close()

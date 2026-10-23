@@ -116,8 +116,8 @@ def main():
     formatted Excel file with multiple sheets, preserving user-added sheets.
     """
     # --- CONFIGURATION ---
-    RESULTS_DIR = "../results_bingo/cache_seni_test1/"
-    OUTPUT_DIR = "../Excel_Output/Cache_sensi_test2/"
+    RESULTS_DIR = "../results_bingo/removing_llc/"
+    OUTPUT_DIR = "../Excel_Output/removing_llc/"
     EXCEL_OUTPUT_FILE = "Load_MPKI.xlsx"
     PROCESSED_LOG_FILE = os.path.join(OUTPUT_DIR, ".processed_files.log")
     DATA_CACHE_FILE = os.path.join(OUTPUT_DIR, ".data_cache.json")
