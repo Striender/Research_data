@@ -715,7 +715,7 @@ int MEMORY_CONTROLLER::add_wq(PACKET *packet)
 
 int MEMORY_CONTROLLER::add_pq(PACKET *packet)
 {
-    return -1;
+    return add_rq(packet);
 }
 
 void MEMORY_CONTROLLER::return_data(PACKET *packet)

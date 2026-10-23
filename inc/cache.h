@@ -91,8 +91,8 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 // L1 DATA CACHE
 // Cache senstivity original size 48KB:   16KB, 32KB, 64KB, 128KB, 256KB, 512KB 
 
-#define L1D_SET 64     
-#define L1D_WAY 12
+#define L1D_SET 32   
+#define L1D_WAY 2
 #define L1D_RQ_SIZE 64
 #define L1D_WQ_SIZE 64 
 #define L1D_PQ_SIZE 8     //	Neelu: Changed from 8 to 16. 

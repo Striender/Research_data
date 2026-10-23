@@ -2807,12 +2807,14 @@ void O3_CPU::retire_rob()
                             remaining_cycles -= l2_part;
                         }
 
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
                         // 3. Next up to 45 cycles (20 to 65) for LLC latency delta
                         if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level >= FILL_LLC) {
                             uint64_t llc_part = std::min(remaining_cycles, (uint64_t)45);
                             rob_stall_load_llc += llc_part;
                             remaining_cycles -= llc_part;
                         }
+#endif
 
                         // 4. Next up to 140 cycles (65 to 205) for off-chip DRAM latency delta
                         if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level == FILL_DRAM) {
@@ -2944,12 +2946,14 @@ void O3_CPU::core_final_stats()
                     remaining_cycles -= l2_part;
                 }
 
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
                 // 3. Next up to 45 cycles (20 to 65) for LLC latency delta
                 if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level >= FILL_LLC) {
                     uint64_t llc_part = std::min(remaining_cycles, (uint64_t)45);
                     rob_stall_load_llc += llc_part;
                     remaining_cycles -= llc_part;
                 }
+#endif
 
                 // 4. Next up to 140 cycles (65 to 205) for off-chip DRAM latency delta
                 if (remaining_cycles > 0 && ROB.entry[ROB.head].completed_fill_level == FILL_DRAM) {

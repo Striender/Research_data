@@ -26,7 +26,7 @@ fi
 ###############################################################################
 TRACE_DIR=/home/sweta/traces/AI_ML/
 
-RESULT_ROOT=results_bingo/cache_seni_test1/32KB_latency_4
+RESULT_ROOT=results_bingo/removing_llc/2KB
 
 BIN_DIR=bin
 

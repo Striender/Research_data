@@ -2023,6 +2023,25 @@ void CACHE::handle_read()
                     if (cache_type == IS_STLB && MSHR.entry[mshr_index].type == TRANSLATION_FROM_L1D)
                         pf_lower_level++;
 
+#if (defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1))
+                    if (cache_type == IS_L2C)
+                    {
+                        // check to make sure the DRAM RQ has room for this L2C read miss
+                        if (lower_level->get_occupancy(1, RQ.entry[index].address) == lower_level->get_size(1, RQ.entry[index].address))
+                        {
+                            miss_handled = 0;
+                        }
+                        else
+                        {
+                            add_nonfifo_queue(&MSHR, &RQ.entry[index]);
+                            if (lower_level)
+                            {
+                                lower_level->add_rq(&RQ.entry[index]);
+                            }
+                        }
+                    }
+                    else
+#else
                     if (cache_type == IS_LLC)
                     {
                         // check to make sure the DRAM RQ has room for this LLC read miss
@@ -2041,6 +2060,7 @@ void CACHE::handle_read()
                         }
                     }
                     else
+#endif
                     {
 
                         if (cache_type == IS_L1I || cache_type == IS_L1D) //@Vishal: VIPT
@@ -2765,6 +2785,22 @@ void CACHE::handle_prefetch()
                     // this is possible since multiple prefetchers can exist at each level of caches
                     if (lower_level)
                     {
+#if (defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1))
+                        if (cache_type == IS_L2C)
+                        {
+                            if (lower_level->get_occupancy(1, PQ.entry[index].address) == lower_level->get_size(1, PQ.entry[index].address))
+                                miss_handled = 0;
+                            else
+                            {
+                                // add it to MSHRs if this prefetch miss will be filled to this cache level
+                                if (PQ.entry[index].fill_level <= fill_level)
+                                    add_nonfifo_queue(&MSHR, &PQ.entry[index]);
+
+                                lower_level->add_rq(&PQ.entry[index]); // add it to the DRAM RQ
+                            }
+                        }
+                        else
+#else
                         if (cache_type == IS_LLC)
                         {
                             if (lower_level->get_occupancy(1, PQ.entry[index].address) == lower_level->get_size(1, PQ.entry[index].address))
@@ -2793,6 +2829,7 @@ void CACHE::handle_prefetch()
                             }
                         }
                         else
+#endif
                         {
                             if (lower_level->get_occupancy(3, PQ.entry[index].address) == lower_level->get_size(3, PQ.entry[index].address))
                                 miss_handled = 0;

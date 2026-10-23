@@ -1054,7 +1054,9 @@ uint64_t va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_
                 ooo_cpu[cpu].L1I.invalidate_entry(cl_addr);
                 ooo_cpu[cpu].L1D.invalidate_entry(cl_addr);
                 ooo_cpu[cpu].L2C.invalidate_entry(cl_addr);
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
                 uncore.LLC.invalidate_entry(cl_addr);
+#endif
             }
 
             // swap complete
@@ -1298,11 +1300,19 @@ int main(int argc, char** argv)
     cout << "Warmup Instructions: " << warmup_instructions << endl;
     cout << "Simulation Instructions: " << simulation_instructions << endl;
     //cout << "Scramble Loads: " << (knob_scramble_loads ? "ture" : "false") << endl;
+    cout << "======================================================================" << endl;
     cout << "Number of CPUs: " << NUM_CPUS << endl;
     cout << "L1d Size: " << L1D_SET * L1D_WAY * BLOCK_SIZE / 1024 << " KB" << "     L1D Latency: "<< L1D_LATENCY <<endl;
+    cout << "L1d sets: " << L1D_SET << endl;
+    cout << "L1d ways: " << L1D_WAY << endl;
+    cout << "L1d block size: " << BLOCK_SIZE << endl << endl ;
     cout << "LLC sets: " << LLC_SET << endl;
     cout << "LLC ways: " << LLC_WAY << endl;
-    
+    cout << "LLC block size: " << BLOCK_SIZE << endl;
+    cout << "LLC Latency: " << LLC_LATENCY << endl;
+    cout << "LLC Removed: " << (REMOVE_LLC ? "true" : "false") << endl;
+    cout << "======================================================================" << endl << endl;
+
 #ifdef CAPTURE_DYNAMIC_ENERGY_PROFILE
     cout << "PHASE_SIZE_IN_CYCLES: " << PHASE_SIZE_IN_CYCLES << endl;
 #endif
@@ -1622,7 +1632,11 @@ int main(int argc, char** argv)
         ooo_cpu[i].L2C.fill_level = FILL_L2;
         ooo_cpu[i].L2C.upper_level_icache[i] = &ooo_cpu[i].L1I;
         ooo_cpu[i].L2C.upper_level_dcache[i] = &ooo_cpu[i].L1D;
+#if (defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1))
+        ooo_cpu[i].L2C.lower_level = &uncore.DRAM;
+#else
         ooo_cpu[i].L2C.lower_level = &uncore.LLC;
+#endif
 	ooo_cpu[i].L2C.extra_interface = &ooo_cpu[i].PTW;
         ooo_cpu[i].L2C.l2c_prefetcher_initialize();
 
@@ -1632,7 +1646,7 @@ int main(int argc, char** argv)
 	ooo_cpu[i].L2C.replacement_final_stats = &CACHE::l2c_replacement_final_stats;
 	(ooo_cpu[i].L2C.*(ooo_cpu[i].L2C.initialize_replacement))();
 
-
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
         // SHARED CACHE
         uncore.LLC.cache_type = IS_LLC;
         uncore.LLC.fill_level = FILL_LLC;
@@ -1646,13 +1660,17 @@ int main(int argc, char** argv)
 	uncore.LLC.find_victim = &CACHE::llc_find_victim;
 	uncore.LLC.replacement_final_stats = &CACHE::llc_replacement_final_stats;
 	(uncore.LLC.*(uncore.LLC.initialize_replacement))();
-
-
+#endif
 
         // OFF-CHIP DRAM
         uncore.DRAM.fill_level = FILL_DRAM;
+#if (defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1))
+        uncore.DRAM.upper_level_icache[i] = &ooo_cpu[i].L2C;
+        uncore.DRAM.upper_level_dcache[i] = &ooo_cpu[i].L2C;
+#else
         uncore.DRAM.upper_level_icache[i] = &uncore.LLC;
         uncore.DRAM.upper_level_dcache[i] = &uncore.LLC;
+#endif
         for (uint32_t i=0; i<DRAM_CHANNELS; i++) {
             uncore.DRAM.RQ[i].is_RQ = 1;
             uncore.DRAM.WQ[i].is_WQ = 1;
@@ -1673,7 +1691,9 @@ int main(int argc, char** argv)
         major_fault[i] = 0;
     }
 
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
     uncore.LLC.llc_prefetcher_initialize();
+#endif
 
     // simulation entry point
     start_time = time(NULL);
@@ -2017,7 +2037,9 @@ int main(int argc, char** argv)
        	}
 
         // TODO: should it be backward?
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
         uncore.LLC.operate();
+#endif
         uncore.DRAM.operate();
     }
 
@@ -2061,7 +2083,9 @@ int main(int argc, char** argv)
 	    ooo_cpu[i].L2C.l2c_replacement_final_stats();
 	    ooo_cpu[i].STLB.stlb_prefetcher_final_stats();
 #endif
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
             print_sim_stats(i, &uncore.LLC);
+#endif
 	    
 	    //@Vishal: print stats
 	    cout<<endl;
@@ -2071,7 +2095,9 @@ int main(int argc, char** argv)
 	    cout<<"Stores Generated: "<<ooo_cpu[i].sim_store_gen<<endl;
             cout<<"Stores sent to L1D: "<<ooo_cpu[i].sim_store_sent<<endl;
         }
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
         uncore.LLC.llc_prefetcher_final_stats();
+#endif
     }
 
     cout << endl << "Region of Interest Statistics" << endl;
@@ -2103,7 +2129,11 @@ int main(int argc, char** argv)
 	print_roi_stats(i, &ooo_cpu[i].PTW.PSCL3);
 	print_roi_stats(i, &ooo_cpu[i].PTW.PSCL2);
 #endif
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
         print_roi_stats(i, &uncore.LLC);
+#else
+        cout << "LLC: REMOVED (L2C connected directly to DRAM)" << endl;
+#endif
 
 	//@Vishal: print stats
         cout<<endl;
@@ -2126,7 +2156,9 @@ int main(int argc, char** argv)
     }
    
 
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
     uncore.LLC.llc_prefetcher_final_stats();
+#endif
     reuse_distance_final_stats();
 
 #ifdef SANITY_CHECK
@@ -2152,7 +2184,9 @@ int main(int argc, char** argv)
 #endif
 
 #ifndef CRC2_COMPILE
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
     uncore.LLC.llc_replacement_final_stats();
+#endif
     print_dram_stats();
     print_branch_stats();
 #endif

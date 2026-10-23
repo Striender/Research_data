@@ -27,6 +27,12 @@
 #define DRC_BYPASS
 //#define NO_CRC2_COMPILE
 
+// LLC REMOVAL KNOB (1: Connect L2 directly to DRAM; 0: Standard LLC hierarchy)
+#define REMOVE_LLC 1
+#ifndef define_remove_llc
+#define define_remove_llc REMOVE_LLC
+#endif
+
 //#define PUSH_DTLB_PB 	//@Vasudha: Use DTLB Prefetch buffer to store translations that are prefetched by DTLB
 #define INS_PAGE_TABLE_WALKER
 

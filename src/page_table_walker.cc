@@ -514,7 +514,9 @@ uint64_t PAGE_TABLE_WALKER :: va_to_pa_ptw(uint8_t cpu, uint64_t instr_id, bool 
                 ooo_cpu[cpu].L1I.invalidate_entry(cl_addr);
                 ooo_cpu[cpu].L1D.invalidate_entry(cl_addr);
                 ooo_cpu[cpu].L2C.invalidate_entry(cl_addr);
+#if !((defined(REMOVE_LLC) && (REMOVE_LLC == 1)) || (defined(define_remove_llc) && (define_remove_llc == 1)))
                 uncore.LLC.invalidate_entry(cl_addr);
+#endif
             }
 
             // swap complete
